@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Pasien;
+use App\Models\Pengguna;
 use App\Models\User;
 
 return [
@@ -68,11 +70,11 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\Pengguna::class),
+            'model' => env('AUTH_MODEL', Pengguna::class),
         ],
         'pasiens' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Pasien::class,
+            'model' => Pasien::class,
         ],
 
         // 'users' => [

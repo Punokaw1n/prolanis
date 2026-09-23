@@ -17,11 +17,14 @@ class PasienController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
                     ->orWhere('nik', 'like', "%{$search}%")
-                    ->orWhere('no_rm', 'like', "%{$search}%");
+                    ->orWhere('no_rm', 'like', "%{$search}%")
+                    ->orWhere('no_bpjs', 'like', "%{$search}%");
             });
+            $pasiens = $query->orderBy('nama')->paginate(15)->withQueryString();
+        } else {
+            // Jika tidak ada pencarian, kembalikan data kosong
+            $pasiens = Pasien::whereRaw('1 = 0')->paginate(15);
         }
-
-        $pasiens = $query->orderBy('nama')->paginate(15)->withQueryString();
 
         return view('admin.pasien.index', compact('pasiens', 'search'));
     }

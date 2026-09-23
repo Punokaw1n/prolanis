@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Pasien;
-use App\Models\Pemeriksaan;
 use App\Models\PemberianObat;
+use App\Models\Pemeriksaan;
 use App\Models\Pengguna;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -16,7 +16,9 @@ class ImportApotekTest extends TestCase
     use RefreshDatabase;
 
     private $admin;
+
     private string $poliklinikPath;
+
     private string $apotekPath;
 
     protected function setUp(): void
@@ -44,7 +46,7 @@ class ImportApotekTest extends TestCase
         $response->assertSessionHas('import_summary');
 
         $summary = session('import_summary');
-        
+
         // Seharusnya tidak ada obat yang disimpan karena pasien belum di-import
         $this->assertEquals(0, $summary['obat_disimpan']);
         $this->assertGreaterThan(0, $summary['baris_gagal']);
@@ -69,7 +71,7 @@ class ImportApotekTest extends TestCase
         $response->assertSessionHas('import_summary');
 
         $summary = session('import_summary');
-        
+
         // Obat harus berhasil disimpan (mengingat ada beberapa obat per baris yang dipisah titik koma)
         $this->assertGreaterThan(0, $summary['obat_disimpan']);
         $this->assertGreaterThan(0, PemberianObat::count());

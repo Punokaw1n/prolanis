@@ -10,6 +10,7 @@ class JadwalLayananController extends Controller
     public function index()
     {
         $jadwal = JadwalLayanan::with('pembuat')->orderBy('tanggal', 'desc')->paginate(10);
+
         return view('admin.jadwal.index', compact('jadwal'));
     }
 
@@ -57,6 +58,7 @@ class JadwalLayananController extends Controller
     public function destroy(JadwalLayanan $jadwal)
     {
         $jadwal->delete();
+
         return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal layanan berhasil dihapus.');
     }
 }

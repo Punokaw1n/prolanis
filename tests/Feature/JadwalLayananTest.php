@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Pengguna;
 use App\Models\JadwalLayanan;
+use App\Models\Pengguna;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
 
 class JadwalLayananTest extends TestCase
 {
@@ -21,7 +21,7 @@ class JadwalLayananTest extends TestCase
             'nama' => 'Admin Test',
             'email' => 'admin@test.com',
             'password' => Hash::make('password'),
-            'peran' => 'admin'
+            'peran' => 'admin',
         ]);
     }
 

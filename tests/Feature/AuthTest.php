@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Pengguna;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
@@ -23,7 +23,7 @@ class AuthTest extends TestCase
             'nama' => 'Admin Test',
             'email' => 'admin@test.com',
             'password' => Hash::make('password'),
-            'peran' => 'admin'
+            'peran' => 'admin',
         ]);
 
         $response = $this->post('/login', [
@@ -41,7 +41,7 @@ class AuthTest extends TestCase
             'nama' => 'Admin Test',
             'email' => 'admin@test.com',
             'password' => Hash::make('password'),
-            'peran' => 'admin'
+            'peran' => 'admin',
         ]);
 
         $this->actingAs($user);

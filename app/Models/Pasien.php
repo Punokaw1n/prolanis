@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Pasien extends Authenticatable
 {
     protected $table = 'pasien';
+
     protected $guarded = ['id'];
 
     public function pemeriksaans(): HasMany

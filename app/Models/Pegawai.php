@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Pegawai extends Model
 {
     protected $table = 'pegawai';
+
     protected $guarded = ['id'];
 
     public function pemeriksaans(): HasMany
