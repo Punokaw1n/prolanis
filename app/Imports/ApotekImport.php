@@ -3,8 +3,8 @@
 namespace App\Imports;
 
 use App\Models\Pasien;
-use App\Models\Pemeriksaan;
 use App\Models\PemberianObat;
+use App\Models\Pemeriksaan;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\ToArray;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -33,31 +33,35 @@ class ApotekImport implements ToArray, WithHeadingRow
     }
 
     /**
-     * @param array<string, mixed> $row
+     * @param  array<string, mixed>  $row
      */
     private function processRow(array $row, int $rowNumber): void
     {
         // === Ambil & trim NIK ===
-        $nik = trim($row['nik'] ?? '');
+        // Cari dari berbagai kemungkinan nama kolom (nik, no_bpjs, no_kartu, dll)
+        $nik = trim($row['nik'] ?? $row['no_bpjs'] ?? $row['no_kartu'] ?? '');
         if (empty($nik)) {
             $this->summary['baris_gagal']++;
-            $this->summary['errors'][] = "Baris {$rowNumber}: NIK kosong, baris dilewati.";
+            $this->summary['errors'][] = "Baris {$rowNumber}: NIK/No BPJS kosong, baris dilewati.";
+
             return;
         }
 
         // === Parse tanggal (format DD-MM-YYYY) ===
         $tanggal = $this->parseDate($row['tanggal'] ?? '');
-        if (!$tanggal) {
+        if (! $tanggal) {
             $this->summary['baris_gagal']++;
             $this->summary['errors'][] = "Baris {$rowNumber}: Format tanggal tidak valid '{$row['tanggal']}'.";
+
             return;
         }
 
         // === Cek Pasien ===
         $pasien = Pasien::where('nik', $nik)->first();
-        if (!$pasien) {
+        if (! $pasien) {
             $this->summary['baris_gagal']++;
             $this->summary['errors'][] = "Baris {$rowNumber}: Pasien dengan NIK {$nik} tidak ditemukan di database. Pastikan data Poliklinik diimport terlebih dahulu.";
+
             return;
         }
 
@@ -65,15 +69,17 @@ class ApotekImport implements ToArray, WithHeadingRow
         $pemeriksaan = Pemeriksaan::where('pasien_id', $pasien->id)
             ->where('tanggal_periksa', $tanggal)
             ->first();
-            
-        if (!$pemeriksaan) {
+
+        if (! $pemeriksaan) {
             $this->summary['baris_gagal']++;
             $this->summary['errors'][] = "Baris {$rowNumber}: Kunjungan tanggal {$tanggal} untuk NIK {$nik} tidak ditemukan.";
+
             return;
         }
 
         // === Proses Obat ===
-        $obatString = trim($row['obat'] ?? '');
+        // Cari dari berbagai kemungkinan nama kolom (obat, nama_obat, daftar_obat, dll)
+        $obatString = trim($row['obat'] ?? $row['nama_obat'] ?? $row['obat_yang_diberikan'] ?? '');
         if (empty($obatString)) {
             // Jika kosong, tidak usah tambah obat, bukan error besar tapi tidak ada obat yg ditambah
             return;
@@ -83,7 +89,7 @@ class ApotekImport implements ToArray, WithHeadingRow
         $obatList = explode(';', $obatString);
         foreach ($obatList as $namaObat) {
             $namaObat = trim($namaObat);
-            if (!empty($namaObat)) {
+            if (! empty($namaObat)) {
                 // Gunakan firstOrCreate untuk menghindari duplikasi jika file di-import dua kali
                 $created = PemberianObat::firstOrCreate([
                     'pemeriksaan_id' => $pemeriksaan->id,
@@ -91,7 +97,7 @@ class ApotekImport implements ToArray, WithHeadingRow
                 ], [
                     'tanggal_diberikan' => $tanggal,
                 ]);
-                
+
                 if ($created->wasRecentlyCreated) {
                     $this->summary['obat_disimpan']++;
                 }

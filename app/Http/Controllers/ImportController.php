@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\ApotekImport;
 use App\Imports\PoliklinikImport;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\HeadingRowImport;
 
 class ImportController extends Controller
 {
@@ -22,6 +25,27 @@ class ImportController extends Controller
             'file.mimes' => 'File harus berformat .xlsx atau .xls.',
             'file.max' => 'Ukuran file maksimal 10MB.',
         ]);
+
+        try {
+            $headings = (new HeadingRowImport)->toArray($request->file('file'));
+            $headers = $headings[0][0] ?? [];
+
+            // File Poliklinik harus punya kolom keluhan atau icd_x, dan tidak boleh punya no_nota (ciri khas apotek)
+            $hasKeluhan = in_array('keluhan', $headers) || in_array('icd_x', $headers);
+            $hasNota = in_array('no_nota', $headers);
+
+            if (! $hasKeluhan || $hasNota) {
+                throw ValidationException::withMessages([
+                    'file' => 'File ditolak. File yang Anda unggah sepertinya BUKAN file Register Poliklinik.',
+                ]);
+            }
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            throw ValidationException::withMessages([
+                'file' => 'Gagal membaca format file Excel.',
+            ]);
+        }
 
         $import = new PoliklinikImport;
         Excel::import($import, $request->file('file'));
@@ -45,7 +69,27 @@ class ImportController extends Controller
             'file.max' => 'Ukuran file maksimal 10MB.',
         ]);
 
-        $import = new \App\Imports\ApotekImport();
+        try {
+            $headings = (new HeadingRowImport)->toArray($request->file('file'));
+            $headers = $headings[0][0] ?? [];
+
+            // File Apotek harus punya kolom obat atau no_nota
+            $hasObat = in_array('obat', $headers) || in_array('nama_obat', $headers) || in_array('no_nota', $headers);
+
+            if (! $hasObat) {
+                throw ValidationException::withMessages([
+                    'file' => 'File ditolak. File yang Anda unggah sepertinya BUKAN file Register Apotek.',
+                ]);
+            }
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            throw ValidationException::withMessages([
+                'file' => 'Gagal membaca format file Excel.',
+            ]);
+        }
+
+        $import = new ApotekImport;
         Excel::import($import, $request->file('file'));
 
         return redirect()->route('admin.import.apotek')

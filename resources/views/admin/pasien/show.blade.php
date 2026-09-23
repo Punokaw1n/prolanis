@@ -22,8 +22,15 @@
                         <span class="text-2xl font-bold">{{ strtoupper(substr($pasien->nama, 0, 1)) }}</span>
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold text-gray-800">{{ $pasien->nama }}</h2>
-                        <p class="text-sm text-gray-500">No RM: <span class="font-medium text-gray-800">{{ $pasien->no_rm ?? '-' }}</span></p>
+                        <div class="flex items-center gap-x-2">
+                            <h2 class="text-lg font-bold text-gray-800">{{ $pasien->nama }}</h2>
+                            @if($pasien->tipe_pasien)
+                                <span class="inline-flex items-center gap-x-1.5 py-0.5 px-2 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                    {{ $pasien->tipe_pasien }}
+                                </span>
+                            @endif
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">No RM: <span class="font-medium text-gray-800">{{ $pasien->no_rm ?? '-' }}</span></p>
                     </div>
                 </div>
 

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class JadwalLayanan extends Model
 {
     protected $table = 'jadwal_layanan';
+
     protected $guarded = ['id'];
 
     public function pemeriksaans(): HasMany

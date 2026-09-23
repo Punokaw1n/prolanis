@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
@@ -12,10 +12,10 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login')->m
 Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-use App\Http\Controllers\JadwalLayananController;
 use App\Http\Controllers\ImportController;
-use App\Http\Controllers\PasienController;
+use App\Http\Controllers\JadwalLayananController;
 use App\Http\Controllers\PasienAuthController;
+use App\Http\Controllers\PasienController;
 use App\Http\Controllers\PortalPasienController;
 
 // Admin & Petugas Routes
@@ -41,7 +41,7 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
     // Import Routes
     Route::get('/import/poliklinik', [ImportController::class, 'showPoliklinik'])->name('admin.import.poliklinik');
     Route::post('/import/poliklinik', [ImportController::class, 'importPoliklinik'])->name('admin.import.poliklinik.process');
-    
+
     Route::get('/import/apotek', [ImportController::class, 'showApotek'])->name('admin.import.apotek');
     Route::post('/import/apotek', [ImportController::class, 'importApotek'])->name('admin.import.apotek.process');
 });

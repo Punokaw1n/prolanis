@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Pasien;
 use App\Models\Pemeriksaan;
-use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class DummyPasienSeeder extends Seeder
 {
@@ -22,13 +21,13 @@ class DummyPasienSeeder extends Seeder
             'tanggal_lahir' => '1965-01-01',
             'jenis_kelamin' => 'L',
             'pekerjaan' => 'Wiraswasta',
-            'no_hp' => '08111111111'
+            'no_hp' => '08111111111',
         ]);
 
         $dates = [
-            '2026-05-10', '2026-06-12', '2026-07-15', '2026-08-16', '2026-09-20'
+            '2026-05-10', '2026-06-12', '2026-07-15', '2026-08-16', '2026-09-20',
         ];
-        
+
         $sistols = [145, 150, 160, 155, 165];
         $diastols = [90, 95, 100, 95, 105];
         $bbs = [75, 76.5, 78, 77, 80];
@@ -45,7 +44,7 @@ class DummyPasienSeeder extends Seeder
                 'heart_rate' => 88,
                 'keluhan' => 'Sering pusing dan tengkuk terasa berat',
                 'nama_diagnosa' => 'Hipertensi Primer',
-                'kode_icd' => 'I10'
+                'kode_icd' => 'I10',
             ]);
         }
 
@@ -57,7 +56,7 @@ class DummyPasienSeeder extends Seeder
             'tanggal_lahir' => '1980-12-31',
             'jenis_kelamin' => 'P',
             'pekerjaan' => 'Ibu Rumah Tangga',
-            'no_hp' => '08222222222'
+            'no_hp' => '08222222222',
         ]);
 
         $sistolsLow = [90, 85, 95, 88, 92];
@@ -76,7 +75,7 @@ class DummyPasienSeeder extends Seeder
                 'heart_rate' => 72,
                 'keluhan' => 'Lemas, mudah lelah, mata berkunang-kunang',
                 'nama_diagnosa' => 'Hipotensi',
-                'kode_icd' => 'I95'
+                'kode_icd' => 'I95',
             ]);
         }
     }

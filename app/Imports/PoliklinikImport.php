@@ -63,21 +63,49 @@ class PoliklinikImport implements ToArray, WithHeadingRow
 
         // === Cek/Buat Pasien (dedup via NIK) ===
         $pasien = Pasien::where('nik', $nik)->first();
+
+        $noRm = trim($row['no_index'] ?? '');
+        $tipePasien = trim($row['tipe_pasien'] ?? $row['type_pasien'] ?? $row['jenis_pasien'] ?? $row['kategori'] ?? $row['kelompok'] ?? $row['asuransi'] ?? $row['jenis_peserta'] ?? $row['peserta'] ?? $row['cara_bayar'] ?? '');
+
+        // Coba ekstrak tipe pasien dari No RM jika kolom spesifik kosong (misal: "01.2112/00/CKG25/PROLANIS DM")
+        if (empty($tipePasien) && str_contains(strtoupper($noRm), 'PROLANIS')) {
+            if (str_contains(strtoupper($noRm), 'PROLANIS DM')) {
+                $tipePasien = 'PROLANIS DM';
+            } elseif (str_contains(strtoupper($noRm), 'PROLANIS HT')) {
+                $tipePasien = 'PROLANIS HT';
+            } else {
+                $tipePasien = 'PROLANIS';
+            }
+        } elseif (empty($tipePasien) && str_contains(strtoupper($noRm), 'PRB')) {
+            $tipePasien = 'PRB';
+        }
+
+        $dataPasien = [
+            'no_rm' => $noRm,
+            'nama' => trim($row['nama'] ?? ''),
+            'alamat' => trim(($row['alamat'] ?? '').', '.($row['kelurahan'] ?? '').', '.($row['kecamatan'] ?? '').', '.($row['kota'] ?? '')),
+            'tanggal_lahir' => $tanggalLahir,
+            'jenis_kelamin' => trim($row['jk'] ?? ''),
+            'pendidikan' => trim($row['pendidikan'] ?? ''),
+            'pekerjaan' => trim($row['pekerjaan'] ?? ''),
+            'no_hp' => trim($row['hp'] ?? ''),
+            'no_bpjs' => trim($row['no_kartu'] ?? ''),
+            'tipe_pasien' => $tipePasien,
+        ];
+
+        // Bersihkan elemen array yang kosong agar tidak menimpa data valid di database dengan string kosong
+        $dataPasien = array_filter($dataPasien, function ($val) {
+            return $val !== '' && $val !== null && $val !== ', , , ';
+        });
+
         if ($pasien) {
+            // Update data pasien dengan data terbaru dari Excel (koreksi nama, alamat, dll)
+            $pasien->update($dataPasien);
             $this->summary['pasien_existing']++;
         } else {
-            $pasien = Pasien::create([
-                'nik' => $nik,
-                'no_rm' => trim($row['no_index'] ?? ''),
-                'nama' => trim($row['nama'] ?? ''),
-                'alamat' => trim(($row['alamat'] ?? '').', '.($row['kelurahan'] ?? '').', '.($row['kecamatan'] ?? '').', '.($row['kota'] ?? '')),
-                'tanggal_lahir' => $tanggalLahir,
-                'jenis_kelamin' => trim($row['jk'] ?? ''),
-                'pendidikan' => trim($row['pendidikan'] ?? ''),
-                'pekerjaan' => trim($row['pekerjaan'] ?? ''),
-                'no_hp' => trim($row['hp'] ?? ''),
-                'no_bpjs' => trim($row['no_kartu'] ?? ''),
-            ]);
+            // Buat pasien baru
+            $dataPasien['nik'] = $nik;
+            $pasien = Pasien::create($dataPasien);
             $this->summary['pasien_baru']++;
         }
 

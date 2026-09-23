@@ -2,9 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Models\JadwalLayanan;
+use App\Models\Pasien;
+use App\Models\Pegawai;
+use App\Models\PemberianObat;
+use App\Models\Pemeriksaan;
+use App\Models\Pengguna;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,42 +24,42 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        \App\Models\Pengguna::create([
+        Pengguna::create([
             'nama' => 'Admin Test',
             'email' => 'admin@prolanis.com',
-            'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'peran' => 'admin'
+            'password' => Hash::make('password'),
+            'peran' => 'admin',
         ]);
 
-        $pegawai = \App\Models\Pegawai::create([
+        $pegawai = Pegawai::create([
             'nama' => 'Dr. Budi',
-            'jabatan' => 'Dokter Umum'
+            'jabatan' => 'Dokter Umum',
         ]);
 
-        $pasien = \App\Models\Pasien::create([
+        $pasien = Pasien::create([
             'nik' => '1234567890123456',
             'nama' => 'Pasien Test',
-            'tanggal_lahir' => '1960-01-01'
+            'tanggal_lahir' => '1960-01-01',
         ]);
 
-        $jadwal = \App\Models\JadwalLayanan::create([
+        $jadwal = JadwalLayanan::create([
             'tanggal' => now()->toDateString(),
-            'dibuat_oleh' => 1
+            'dibuat_oleh' => 1,
         ]);
 
-        $pemeriksaan = \App\Models\Pemeriksaan::create([
+        $pemeriksaan = Pemeriksaan::create([
             'pasien_id' => $pasien->id,
             'jadwal_layanan_id' => $jadwal->id,
             'tanggal_periksa' => now()->toDateString(),
             'nakes_id' => $pegawai->id,
             'berat_badan' => 60.5,
             'tensi_sistol' => 120,
-            'tensi_diastol' => 80
+            'tensi_diastol' => 80,
         ]);
 
-        \App\Models\PemberianObat::create([
+        PemberianObat::create([
             'pemeriksaan_id' => $pemeriksaan->id,
-            'nama_obat' => 'Metformin 500mg'
+            'nama_obat' => 'Metformin 500mg',
         ]);
     }
 }
