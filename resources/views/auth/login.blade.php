@@ -35,8 +35,20 @@
                         <div class="flex justify-between items-center">
                             <label for="password" class="block text-sm mb-2">Password</label>
                         </div>
-                        <div class="relative">
-                            <input type="password" id="password" name="password" class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none border" required aria-describedby="password-error">
+                        <div class="relative" x-data="{ show: false }">
+                            <input :type="show ? 'text' : 'password'" id="password" name="password" class="py-3 ps-4 pe-10 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none" required>
+                            <button type="button" @click="show = !show" style="right: 0;" class="absolute inset-y-0 right-0 flex items-center z-20 px-3 cursor-pointer text-gray-400 rounded-e-md focus:outline-none focus:text-blue-600 hover:text-gray-600">
+                              <svg class="shrink-0 size-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <!-- Eye close icon (show = false) -->
+                                <path x-show="!show" d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                                <path x-show="!show" d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                                <path x-show="!show" d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                                <line x-show="!show" x1="2" x2="22" y1="2" y2="22"/>
+                                <!-- Eye open icon (show = true) -->
+                                <path x-show="show" style="display: none;" d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle x-show="show" style="display: none;" cx="12" cy="12" r="3"/>
+                              </svg>
+                            </button>
                         </div>
                     </div>
                     <!-- End Form Group -->

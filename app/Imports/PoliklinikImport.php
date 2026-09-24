@@ -6,6 +6,7 @@ use App\Models\Pasien;
 use App\Models\Pegawai;
 use App\Models\Pemeriksaan;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Concerns\ToArray;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
@@ -23,6 +24,27 @@ class PoliklinikImport implements ToArray, WithHeadingRow
 
     public function array(array $rows): void
     {
+        // Validasi awal: Jika ada NIK yang kosong, kurang dari 16 digit, atau diakhiri '0', batalkan!
+        foreach ($rows as $index => $row) {
+            $nik = preg_replace('/[^0-9]/', '', $row['nik'] ?? '');
+            
+            $isInvalid = empty($nik) || strlen($nik) < 16 || str_ends_with($nik, '0');
+            
+            if ($isInvalid) {
+                $nama = trim($row['nama'] ?? 'Tanpa Nama');
+                $rowNumber = $index + 2;
+                
+                $alasan = 'tidak valid';
+                if (empty($nik)) $alasan = 'kosong';
+                elseif (strlen($nik) < 16) $alasan = 'kurang dari 16 digit';
+                elseif (str_ends_with($nik, '0')) $alasan = 'berakhiran angka 0 (kemungkinan format Excel rusak/dibulatkan)';
+                
+                throw ValidationException::withMessages([
+                    'file' => "Upload dibatalkan! NIK {$alasan} pada pasien '{$nama}' di baris {$rowNumber} (NIK: {$nik}). Harap perbaiki NIK di file Excel (pastikan cell berformat Text).",
+                ]);
+            }
+        }
+
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2; // +2 karena index 0-based dan header row
 
@@ -41,10 +63,12 @@ class PoliklinikImport implements ToArray, WithHeadingRow
     private function processRow(array $row, int $rowNumber): void
     {
         // === Ambil & trim NIK ===
-        $nik = trim($row['nik'] ?? '');
+        // === Ambil & bersihkan NIK dari karakter non-angka (seperti petik) ===
+        $nik = preg_replace('/[^0-9]/', '', $row['nik'] ?? '');
         if (empty($nik)) {
+            $nama = trim($row['nama'] ?? 'Tanpa Nama');
             $this->summary['baris_gagal']++;
-            $this->summary['errors'][] = "Baris {$rowNumber}: NIK kosong, baris dilewati.";
+            $this->summary['errors'][] = "Baris {$rowNumber}: NIK kosong untuk pasien '{$nama}', baris dilewati.";
 
             return;
         }
@@ -88,8 +112,8 @@ class PoliklinikImport implements ToArray, WithHeadingRow
             'jenis_kelamin' => trim($row['jk'] ?? ''),
             'pendidikan' => trim($row['pendidikan'] ?? ''),
             'pekerjaan' => trim($row['pekerjaan'] ?? ''),
-            'no_hp' => trim($row['hp'] ?? ''),
-            'no_bpjs' => trim($row['no_kartu'] ?? ''),
+            'no_hp' => preg_replace('/[^0-9]/', '', $row['hp'] ?? ''),
+            'no_bpjs' => preg_replace('/[^0-9]/', '', $row['no_kartu'] ?? ''),
             'tipe_pasien' => $tipePasien,
         ];
 

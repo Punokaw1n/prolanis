@@ -14,6 +14,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\JadwalLayananController;
+use App\Http\Controllers\EvaluasiKehadiranController;
 use App\Http\Controllers\PasienAuthController;
 use App\Http\Controllers\PasienController;
 use App\Http\Controllers\PortalPasienController;
@@ -21,7 +22,10 @@ use App\Http\Controllers\PortalPasienController;
 // Admin & Petugas Routes
 Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {
-        return view('admin.dashboard');
+        $totalPasien = \App\Models\Pasien::count();
+        $totalJadwal = \App\Models\JadwalLayanan::count();
+
+        return view('admin.dashboard', compact('totalPasien', 'totalJadwal'));
     })->name('admin.dashboard');
 
     Route::resource('jadwal', JadwalLayananController::class, [
@@ -37,6 +41,9 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
     Route::get('/pasien', [PasienController::class, 'index'])->name('admin.pasien.index');
     Route::get('/pasien/{id}', [PasienController::class, 'show'])->name('admin.pasien.show');
+
+    // Evaluasi Kehadiran
+    Route::get('/evaluasi-kehadiran', [EvaluasiKehadiranController::class, 'index'])->name('admin.evaluasi.index');
 
     // Import Routes
     Route::get('/import/poliklinik', [ImportController::class, 'showPoliklinik'])->name('admin.import.poliklinik');

@@ -15,23 +15,31 @@
         
         <div class="flex-1 space-y-4">
             <div>
-                <span class="block text-xs text-gray-500 uppercase">Nama Lengkap</span>
-                <span class="block text-sm font-medium text-gray-900">{{ $pasien->nama }}</span>
+                <span class="block text-sm text-gray-500 uppercase mb-1">Nama Lengkap</span>
+                <span class="block text-base font-bold text-gray-900">{{ $pasien->nama }}</span>
             </div>
             <div>
-                <span class="block text-xs text-gray-500 uppercase">No RM (Rekam Medis)</span>
-                <span class="block text-sm font-medium text-gray-900">{{ $pasien->no_rm ?? '-' }}</span>
+                <span class="block text-sm text-gray-500 uppercase mb-1">No RM (Rekam Medis)</span>
+                <span class="block text-base font-semibold text-gray-900">{{ $pasien->no_rm ?? '-' }}</span>
             </div>
             <div>
-                <span class="block text-xs text-gray-500 uppercase">NIK</span>
-                <span class="block text-sm font-medium text-gray-900">{{ substr($pasien->nik, 0, 12) }}****</span>
+                <span class="block text-sm text-gray-500 uppercase mb-1">NIK</span>
+                <span class="block text-base font-semibold text-gray-900">{{ substr($pasien->nik, 0, 12) }}****</span>
             </div>
             <div>
-                <span class="block text-xs text-gray-500 uppercase">Tanggal Lahir / Usia</span>
-                <span class="block text-sm font-medium text-gray-900">
+                <span class="block text-sm text-gray-500 uppercase mb-1">Tanggal Lahir / Usia</span>
+                <span class="block text-base font-semibold text-gray-900">
                     {{ \Carbon\Carbon::parse($pasien->tanggal_lahir)->translatedFormat('d F Y') }}
-                    <span class="text-gray-500 font-normal">({{ \Carbon\Carbon::parse($pasien->tanggal_lahir)->age }} th)</span>
+                    <span class="text-gray-600 font-normal">({{ \Carbon\Carbon::parse($pasien->tanggal_lahir)->age }} th)</span>
                 </span>
+            </div>
+            <div>
+                <span class="block text-sm text-gray-500 uppercase mb-1">No BPJS</span>
+                <span class="block text-base font-semibold text-gray-900">{{ $pasien->no_bpjs ?? '-' }}</span>
+            </div>
+            <div>
+                <span class="block text-sm text-gray-500 uppercase mb-1">Alamat</span>
+                <span class="block text-base font-semibold text-gray-900">{{ $pasien->alamat ?? '-' }}</span>
             </div>
         </div>
     </div>
@@ -48,29 +56,48 @@
             </span>
         </div>
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <div class="text-xs text-gray-500 uppercase mb-1">Tekanan Darah</div>
-                <div class="text-xl font-bold text-gray-900">
-                    {{ $kunjunganTerakhir->tensi_sistol ?? '-' }}<span class="text-sm font-medium text-gray-500">/{{ $kunjunganTerakhir->tensi_diastol ?? '-' }}</span>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 flex flex-col justify-between">
+                <div class="text-sm font-semibold text-blue-800 uppercase mb-2">Tekanan Darah</div>
+                <div>
+                    <div class="text-2xl font-bold text-gray-900">
+                        {{ $kunjunganTerakhir->tensi_sistol ?? '-' }}<span class="text-base font-semibold text-gray-600">/{{ $kunjunganTerakhir->tensi_diastol ?? '-' }}</span>
+                    </div>
+                    @php
+                        $sistol = (int) $kunjunganTerakhir->tensi_sistol;
+                        $diastol = (int) $kunjunganTerakhir->tensi_diastol;
+                        $statusTensi = 'Normal';
+                        $colorClass = 'text-emerald-700 bg-emerald-100 border-emerald-200';
+                        
+                        if ($sistol >= 140 || $diastol >= 90) {
+                            $statusTensi = 'Tinggi';
+                            $colorClass = 'text-red-700 bg-red-100 border-red-200';
+                        } elseif ($sistol > 0 && ($sistol <= 90 || $diastol <= 60)) {
+                            $statusTensi = 'Rendah';
+                            $colorClass = 'text-yellow-700 bg-yellow-100 border-yellow-200';
+                        }
+                    @endphp
+                    <div class="mt-3 inline-block px-2.5 py-1 rounded-md text-xs font-bold border {{ $colorClass }}">
+                        Kondisi: {{ $statusTensi }}
+                    </div>
                 </div>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <div class="text-xs text-gray-500 uppercase mb-1">Berat Badan</div>
-                <div class="text-xl font-bold text-gray-900">
-                    {{ $kunjunganTerakhir->berat_badan ?? '-' }}<span class="text-sm font-medium text-gray-500"> kg</span>
+                <div class="text-sm font-semibold text-gray-600 uppercase mb-2">Berat Badan</div>
+                <div class="text-2xl font-bold text-gray-900 mt-auto">
+                    {{ $kunjunganTerakhir->berat_badan ?? '-' }}<span class="text-base font-semibold text-gray-500"> kg</span>
                 </div>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <div class="text-xs text-gray-500 uppercase mb-1">Tinggi Badan</div>
-                <div class="text-xl font-bold text-gray-900">
-                    {{ $kunjunganTerakhir->tinggi_badan ?? '-' }}<span class="text-sm font-medium text-gray-500"> cm</span>
+                <div class="text-sm font-semibold text-gray-600 uppercase mb-2">Tinggi Badan</div>
+                <div class="text-2xl font-bold text-gray-900 mt-auto">
+                    {{ $kunjunganTerakhir->tinggi_badan ?? '-' }}<span class="text-base font-semibold text-gray-500"> cm</span>
                 </div>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <div class="text-xs text-gray-500 uppercase mb-1">Suhu</div>
-                <div class="text-xl font-bold text-gray-900">
-                    {{ $kunjunganTerakhir->temperature ?? '-' }}<span class="text-sm font-medium text-gray-500"> °C</span>
+                <div class="text-sm font-semibold text-gray-600 uppercase mb-2">Suhu</div>
+                <div class="text-2xl font-bold text-gray-900 mt-auto">
+                    {{ $kunjunganTerakhir->temperature ?? '-' }}<span class="text-base font-semibold text-gray-500"> °C</span>
                 </div>
             </div>
         </div>
@@ -116,9 +143,6 @@
                         {{ \Carbon\Carbon::parse($pemeriksaan->tanggal_periksa)->translatedFormat('d M Y') }}
                     </span>
                     <h4 class="text-sm font-bold text-gray-900">{{ $pemeriksaan->nama_diagnosa ?? 'Pemeriksaan Rutin' }}</h4>
-                    @if($pemeriksaan->kode_icd)
-                        <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 mt-1 inline-block">ICD: {{ $pemeriksaan->kode_icd }}</span>
-                    @endif
                 </div>
                 <div class="text-left md:text-right">
                     <p class="text-sm text-gray-600"><span class="font-medium">Dokter:</span> {{ $pemeriksaan->nakes ? $pemeriksaan->nakes->nama : '-' }}</p>

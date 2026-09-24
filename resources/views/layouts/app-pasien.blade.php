@@ -35,7 +35,10 @@
                         <span class="text-sm font-medium text-gray-600 hidden sm:block">Halo, {{ explode(' ', Auth::guard('pasien')->user()->nama)[0] }}</span>
                         <form action="{{ route('pasien.logout') }}" method="POST">
                             @csrf
-                            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-700">Logout</button>
+                            <button type="submit" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-red-200 bg-red-50 text-red-600 shadow-sm hover:bg-red-100 focus:outline-none focus:bg-red-100 transition">
+                                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                                Keluar
+                            </button>
                         </form>
                     </div>
                     @endauth
@@ -50,7 +53,7 @@
 
         <!-- Footer -->
         <footer class="bg-white border-t border-gray-200 py-6 text-center">
-            <p class="text-sm text-gray-500">&copy; {{ date('Y') }} UPTD Puskesmas. All rights reserved.</p>
+            <p class="text-sm text-gray-500">&copy; {{ date('Y') }} Puskesmas Kalijudan. Created with <span class="text-red-500">&hearts;</span></p>
         </footer>
     </div>
 

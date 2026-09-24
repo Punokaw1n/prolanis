@@ -1,5 +1,31 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+/* Memaksa scrollbar bawah selalu terlihat agar user tahu tabel bisa digeser */
+.custom-scrollbar-x::-webkit-scrollbar {
+    height: 8px;
+    display: block !important;
+}
+.custom-scrollbar-x::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+.custom-scrollbar-x::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.custom-scrollbar-x::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+/* Firefox support */
+.custom-scrollbar-x {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+</style>
+@endpush
+
 @section('content')
 <!-- Page Heading -->
 <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -46,9 +72,8 @@
             </div>
         </div>
 
-        <div class="-m-1.5 overflow-x-auto">
-        <div class="p-1.5 min-w-full inline-block align-middle">
-            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto custom-scrollbar-x pb-2">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
@@ -112,16 +137,15 @@
                         @endforelse
                     </tbody>
                 </table>
-                
-                <!-- Pagination -->
-                @if($pasiens->hasPages())
-                <div class="px-6 py-4 border-t border-gray-200">
-                    {{ $pasiens->links() }}
-                </div>
-                @endif
             </div>
+            
+            <!-- Pagination -->
+            @if($pasiens->hasPages())
+            <div class="px-6 py-4 border-t border-gray-200">
+                {{ $pasiens->links() }}
+            </div>
+            @endif
         </div>
-    </div>
     </div>
 </div>
 @endsection
