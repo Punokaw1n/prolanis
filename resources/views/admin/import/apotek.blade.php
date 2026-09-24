@@ -1,8 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<div class="max-w-3xl mx-auto">
 <!-- Page Heading -->
-<header class="mb-8">
+<header class="mb-8 text-center">
     <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Import Register Apotek</h1>
     <p class="mt-2 text-lg text-gray-600">Upload file Excel register apotek untuk mencatat obat ke data kunjungan pasien.</p>
 </header>
@@ -48,9 +49,8 @@
 </div>
 
 <!-- Upload Form Card -->
-<div class="max-w-2xl">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-800">Upload File Excel Apotek</h2>
             <p class="mt-1 text-sm text-gray-500">
                 File yang diterima: <code class="text-xs bg-gray-100 rounded px-1 py-0.5">.xlsx</code> atau <code class="text-xs bg-gray-100 rounded px-1 py-0.5">.xls</code>, maksimal 10MB.
@@ -75,9 +75,9 @@
                     <!-- File Uploading Progress Form -->
                     <div x-show="status !== 'idle'" style="display: none;" class="w-full bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
                       <!-- Uploading File Content -->
-                      <div class="mb-4 flex justify-between items-center">
-                        <div class="flex items-center gap-x-3">
-                          <span class="size-10 flex justify-center items-center bg-white border border-gray-200 text-gray-800 rounded-lg shadow-sm">
+                      <div class="mb-4 flex flex-wrap sm:flex-nowrap justify-between items-center gap-3">
+                        <div class="flex items-center gap-x-3 min-w-0">
+                          <span class="size-10 flex shrink-0 justify-center items-center bg-white border border-gray-200 text-gray-800 rounded-lg shadow-sm">
                             <svg class="shrink-0 size-6" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M15.0243 1.43996H7.08805C6.82501 1.43996 6.57277 1.54445 6.38677 1.73043C6.20077 1.91642 6.09631 2.16868 6.09631 2.43171V6.64796L15.0243 11.856L19.4883 13.7398L23.9523 11.856V6.64796L15.0243 1.43996Z" fill="#21A366"/>
                               <path d="M6.09631 6.64796H15.0243V11.856H6.09631V6.64796Z" fill="#107C41"/>
@@ -92,12 +92,12 @@
                               <path d="M2.77283 15.576L5.18041 11.8455L2.9752 8.13596H4.74964L5.95343 10.5071C6.06401 10.7318 6.14015 10.8994 6.18185 11.01H6.19745C6.27683 10.8305 6.35987 10.6559 6.44669 10.4863L7.73309 8.13596H9.36167L7.09991 11.8247L9.41897 15.576H7.68545L6.29489 12.972C6.22943 12.861 6.17387 12.7445 6.12899 12.6238H6.10817C6.06761 12.7419 6.01367 12.855 5.94748 12.9608L4.51676 15.576H2.77283Z" fill="white"/>
                             </svg>
                           </span>
-                          <div>
-                            <p class="text-sm font-medium text-gray-800" x-text="fileName">preline-ui.xls</p>
+                          <div class="min-w-0">
+                            <p class="text-sm font-medium text-gray-800 truncate" x-text="fileName">preline-ui.xls</p>
                             <p class="text-xs text-gray-500 mt-0.5" x-text="fileSize">7 KB</p>
                           </div>
                         </div>
-                        <div class="inline-flex items-center gap-x-2">
+                        <div class="inline-flex items-center gap-x-2 shrink-0">
                           <span x-show="status === 'uploading'" class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             <span class="size-1.5 inline-block bg-blue-600 rounded-full animate-pulse"></span>
                             Memproses...
@@ -172,6 +172,7 @@
             </form>
         </div>
     </div>
+</div>
 </div>
 @endsection
 

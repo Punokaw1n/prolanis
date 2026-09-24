@@ -6,6 +6,7 @@ use App\Models\Pasien;
 use App\Models\PemberianObat;
 use App\Models\Pemeriksaan;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Concerns\ToArray;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
@@ -20,6 +21,27 @@ class ApotekImport implements ToArray, WithHeadingRow
 
     public function array(array $rows): void
     {
+        // Validasi awal: Jika ada NIK yang kosong, kurang dari 16 digit, atau diakhiri '0', batalkan!
+        foreach ($rows as $index => $row) {
+            $nik = preg_replace('/[^0-9]/', '', $row['nik'] ?? $row['no_bpjs'] ?? $row['no_kartu'] ?? '');
+            
+            $isInvalid = empty($nik) || strlen($nik) < 16 || str_ends_with($nik, '0');
+            
+            if ($isInvalid) {
+                $nama = trim($row['nama'] ?? 'Tanpa Nama');
+                $rowNumber = $index + 2;
+                
+                $alasan = 'tidak valid';
+                if (empty($nik)) $alasan = 'kosong';
+                elseif (strlen($nik) < 16) $alasan = 'kurang dari 16 digit';
+                elseif (str_ends_with($nik, '0')) $alasan = 'berakhiran angka 0 (kemungkinan format Excel rusak/dibulatkan)';
+                
+                throw ValidationException::withMessages([
+                    'file' => "Upload dibatalkan! NIK/No BPJS {$alasan} pada pasien '{$nama}' di baris {$rowNumber} (NIK: {$nik}). Harap perbaiki NIK di file Excel.",
+                ]);
+            }
+        }
+
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2; // +2 karena index 0-based dan header row
 
@@ -37,12 +59,13 @@ class ApotekImport implements ToArray, WithHeadingRow
      */
     private function processRow(array $row, int $rowNumber): void
     {
-        // === Ambil & trim NIK ===
+        // === Ambil & bersihkan NIK dari karakter non-angka (seperti petik) ===
         // Cari dari berbagai kemungkinan nama kolom (nik, no_bpjs, no_kartu, dll)
-        $nik = trim($row['nik'] ?? $row['no_bpjs'] ?? $row['no_kartu'] ?? '');
+        $nik = preg_replace('/[^0-9]/', '', $row['nik'] ?? $row['no_bpjs'] ?? $row['no_kartu'] ?? '');
         if (empty($nik)) {
+            $nama = trim($row['nama'] ?? 'Tanpa Nama');
             $this->summary['baris_gagal']++;
-            $this->summary['errors'][] = "Baris {$rowNumber}: NIK/No BPJS kosong, baris dilewati.";
+            $this->summary['errors'][] = "Baris {$rowNumber}: NIK/No BPJS kosong untuk pasien '{$nama}', baris dilewati.";
 
             return;
         }
@@ -59,8 +82,9 @@ class ApotekImport implements ToArray, WithHeadingRow
         // === Cek Pasien ===
         $pasien = Pasien::where('nik', $nik)->first();
         if (! $pasien) {
+            $nama = trim($row['nama'] ?? 'Tanpa Nama');
             $this->summary['baris_gagal']++;
-            $this->summary['errors'][] = "Baris {$rowNumber}: Pasien dengan NIK {$nik} tidak ditemukan di database. Pastikan data Poliklinik diimport terlebih dahulu.";
+            $this->summary['errors'][] = "Baris {$rowNumber}: Pasien '{$nama}' dengan NIK {$nik} tidak ditemukan di database. Pastikan data Poliklinik diimport terlebih dahulu.";
 
             return;
         }
@@ -71,8 +95,9 @@ class ApotekImport implements ToArray, WithHeadingRow
             ->first();
 
         if (! $pemeriksaan) {
+            $nama = trim($row['nama'] ?? 'Tanpa Nama');
             $this->summary['baris_gagal']++;
-            $this->summary['errors'][] = "Baris {$rowNumber}: Kunjungan tanggal {$tanggal} untuk NIK {$nik} tidak ditemukan.";
+            $this->summary['errors'][] = "Baris {$rowNumber}: Kunjungan tanggal {$tanggal} untuk pasien '{$nama}' (NIK {$nik}) tidak ditemukan.";
 
             return;
         }

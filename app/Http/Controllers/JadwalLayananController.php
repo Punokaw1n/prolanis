@@ -26,10 +26,17 @@ class JadwalLayananController extends Controller
             'keterangan' => 'nullable|string',
         ]);
 
+        $isActive = $request->has('is_active');
+
+        if ($isActive) {
+            JadwalLayanan::query()->update(['is_active' => false]);
+        }
+
         JadwalLayanan::create([
             'tanggal' => $request->tanggal,
             'keterangan' => $request->keterangan,
             'dibuat_oleh' => auth()->id(),
+            'is_active' => $isActive,
         ]);
 
         return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal layanan berhasil ditambahkan.');
@@ -47,9 +54,16 @@ class JadwalLayananController extends Controller
             'keterangan' => 'nullable|string',
         ]);
 
+        $isActive = $request->has('is_active');
+
+        if ($isActive) {
+            JadwalLayanan::where('id', '!=', $jadwal->id)->update(['is_active' => false]);
+        }
+
         $jadwal->update([
             'tanggal' => $request->tanggal,
             'keterangan' => $request->keterangan,
+            'is_active' => $isActive,
         ]);
 
         return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal layanan berhasil diperbarui.');

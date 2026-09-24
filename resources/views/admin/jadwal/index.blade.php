@@ -33,6 +33,7 @@
                         <tr>
                             <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase">Tanggal</th>
                             <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase">Dibuat Oleh</th>
                             <th scope="col" class="px-6 py-3 text-end text-xs font-medium text-gray-500 uppercase">Aksi</th>
                         </tr>
@@ -45,6 +46,17 @@
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-800">
                                 {{ $item->keterangan ?? '-' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                @if($item->is_active)
+                                    <span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
+                                        Aktif Digunakan
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+                                        Nonaktif
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                                 {{ $item->pembuat->nama ?? 'Sistem' }}
@@ -60,7 +72,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-10 text-center text-sm text-gray-500">
+                            <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">
                                 Belum ada jadwal layanan yang ditambahkan.
                             </td>
                         </tr>

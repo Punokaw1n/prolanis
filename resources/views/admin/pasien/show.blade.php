@@ -42,7 +42,7 @@
                     <div class="grid grid-cols-3 gap-1">
                         <dt class="text-sm font-medium text-gray-500">Tgl Lahir</dt>
                         <dd class="text-sm font-medium text-gray-800 col-span-2">
-                            {{ $pasien->tanggal_lahir ? \Carbon\Carbon::parse($pasien->tanggal_lahir)->format('d F Y') : '-' }}
+                            {{ $pasien->tanggal_lahir ? \Carbon\Carbon::parse($pasien->tanggal_lahir)->translatedFormat('d F Y') : '-' }}
                             @if($pasien->tanggal_lahir)
                                 <span class="text-gray-500 font-normal">({{ \Carbon\Carbon::parse($pasien->tanggal_lahir)->age }} th)</span>
                             @endif
