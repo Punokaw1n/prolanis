@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -14,6 +15,11 @@ class Pasien extends Authenticatable
     public function pemeriksaans(): HasMany
     {
         return $this->hasMany(Pemeriksaan::class);
+    }
+
+    public function jadwalLayanan(): BelongsToMany
+    {
+        return $this->belongsToMany(JadwalLayanan::class, 'jadwal_layanan_pasien', 'pasien_id', 'jadwal_layanan_id')->withPivot('konfirmasi_kehadiran')->withTimestamps();
     }
 
     /**

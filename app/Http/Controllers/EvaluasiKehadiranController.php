@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Pasien;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EvaluasiKehadiranController extends Controller
 {
@@ -12,10 +15,24 @@ class EvaluasiKehadiranController extends Controller
     {
         $search = $request->get('search');
         $statusFilter = $request->get('status');
+        $tanggal = $request->get('tanggal');
+        $konfirmasiFilter = $request->get('konfirmasi');
+
+        $jadwalLayananQuery = function ($q) use ($tanggal) {
+            if ($tanggal) {
+                $q->whereDate('tanggal', $tanggal);
+            } else {
+                $q->where('tanggal', '>=', now()->format('Y-m-d'))->orderBy('tanggal', 'asc');
+            }
+        };
 
         $query = Pasien::with(['pemeriksaans' => function ($q) {
             $q->orderBy('tanggal_periksa', 'desc');
-        }]);
+        }, 'jadwalLayanan' => $jadwalLayananQuery]);
+
+        if ($tanggal) {
+            $query->whereHas('jadwalLayanan', $jadwalLayananQuery);
+        }
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -28,6 +45,10 @@ class EvaluasiKehadiranController extends Controller
         // Ambil semua data karena kita harus menghitung status secara dinamis di PHP (berdasarkan relasi terbaru)
         $pasiens = $query->get()->map(function ($pasien) {
             $kunjunganTerakhir = $pasien->pemeriksaans->first();
+            $jadwalPasien = $pasien->jadwalLayanan->first();
+            
+            $pasien->konfirmasi = $jadwalPasien ? $jadwalPasien->pivot->konfirmasi_kehadiran : 'Menunggu';
+            $pasien->jadwal_terkait_id = $jadwalPasien ? $jadwalPasien->id : null;
             
             $pasien->tanggal_kunjungan_terakhir = $kunjunganTerakhir ? Carbon::parse($kunjunganTerakhir->tanggal_periksa) : null;
             $pasien->status_kehadiran = 'Pasif'; // Default jika belum pernah periksa
@@ -60,6 +81,16 @@ class EvaluasiKehadiranController extends Controller
             });
         }
 
+        if ($konfirmasiFilter) {
+            $pasiens = $pasiens->filter(function ($pasien) use ($konfirmasiFilter) {
+                return strtolower($pasien->konfirmasi) === strtolower($konfirmasiFilter);
+            });
+        }
+
+        if ($request->get('export') == 'excel') {
+            return $this->exportExcel($pasiens, $tanggal);
+        }
+
         // Sort: Prioritaskan yang Pasif dan Jarang (berdasarkan hari_terlewat descending)
         $pasiens = $pasiens->sortByDesc('hari_terlewat');
 
@@ -78,6 +109,81 @@ class EvaluasiKehadiranController extends Controller
             'pasiens' => $paginatedPasiens,
             'search' => $search,
             'statusFilter' => $statusFilter,
+            'tanggal' => $tanggal,
+            'konfirmasiFilter' => $konfirmasiFilter,
         ]);
+    }
+
+    public function updateKonfirmasi(Request $request, $pasienId)
+    {
+        $request->validate([
+            'jadwal_id' => 'required|exists:jadwal_layanan,id',
+            'status' => 'required|string|in:Hadir,Tidak Hadir,Menunggu'
+        ]);
+
+        $pasien = Pasien::findOrFail($pasienId);
+        $pasien->jadwalLayanan()->updateExistingPivot($request->jadwal_id, [
+            'konfirmasi_kehadiran' => $request->status
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    private function exportExcel($pasiens, $tanggal)
+    {
+        $fileName = 'Absensi_Prolanis_' . ($tanggal ? $tanggal : 'Semua') . '.xlsx';
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Set Header
+        $columns = ['No', 'Nama', 'NIK', 'Alamat', 'Tanggal', 'Tanda Tangan'];
+        $colIndex = 'A';
+        foreach ($columns as $header) {
+            $sheet->setCellValue($colIndex . '1', $header);
+            $sheet->getStyle($colIndex . '1')->getFont()->setBold(true);
+            $colIndex++;
+        }
+
+        // Set Data
+        $row = 2;
+        $i = 1;
+        foreach ($pasiens as $pasien) {
+            $jadwal = $pasien->jadwalLayanan->first();
+            $tglJadwal = $jadwal ? Carbon::parse($jadwal->tanggal)->translatedFormat('d F Y') : '-';
+            
+            $sheet->setCellValue('A' . $row, $i++);
+            $sheet->setCellValue('B' . $row, $pasien->nama);
+            // Prefix with ' to ensure NIK is treated as text, avoiding scientific notation
+            $sheet->setCellValue('C' . $row, "'" . $pasien->nik);
+            $sheet->setCellValue('D' . $row, $pasien->alamat ?? '-');
+            $sheet->setCellValue('E' . $row, $tglJadwal);
+            
+            // Tanda Tangan is empty, we just need space
+            // Set row height for signing
+            $sheet->getRowDimension($row)->setRowHeight(35);
+            
+            $row++;
+        }
+
+        // Auto-size columns A to E
+        foreach (range('A', 'E') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        
+        // Manually set a wide column for Tanda Tangan (Column F)
+        $sheet->getColumnDimension('F')->setWidth(25);
+
+        // Stream the file back
+        $response = new StreamedResponse(function() use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        });
+
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment;filename="' . $fileName . '"');
+        $response->headers->set('Cache-Control', 'max-age=0');
+
+        return $response;
     }
 }

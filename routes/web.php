@@ -28,6 +28,8 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
         return view('admin.dashboard', compact('totalPasien', 'totalJadwal'));
     })->name('admin.dashboard');
 
+    Route::get('/peserta-terjadwal', [JadwalLayananController::class, 'peserta'])->name('admin.jadwal.peserta');
+    
     Route::resource('jadwal', JadwalLayananController::class, [
         'names' => [
             'index' => 'admin.jadwal.index',
@@ -44,6 +46,7 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
     // Evaluasi Kehadiran
     Route::get('/evaluasi-kehadiran', [EvaluasiKehadiranController::class, 'index'])->name('admin.evaluasi.index');
+    Route::post('/evaluasi-kehadiran/{pasien}/konfirmasi', [EvaluasiKehadiranController::class, 'updateKonfirmasi'])->name('admin.evaluasi.konfirmasi');
 
     // Import Routes
     Route::get('/import/poliklinik', [ImportController::class, 'showPoliklinik'])->name('admin.import.poliklinik');

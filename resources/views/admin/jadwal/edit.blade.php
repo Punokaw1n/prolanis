@@ -11,7 +11,7 @@
         </div>
         
         <div class="p-6">
-            <form action="{{ route('admin.jadwal.update', $jadwal->id) }}" method="POST">
+            <form action="{{ route('admin.jadwal.update', $jadwal->id) }}" method="POST" x-data="jadwalForm()">
                 @csrf
                 @method('PUT')
                 
@@ -52,6 +52,56 @@
                         </div>
                     </div>
                     <!-- End Checkbox -->
+
+                    <!-- Pasien Selection -->
+                    <div class="mt-8 border-t border-gray-200 pt-8">
+                        <div class="mb-5 flex flex-col">
+                            <label class="text-base font-semibold text-gray-800">Pilih Pasien</label>
+                            <span class="text-sm text-gray-500">Pasien yang dicentang akan dijadwalkan hadir pada tanggal tersebut.</span>
+                        </div>
+                        
+                        <div class="relative mb-4" x-show="selectedMonth" style="display: none;">
+                            <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-3.5">
+                                <svg class="size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            </div>
+                            <input type="text" x-model="searchQuery" class="py-3 ps-10 pe-4 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 border" placeholder="Cari nama atau NIK/RM pasien...">
+                        </div>
+
+                        <div class="max-h-80 overflow-y-auto p-1 -mx-1" x-show="selectedMonth" style="display: none;">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                @foreach($pasiens as $pasien)
+                                <label for="pasien_{{ $pasien->id }}" 
+                                       class="flex p-3 w-full border border-gray-200 rounded-lg text-sm focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-colors"
+                                       x-show="matchesSearch('{{ addslashes($pasien->nama) }}', '{{ $pasien->no_rm }}', '{{ $pasien->nik }}')"
+                                       :class="isPatientDisabled({{ $pasien->id }}) ? 'bg-gray-100 opacity-70' : 'bg-white hover:bg-blue-50 cursor-pointer'">
+                                    <input type="checkbox" name="pasien_ids[]" value="{{ $pasien->id }}" id="pasien_{{ $pasien->id }}"
+                                        class="shrink-0 mt-0.5 size-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none"
+                                        {{ $jadwal->pasien->contains($pasien->id) ? 'checked' : '' }}
+                                        :disabled="isPatientDisabled({{ $pasien->id }})">
+                                    <div class="ms-3 flex flex-col w-full">
+                                        <span class="text-sm font-semibold" :class="isPatientDisabled({{ $pasien->id }}) ? 'text-gray-500' : 'text-gray-800'">{{ $pasien->nama }}</span>
+                                        <div class="flex flex-col mt-0.5" :class="isPatientDisabled({{ $pasien->id }}) ? 'text-gray-400' : 'text-gray-500'">
+                                            <span class="text-xs">NIK: {{ $pasien->nik ?? '-' }}</span>
+                                            <span class="text-xs line-clamp-1" title="{{ $pasien->alamat }}">{{ $pasien->alamat ?? '-' }}</span>
+                                        </div>
+                                        
+                                        <span x-show="isPatientDisabled({{ $pasien->id }})" class="text-xs text-orange-600 mt-1.5 font-medium" style="display: none;" x-text="'Sudah ada jadwal di ' + getScheduledDate({{ $pasien->id }})"></span>
+                                    </div>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div x-show="!selectedMonth" class="flex flex-col items-center justify-center p-8 border border-gray-200 border-dashed rounded-xl bg-gray-50 text-center">
+                            <svg class="size-10 text-gray-400 mb-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                            <p class="text-sm text-gray-600 font-medium">Tanggal belum dipilih</p>
+                            <p class="text-xs text-gray-500 mt-1">Silakan pilih tanggal layanan terlebih dahulu untuk melihat dan mencentang daftar pasien.</p>
+                        </div>
+                        
+                        <p x-show="selectedMonth" class="text-xs text-gray-500 mt-3" style="display: none;">*Pasien dengan keterangan abu-abu berarti sudah dijadwalkan pada bulan yang sama di jadwal lain.</p>
+                    </div>
+                    <!-- End Pasien Selection -->
                 </div>
 
                 <div class="mt-6 flex justify-end gap-x-3">
@@ -77,13 +127,60 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        flatpickr("#tanggal", {
-            locale: "id",
-            dateFormat: "Y-m-d",
-            altInput: true,
-            altFormat: "d F Y",
-        });
+    document.addEventListener("alpine:init", () => {
+        Alpine.data('jadwalForm', () => ({
+            selectedMonth: null,
+            patientSchedules: @json($patientSchedules),
+            searchQuery: '',
+            
+            init() {
+                const initialDate = document.getElementById('tanggal').value;
+                if (initialDate) {
+                    this.selectedMonth = initialDate.substring(0, 7);
+                }
+
+                flatpickr("#tanggal", {
+                    locale: "id",
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "d F Y",
+                    onChange: (selectedDates, dateStr) => {
+                        this.selectedMonth = dateStr ? dateStr.substring(0, 7) : null;
+                        
+                        this.$nextTick(() => {
+                            const checkboxes = this.$el.querySelectorAll('input[name="pasien_ids[]"]:checked');
+                            checkboxes.forEach(cb => {
+                                if (cb.disabled) {
+                                    cb.checked = false;
+                                }
+                            });
+                        });
+                    }
+                });
+            },
+            
+            isPatientDisabled(patientId) {
+                if (!this.selectedMonth) return false;
+                const schedules = this.patientSchedules[patientId] || [];
+                // Check if they are scheduled in the same month in a DIFFERENT jadwal
+                return schedules.some(s => s.month === this.selectedMonth && s.jadwal_id !== {{ $jadwal->id }});
+            },
+            
+            getScheduledDate(patientId) {
+                if (!this.selectedMonth) return null;
+                const schedules = this.patientSchedules[patientId] || [];
+                const schedule = schedules.find(s => s.month === this.selectedMonth && s.jadwal_id !== {{ $jadwal->id }});
+                return schedule ? schedule.formatted_date : null;
+            },
+            
+            matchesSearch(nama, rm, nik) {
+                if (this.searchQuery === '') return true;
+                const query = this.searchQuery.toLowerCase();
+                return nama.toLowerCase().includes(query) || 
+                       (rm && rm.toLowerCase().includes(query)) ||
+                       (nik && nik.toLowerCase().includes(query));
+            }
+        }));
     });
 </script>
 @endpush

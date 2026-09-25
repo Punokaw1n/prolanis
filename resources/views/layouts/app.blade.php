@@ -18,12 +18,15 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
-<body class="bg-gray-50 font-sans antialiased">
+<body class="bg-gray-50 font-sans antialiased" x-data="{ sidebarOpen: false }">
 
     <div class="h-screen overflow-hidden">
+        
+        <!-- Mobile Overlay Backdrop -->
+        <div x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen = false" class="fixed inset-0 bg-gray-900/50 z-40 lg:hidden" style="display: none;"></div>
 
         <!-- ========== SIDEBAR ========== -->
-        <aside id="sidebar" class="hidden lg:flex lg:flex-col fixed inset-y-0 start-0 z-50 w-56 bg-white border-e border-gray-200">
+        <aside id="sidebar" :class="sidebarOpen ? 'flex' : 'hidden'" class="lg:flex flex-col fixed inset-y-0 start-0 z-50 w-56 bg-white border-e border-gray-200 h-full">
             <!-- Logo -->
             <div class="flex items-center gap-x-3 px-6 h-16 border-b border-gray-200">
                 <div class="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
@@ -73,9 +76,15 @@
                         <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" class="w-full overflow-hidden" style="display: {{ $isProlanisActive ? 'block' : 'none' }};">
                             <ul class="pt-2 ps-8 space-y-1">
                                 <li>
-                                    <a href="{{ route('admin.jadwal.index') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.jadwal.*') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
+                                    <a href="{{ route('admin.jadwal.index') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.jadwal.index') || request()->routeIs('admin.jadwal.create') || request()->routeIs('admin.jadwal.edit') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
                                         <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                                         Jadwal Layanan
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.jadwal.peserta') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.jadwal.peserta') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
+                                        <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                        Peserta Terjadwal
                                     </a>
                                 </li>
                                 <li>
@@ -129,7 +138,7 @@
             <!-- Top Bar (mobile brand + hamburger, desktop: just a subtle bar) -->
             <header class="sticky top-0 z-40 flex items-center h-16 bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8">
                 <!-- Mobile toggle -->
-                <button type="button" class="lg:hidden p-2 -ms-2 rounded-lg text-gray-700 hover:bg-gray-100" onclick="document.getElementById('sidebar').classList.toggle('hidden')">
+                <button type="button" class="lg:hidden p-2 -ms-2 rounded-lg text-gray-700 hover:bg-gray-100" @click="sidebarOpen = true">
                     <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
                 </button>
                 <span class="lg:hidden ms-3 text-lg font-bold text-gray-800">Prolanis</span>
