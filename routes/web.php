@@ -30,6 +30,8 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
     Route::get('/peserta-terjadwal', [JadwalLayananController::class, 'peserta'])->name('admin.jadwal.peserta');
     
+    Route::get('/jadwal/search-pasien', [JadwalLayananController::class, 'searchPasien'])->name('admin.jadwal.searchPasien');
+    
     Route::resource('jadwal', JadwalLayananController::class, [
         'names' => [
             'index' => 'admin.jadwal.index',

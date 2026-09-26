@@ -58,10 +58,35 @@ class JadwalLayananController extends Controller
 
     public function create()
     {
-        $pasiens = Pasien::orderBy('nama', 'asc')->get();
+        $initialPasiens = [];
         $patientSchedules = $this->getPatientSchedules();
 
-        return view('admin.jadwal.create', compact('pasiens', 'patientSchedules'));
+        return view('admin.jadwal.create', compact('initialPasiens', 'patientSchedules'));
+    }
+
+    public function searchPasien(Request $request)
+    {
+        $search = $request->get('q');
+        if (strlen($search) < 2) {
+            return response()->json([]);
+        }
+
+        $pasiens = Pasien::with(['pemeriksaans' => function($q) {
+                $q->orderBy('tanggal_periksa', 'desc')->select('id', 'pasien_id', 'tanggal_periksa');
+            }])
+            ->where('nama', 'like', "%{$search}%")
+            ->orWhere('nik', 'like', "%{$search}%")
+            ->orWhere('no_rm', 'like', "%{$search}%")
+            ->orderBy('nama', 'asc')
+            ->limit(30)
+            ->get(['id', 'nama', 'nik', 'alamat', 'no_rm'])
+            ->map(function ($p) {
+                $p->kunjungan_terakhir = $p->pemeriksaans->first() ? \Carbon\Carbon::parse($p->pemeriksaans->first()->tanggal_periksa)->translatedFormat('d F Y') : null;
+                unset($p->pemeriksaans);
+                return $p;
+            });
+
+        return response()->json($pasiens);
     }
 
     public function store(Request $request)
@@ -93,11 +118,17 @@ class JadwalLayananController extends Controller
 
     public function edit(JadwalLayanan $jadwal)
     {
-        $jadwal->load('pasien');
-        $pasiens = Pasien::orderBy('nama', 'asc')->get();
+        $initialPasiens = $jadwal->pasien()->with(['pemeriksaans' => function($q) {
+                $q->orderBy('tanggal_periksa', 'desc')->select('id', 'pasien_id', 'tanggal_periksa');
+            }])->get(['pasien.id', 'nama', 'nik', 'alamat', 'no_rm'])->map(function($p) {
+                $p->kunjungan_terakhir = $p->pemeriksaans->first() ? \Carbon\Carbon::parse($p->pemeriksaans->first()->tanggal_periksa)->translatedFormat('d F Y') : null;
+                unset($p->pemeriksaans);
+                return $p;
+            });
+            
         $patientSchedules = $this->getPatientSchedules();
 
-        return view('admin.jadwal.edit', compact('jadwal', 'pasiens', 'patientSchedules'));
+        return view('admin.jadwal.edit', compact('jadwal', 'initialPasiens', 'patientSchedules'));
     }
 
     public function update(Request $request, JadwalLayanan $jadwal)
