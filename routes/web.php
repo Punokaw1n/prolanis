@@ -18,6 +18,7 @@ use App\Http\Controllers\EvaluasiKehadiranController;
 use App\Http\Controllers\PasienAuthController;
 use App\Http\Controllers\PasienController;
 use App\Http\Controllers\PortalPasienController;
+use App\Http\Controllers\PetugasController;
 
 // Admin & Petugas Routes
 Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(function () {
@@ -45,6 +46,17 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
     Route::get('/pasien', [PasienController::class, 'index'])->name('admin.pasien.index');
     Route::get('/pasien/{id}', [PasienController::class, 'show'])->name('admin.pasien.show');
+
+    Route::resource('petugas', PetugasController::class, [
+        'names' => [
+            'index' => 'admin.petugas.index',
+            'create' => 'admin.petugas.create',
+            'store' => 'admin.petugas.store',
+            'edit' => 'admin.petugas.edit',
+            'update' => 'admin.petugas.update',
+            'destroy' => 'admin.petugas.destroy',
+        ]
+    ]);
 
     // Evaluasi Kehadiran
     Route::get('/evaluasi-kehadiran', [EvaluasiKehadiranController::class, 'index'])->name('admin.evaluasi.index');

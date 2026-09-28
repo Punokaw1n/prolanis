@@ -23,9 +23,9 @@
 
                     <!-- Form Group -->
                     <div>
-                        <label for="email" class="block text-sm mb-2">Email</label>
+                        <label for="username" class="block text-sm mb-2 font-medium text-gray-700">NIK / NIP / Email</label>
                         <div class="relative">
-                            <input type="email" id="email" name="email" value="{{ old('email') }}" class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none border" required aria-describedby="email-error">
+                            <input type="text" id="username" name="username" value="{{ old('username') }}" class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none border" required aria-describedby="username-error" placeholder="Masukkan NIK atau NIP Anda">
                         </div>
                     </div>
                     <!-- End Form Group -->

@@ -13,7 +13,7 @@
     <div class="px-6 py-4 bg-white border-b border-gray-200">
         <div class="flex gap-2 overflow-x-auto custom-scrollbar-x">
             <button type="button" @click="status = ''; performSearch()" 
-                :class="status === '' ? 'bg-gray-800 text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'" 
+                :class="status === '' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'" 
                 class="px-4 py-2 border rounded-full text-sm font-medium transition-colors whitespace-nowrap shadow-sm">
                 Semua Pasien
             </button>
@@ -113,17 +113,26 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Data Pasien</th>
-                    <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Kunjungan Terakhir</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status Kepatuhan</th>
-                    <th scope="col" class="px-6 py-3 text-end text-xs font-semibold text-gray-500 uppercase tracking-wider">Tindakan</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 bg-white">
+        @if(isset($isInitialLoad) && $isInitialLoad)
+            <div class="flex flex-col items-center justify-center py-24 px-4 text-center bg-gray-50/50 rounded-b-xl border-t border-gray-200">
+                <div class="bg-blue-50 text-blue-500 p-4 rounded-full mb-4">
+                    <svg class="size-10" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Evaluasi Kehadiran Prolanis</h3>
+                <p class="text-sm text-gray-500 max-w-md mt-2">Silakan pilih tanggal, status kepatuhan, atau ketikkan nama/nomor HP pasien pada form pencarian di atas untuk mulai memuat data evaluasi kehadiran.</p>
+            </div>
+        @else
+            <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Data Pasien</th>
+                        <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Kunjungan Terakhir</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status Kepatuhan</th>
+                        <th scope="col" class="px-6 py-3 text-end text-xs font-semibold text-gray-500 uppercase tracking-wider">Tindakan</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
                 @forelse($pasiens as $pasien)
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -228,6 +237,7 @@
         {{ $pasiens->links() }}
     </div>
     @endif
+    @endif
     </div> <!-- End Table Container -->
 </div>
 @endsection
@@ -244,13 +254,16 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('evaluasiSearch', () => ({
         query: '{{ $search ?? '' }}',
-        status: '{{ $statusFilter ?? '' }}',
+        status: '{{ isset($isInitialLoad) && $isInitialLoad ? "initial" : ($statusFilter ?? "") }}',
         tanggal: '{{ $tanggal ?? '' }}',
         konfirmasi: '{{ $konfirmasiFilter ?? '' }}',
         isLoading: false,
         loadingText: 'Mencari data...',
         
         async performSearch(isReset = false) {
+            if (this.status === 'initial') {
+                this.status = '';
+            }
             this.loadingText = isReset === true ? 'Mereset data...' : 'Mencari data...';
             this.isLoading = true;
             
