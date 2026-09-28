@@ -59,6 +59,24 @@
                             <span class="text-sm text-gray-500">Pasien yang dicentang akan dijadwalkan hadir pada tanggal tersebut.</span>
                         </div>
                         
+                                                <div class="flex gap-2 mb-4 overflow-x-auto custom-scrollbar-x pb-2" x-show="selectedMonth" style="display: none;">
+                            <button type="button" @click="searchStatus = ''; performSearch()" 
+                                :class="searchStatus === '' ? 'bg-gray-800 text-white border-transparent shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 shadow-sm'" 
+                                class="px-4 py-1.5 border rounded-full text-sm font-medium transition-colors whitespace-nowrap">Semua</button>
+                            
+                            <button type="button" @click="searchStatus = 'Rutin'; performSearch()" 
+                                :class="searchStatus === 'Rutin' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 shadow-sm'" 
+                                class="px-4 py-1.5 border rounded-full text-sm font-medium transition-colors whitespace-nowrap">Rutin</button>
+                            
+                            <button type="button" @click="searchStatus = 'Jarang'; performSearch()" 
+                                :class="searchStatus === 'Jarang' ? 'bg-yellow-100 text-yellow-800 border-yellow-200 shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 shadow-sm'" 
+                                class="px-4 py-1.5 border rounded-full text-sm font-medium transition-colors whitespace-nowrap">Jarang Hadir</button>
+                            
+                            <button type="button" @click="searchStatus = 'Pasif'; performSearch()" 
+                                :class="searchStatus === 'Pasif' ? 'bg-red-100 text-red-800 border-red-200 shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 shadow-sm'" 
+                                class="px-4 py-1.5 border rounded-full text-sm font-medium transition-colors whitespace-nowrap">Pasif</button>
+                        </div>
+                        
                         <div class="relative mb-4" x-show="selectedMonth" style="display: none;">
                             <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-3.5">
                                 <svg class="size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -163,6 +181,7 @@
             selectedMonth: null,
             patientSchedules: @json($patientSchedules),
             searchQuery: '',
+            searchStatus: '',
             isSearching: false,
             searchResults: [],
             selectedPasiens: @json($initialPasiens ?? []),
@@ -189,14 +208,19 @@
             },
             
             async performSearch() {
-                if (this.searchQuery.trim().length < 2) {
+                if (!this.searchStatus && this.searchQuery.trim().length < 2) {
                     this.searchResults = [];
                     return;
                 }
                 
                 this.isSearching = true;
                 try {
-                    const response = await fetch(`/admin/jadwal/search-pasien?q=${encodeURIComponent(this.searchQuery.trim())}`);
+                    const tanggalVal = document.getElementById('tanggal').value;
+                    let url = `/admin/jadwal/search-pasien?q=${encodeURIComponent(this.searchQuery.trim())}`;
+                    if (this.searchStatus) url += `&status=${encodeURIComponent(this.searchStatus)}`;
+                    if (tanggalVal) url += `&tanggal=${encodeURIComponent(tanggalVal)}`;
+                    
+                    const response = await fetch(url);
                     if (response.ok) {
                         this.searchResults = await response.json();
                     }

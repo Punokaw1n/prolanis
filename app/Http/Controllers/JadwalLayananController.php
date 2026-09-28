@@ -67,26 +67,57 @@ class JadwalLayananController extends Controller
     public function searchPasien(Request $request)
     {
         $search = $request->get('q');
-        if (strlen($search) < 2) {
+        $status = $request->get('status');
+        $tanggal = $request->get('tanggal');
+
+        if (!$status && strlen($search) < 2) {
             return response()->json([]);
         }
 
-        $pasiens = Pasien::with(['pemeriksaans' => function($q) {
-                $q->orderBy('tanggal_periksa', 'desc')->select('id', 'pasien_id', 'tanggal_periksa');
-            }])
-            ->where('nama', 'like', "%{$search}%")
-            ->orWhere('nik', 'like', "%{$search}%")
-            ->orWhere('no_rm', 'like', "%{$search}%")
-            ->orderBy('nama', 'asc')
-            ->limit(30)
-            ->get(['id', 'nama', 'nik', 'alamat', 'no_rm'])
-            ->map(function ($p) {
-                $p->kunjungan_terakhir = $p->pemeriksaans->first() ? \Carbon\Carbon::parse($p->pemeriksaans->first()->tanggal_periksa)->translatedFormat('d F Y') : null;
-                unset($p->pemeriksaans);
-                return $p;
-            });
+        $query = Pasien::with(['pemeriksaans' => function($q) {
+            $q->orderBy('tanggal_periksa', 'desc')->select('id', 'pasien_id', 'tanggal_periksa');
+        }]);
 
-        return response()->json($pasiens);
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('nik', 'like', "%{$search}%")
+                  ->orWhere('no_rm', 'like', "%{$search}%");
+            });
+        }
+
+        $pasiens = $query->orderBy('nama', 'asc')->get(['id', 'nama', 'nik', 'alamat', 'no_rm']);
+
+        $targetDate = $tanggal ? \Carbon\Carbon::parse($tanggal)->startOfMonth() : now()->startOfMonth();
+
+        $pasiens = $pasiens->map(function ($p) use ($targetDate) {
+            $lastPemeriksaan = $p->pemeriksaans->first();
+            $p->kunjungan_terakhir = $lastPemeriksaan ? \Carbon\Carbon::parse($lastPemeriksaan->tanggal_periksa)->translatedFormat('d F Y') : null;
+            
+            $p->status_kehadiran = 'Pasif';
+            if ($lastPemeriksaan) {
+                $bulanTerlewat = (int) \Carbon\Carbon::parse($lastPemeriksaan->tanggal_periksa)->copy()->startOfMonth()->diffInMonths($targetDate);
+                if ($bulanTerlewat <= 1) {
+                    $p->status_kehadiran = 'Rutin';
+                } elseif ($bulanTerlewat <= 3) {
+                    $p->status_kehadiran = 'Jarang';
+                } else {
+                    $p->status_kehadiran = 'Pasif';
+                }
+            }
+            
+            unset($p->pemeriksaans);
+            return $p;
+        });
+
+        if ($status) {
+            $pasiens = $pasiens->filter(function($p) use ($status) {
+                return $p->status_kehadiran === $status;
+            })->values();
+        }
+
+        // Batasi hasil maksimal 100 agar browser tidak lambat
+        return response()->json($pasiens->take(100));
     }
 
     public function store(Request $request)

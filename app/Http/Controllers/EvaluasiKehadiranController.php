@@ -42,8 +42,10 @@ class EvaluasiKehadiranController extends Controller
             });
         }
 
+        $targetDate = $tanggal ? Carbon::parse($tanggal)->startOfMonth() : now()->startOfMonth();
+
         // Ambil semua data karena kita harus menghitung status secara dinamis di PHP (berdasarkan relasi terbaru)
-        $pasiens = $query->get()->map(function ($pasien) {
+        $pasiens = $query->get()->map(function ($pasien) use ($targetDate) {
             $kunjunganTerakhir = $pasien->pemeriksaans->first();
             $jadwalPasien = $pasien->jadwalLayanan->first();
             
@@ -52,17 +54,18 @@ class EvaluasiKehadiranController extends Controller
             
             $pasien->tanggal_kunjungan_terakhir = $kunjunganTerakhir ? Carbon::parse($kunjunganTerakhir->tanggal_periksa) : null;
             $pasien->status_kehadiran = 'Pasif'; // Default jika belum pernah periksa
-            $pasien->hari_terlewat = null;
+            $pasien->bulan_terlewat = null;
             $pasien->color_class = 'bg-red-100 text-red-800 border-red-200';
 
             if ($pasien->tanggal_kunjungan_terakhir) {
-                $hariTerlewat = (int) $pasien->tanggal_kunjungan_terakhir->diffInDays(now());
-                $pasien->hari_terlewat = $hariTerlewat;
+                // Menghitung selisih bulan kalender (contoh: Sept ke Agustus = 1, Sept ke Juli = 2)
+                $bulanTerlewat = (int) $pasien->tanggal_kunjungan_terakhir->copy()->startOfMonth()->diffInMonths($targetDate);
+                $pasien->bulan_terlewat = $bulanTerlewat;
 
-                if ($hariTerlewat <= 40) {
+                if ($bulanTerlewat <= 1) {
                     $pasien->status_kehadiran = 'Rutin';
                     $pasien->color_class = 'bg-emerald-100 text-emerald-800 border-emerald-200';
-                } elseif ($hariTerlewat <= 90) {
+                } elseif ($bulanTerlewat <= 3) {
                     $pasien->status_kehadiran = 'Jarang';
                     $pasien->color_class = 'bg-yellow-100 text-yellow-800 border-yellow-200';
                 } else {

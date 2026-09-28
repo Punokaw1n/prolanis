@@ -9,21 +9,41 @@
 </div>
 
 <div x-data="evaluasiSearch()" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <!-- Status Filter Pills -->
+    <div class="px-6 py-4 bg-white border-b border-gray-200">
+        <div class="flex gap-2 overflow-x-auto custom-scrollbar-x">
+            <button type="button" @click="status = ''; performSearch()" 
+                :class="status === '' ? 'bg-gray-800 text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'" 
+                class="px-4 py-2 border rounded-full text-sm font-medium transition-colors whitespace-nowrap shadow-sm">
+                Semua Pasien
+            </button>
+            
+            <button type="button" @click="status = 'Rutin'; performSearch()" 
+                :class="status === 'Rutin' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'" 
+                class="px-4 py-2 border rounded-full text-sm font-medium transition-colors whitespace-nowrap shadow-sm">
+                Rutin
+            </button>
+            
+            <button type="button" @click="status = 'Jarang'; performSearch()" 
+                :class="status === 'Jarang' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'" 
+                class="px-4 py-2 border rounded-full text-sm font-medium transition-colors whitespace-nowrap shadow-sm">
+                Jarang Hadir
+            </button>
+            
+            <button type="button" @click="status = 'Pasif'; performSearch()" 
+                :class="status === 'Pasif' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'" 
+                class="px-4 py-2 border rounded-full text-sm font-medium transition-colors whitespace-nowrap shadow-sm">
+                Pasif
+            </button>
+        </div>
+    </div>
+
     <!-- Header & Filters -->
     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <form @submit.prevent="performSearch" action="{{ route('admin.evaluasi.index') }}" method="GET"
             class="flex flex-wrap lg:flex-nowrap items-center gap-2">
-
-            <!-- Status Kepatuhan Dropdown -->
-            <div class="w-full sm:w-44">
-                <select x-model="status" @change="performSearch" name="status"
-                    class="py-2 px-3 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 text-gray-700 font-medium">
-                    <option value="">Semua Status Kepatuhan</option>
-                    <option value="Rutin">Rutin</option>
-                    <option value="Jarang">Jarang Hadir</option>
-                    <option value="Pasif">Pasif</option>
-                </select>
-            </div>
+            
+            <input type="hidden" name="status" :value="status">
 
             <!-- Search Box -->
             <div class="relative flex-1 min-w-[180px]">
