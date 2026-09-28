@@ -19,6 +19,8 @@ use App\Http\Controllers\PasienAuthController;
 use App\Http\Controllers\PasienController;
 use App\Http\Controllers\PortalPasienController;
 use App\Http\Controllers\PetugasController;
+use App\Http\Controllers\TemplatePersetujuanController;
+use App\Http\Controllers\PersetujuanController;
 
 // Admin & Petugas Routes
 Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(function () {
@@ -61,6 +63,17 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
     // Evaluasi Kehadiran
     Route::get('/evaluasi-kehadiran', [EvaluasiKehadiranController::class, 'index'])->name('admin.evaluasi.index');
     Route::post('/evaluasi-kehadiran/{pasien}/konfirmasi', [EvaluasiKehadiranController::class, 'updateKonfirmasi'])->name('admin.evaluasi.konfirmasi');
+    // Template Persetujuan (Hanya Admin yang bisa kelola)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/template-persetujuan', [TemplatePersetujuanController::class, 'index'])->name('admin.template.index');
+        Route::post('/template-persetujuan', [TemplatePersetujuanController::class, 'store'])->name('admin.template.store');
+    });
+
+    // Penerbitan & Kelola Informed Consent
+    Route::get('/persetujuan/buat', [PersetujuanController::class, 'create'])->name('admin.persetujuan.create');
+    Route::post('/persetujuan/buat', [PersetujuanController::class, 'store'])->name('admin.persetujuan.store');
+    Route::get('/persetujuan/{id}', [PersetujuanController::class, 'show'])->name('admin.persetujuan.show');
+    Route::get('/persetujuan', [PersetujuanController::class, 'index'])->name('admin.persetujuan.index'); // Arsip
 
     // Import Routes
     Route::get('/import/poliklinik', [ImportController::class, 'showPoliklinik'])->name('admin.import.poliklinik');
