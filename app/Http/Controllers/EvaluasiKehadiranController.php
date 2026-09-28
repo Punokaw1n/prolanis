@@ -17,6 +17,25 @@ class EvaluasiKehadiranController extends Controller
         $statusFilter = $request->get('status');
         $tanggal = $request->get('tanggal');
         $konfirmasiFilter = $request->get('konfirmasi');
+        $page = $request->get('page');
+
+        // Jika tidak ada parameter pencarian sama sekali, anggap ini loading awal
+        $isInitialLoad = !$search && !$statusFilter && !$tanggal && !$konfirmasiFilter && !$page && !$request->ajax();
+
+        if ($isInitialLoad) {
+            $paginatedPasiens = new \Illuminate\Pagination\LengthAwarePaginator(
+                collect([]), 0, 15, 1,
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+            );
+            return view('admin.evaluasi.index', [
+                'pasiens' => $paginatedPasiens,
+                'search' => $search,
+                'statusFilter' => $statusFilter,
+                'tanggal' => $tanggal,
+                'konfirmasiFilter' => $konfirmasiFilter,
+                'isInitialLoad' => true,
+            ]);
+        }
 
         $jadwalLayananQuery = function ($q) use ($tanggal) {
             if ($tanggal) {
@@ -108,12 +127,15 @@ class EvaluasiKehadiranController extends Controller
             ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
         );
 
+        $isInitialLoad = false;
+
         return view('admin.evaluasi.index', [
             'pasiens' => $paginatedPasiens,
             'search' => $search,
             'statusFilter' => $statusFilter,
             'tanggal' => $tanggal,
             'konfirmasiFilter' => $konfirmasiFilter,
+            'isInitialLoad' => $isInitialLoad,
         ]);
     }
 

