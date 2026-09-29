@@ -63,11 +63,50 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
                                 <a class="text-blue-600 hover:text-blue-800 mr-3" href="{{ route('admin.jadwal.edit', $item->id) }}">Edit</a>
-                                <form action="{{ route('admin.jadwal.destroy', $item->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus jadwal ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-800">Hapus</button>
-                                </form>
+                                <div x-data="{ open: false }" class="inline-block">
+                                    <button @click="open = true" type="button" class="text-red-600 hover:text-red-800">Hapus</button>
+
+                                <!-- AlpineJS Delete Modal -->
+                                    <template x-teleport="body">
+                                        <div x-show="open" style="display: none;" class="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                                            <!-- Backdrop -->
+                                            <div x-show="open" x-transition.opacity class="fixed inset-0 bg-gray-900/50 transition-opacity"></div>
+
+                                            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+                                                <!-- Modal Panel -->
+                                                <div x-show="open" 
+                                                    x-transition:enter="ease-out duration-300" 
+                                                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                                                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                                                    x-transition:leave="ease-in duration-200" 
+                                                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                                                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                                                    @click.away="open = false"
+                                                    class="relative inline-block w-full max-w-lg p-4 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl sm:p-7 rounded-xl sm:my-8 sm:align-middle">
+                                                    
+                                                    <div class="text-center">
+                                                        <svg class="size-14 mx-auto text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                                        <h3 class="text-lg font-bold text-gray-800" id="modal-title">Hapus Jadwal?</h3>
+                                                        <p class="text-sm text-gray-500 mt-2">Apakah Anda yakin ingin menghapus jadwal <strong>{{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('d F Y') }}</strong>? Data absensi terkait jadwal ini juga mungkin akan terdampak.</p>
+                                                    </div>
+
+                                                    <div class="mt-6 flex justify-center gap-x-3">
+                                                        <button @click="open = false" type="button" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50">
+                                                            Batal
+                                                        </button>
+                                                        <form action="{{ route('admin.jadwal.destroy', $item->id) }}" method="POST" class="inline-block">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700">
+                                                                Ya, Hapus
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
                             </td>
                         </tr>
                         @empty

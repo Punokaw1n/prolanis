@@ -16,6 +16,12 @@ class RoleMiddleware
 
         $user = auth()->user();
 
+        // Check if user is active
+        if (! $user->is_active) {
+            auth()->logout();
+            return redirect('/login')->withErrors(['username' => 'Akun Anda telah dinonaktifkan. Silakan hubungi administrator.']);
+        }
+
         if (empty($roles)) {
             return $next($request);
         }

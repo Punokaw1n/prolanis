@@ -4,7 +4,11 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    if (auth()->check()) {
+        return redirect()->route('admin.dashboard');
+    }
+
+    return redirect()->route('login');
 });
 
 // Auth Routes
@@ -12,29 +16,47 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login')->m
 Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+use App\Http\Controllers\ConsentPubController;
+use App\Http\Controllers\EvaluasiKehadiranController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\JadwalLayananController;
-use App\Http\Controllers\EvaluasiKehadiranController;
 use App\Http\Controllers\PasienAuthController;
 use App\Http\Controllers\PasienController;
-use App\Http\Controllers\PortalPasienController;
-use App\Http\Controllers\PetugasController;
-use App\Http\Controllers\TemplatePersetujuanController;
 use App\Http\Controllers\PersetujuanController;
+use App\Http\Controllers\PetugasController;
+use App\Http\Controllers\PortalPasienController;
+use App\Http\Controllers\TemplatePersetujuanController;
+use App\Models\JadwalLayanan;
+use App\Models\Pasien;
 
 // Admin & Petugas Routes
 Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {
         $totalPasien = \App\Models\Pasien::count();
         $totalJadwal = \App\Models\JadwalLayanan::count();
+        $totalPetugas = \App\Models\User::where('is_active', true)->count();
+        $pendingConsent = \App\Models\Persetujuan::where('status', 'menunggu')->count();
+        
+        $upcomingJadwal = \App\Models\JadwalLayanan::where('tanggal', '>=', \Carbon\Carbon::today())
+                                ->orderBy('tanggal', 'asc')
+                                ->take(4)
+                                ->get();
+                                
+        $recentLogs = \App\Models\LogAktivitas::with('user')
+                                ->orderBy('created_at', 'desc')
+                                ->take(5)
+                                ->get();
 
-        return view('admin.dashboard', compact('totalPasien', 'totalJadwal'));
+        return view('admin.dashboard', compact(
+            'totalPasien', 'totalJadwal', 'totalPetugas', 'pendingConsent',
+            'upcomingJadwal', 'recentLogs'
+        ));
     })->name('admin.dashboard');
 
     Route::get('/peserta-terjadwal', [JadwalLayananController::class, 'peserta'])->name('admin.jadwal.peserta');
-    
+
     Route::get('/jadwal/search-pasien', [JadwalLayananController::class, 'searchPasien'])->name('admin.jadwal.searchPasien');
-    
+
     Route::resource('jadwal', JadwalLayananController::class, [
         'names' => [
             'index' => 'admin.jadwal.index',
@@ -56,9 +78,10 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
             'store' => 'admin.petugas.store',
             'edit' => 'admin.petugas.edit',
             'update' => 'admin.petugas.update',
-            'destroy' => 'admin.petugas.destroy',
-        ]
-    ]);
+        ],
+    ])->except(['destroy']);
+    
+    Route::patch('/petugas/{petuga}/toggle-status', [PetugasController::class, 'toggleStatus'])->name('admin.petugas.toggle-status');
 
     // Evaluasi Kehadiran
     Route::get('/evaluasi-kehadiran', [EvaluasiKehadiranController::class, 'index'])->name('admin.evaluasi.index');
@@ -73,6 +96,8 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
     Route::get('/persetujuan/buat', [PersetujuanController::class, 'create'])->name('admin.persetujuan.create');
     Route::post('/persetujuan/buat', [PersetujuanController::class, 'store'])->name('admin.persetujuan.store');
     Route::get('/persetujuan/{id}', [PersetujuanController::class, 'show'])->name('admin.persetujuan.show');
+    Route::get('/persetujuan/{id}/status', [PersetujuanController::class, 'checkStatus'])->name('admin.persetujuan.status');
+    Route::get('/persetujuan/{id}/pdf', [PersetujuanController::class, 'exportPdf'])->name('admin.persetujuan.pdf');
     Route::get('/persetujuan', [PersetujuanController::class, 'index'])->name('admin.persetujuan.index'); // Arsip
 
     // Import Routes
@@ -81,6 +106,8 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
     Route::get('/import/apotek', [ImportController::class, 'showApotek'])->name('admin.import.apotek');
     Route::post('/import/apotek', [ImportController::class, 'importApotek'])->name('admin.import.apotek.process');
+
+    Route::get('/log-aktivitas', [\App\Http\Controllers\LogAktivitasController::class, 'index'])->name('admin.log.index');
 });
 
 // Portal Pasien Routes
@@ -92,4 +119,9 @@ Route::prefix('portal')->group(function () {
     Route::middleware('auth:pasien')->group(function () {
         Route::get('/dashboard', [PortalPasienController::class, 'dashboard'])->name('pasien.dashboard');
     });
+
+    // Halaman Tanda Tangan Publik (diakses via QR Code, tanpa login)
+    Route::get('/consent/{token}', [ConsentPubController::class, 'show'])->name('consent.show');
+    Route::post('/consent/{token}/sign', [ConsentPubController::class, 'sign'])->name('consent.sign');
+    Route::get('/consent/{token}/selesai', [ConsentPubController::class, 'selesai'])->name('consent.selesai');
 });

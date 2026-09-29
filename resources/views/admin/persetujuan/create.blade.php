@@ -118,6 +118,10 @@
                 $text = str_replace('{nik}', $pasien->nik ?? '-', $text);
                 $text = str_replace('{no_rm}', $pasien->no_rm ?? '-', $text);
                 $text = str_replace('{tanggal_lahir}', $pasien->tanggal_lahir ? \Carbon\Carbon::parse($pasien->tanggal_lahir)->translatedFormat('d F Y') : '-', $text);
+                $jk = '-';
+                if ($pasien->jenis_kelamin === 'L') $jk = 'Laki-laki';
+                elseif ($pasien->jenis_kelamin === 'P') $jk = 'Perempuan';
+                $text = str_replace('{jenis_kelamin}', $jk, $text);
                 $text = str_replace('{alamat}', $pasien->alamat ?? '-', $text);
                 $text = str_replace('{tanggal}', now()->translatedFormat('d F Y'), $text);
                 return nl2br($text);
@@ -162,22 +166,26 @@
             </div>
         </div>
 
-        @if($pasien)
-        <div class="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <p class="text-xs text-gray-500">
-                QR Code berlaku <strong class="text-gray-700">1 jam</strong> setelah diterbitkan.
-            </p>
+        <div class="px-6 py-4 border-t border-gray-200">
+            @if($pasien)
             <form action="{{ route('admin.persetujuan.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="pasien_id" value="{{ $pasien->id }}">
                 <input type="hidden" name="template_id" value="{{ $template->id }}">
-                <button type="submit" class="w-full sm:w-auto py-2.5 px-5 inline-flex items-center justify-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 shadow-sm">
+                <button type="submit" class="w-full py-3 px-5 inline-flex items-center justify-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
                     <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                     Terbitkan & Buat QR Code
                 </button>
             </form>
+            <p class="text-xs text-gray-500 text-center mt-2">
+                QR Code berlaku <strong class="text-gray-700">1 jam</strong> setelah diterbitkan.
+            </p>
+            @else
+            <button type="button" disabled class="w-full py-3 px-5 inline-flex items-center justify-center gap-x-2 text-sm font-semibold rounded-lg border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed">
+                Pilih pasien terlebih dahulu
+            </button>
+            @endif
         </div>
-        @endif
     </div>
     @endif
 

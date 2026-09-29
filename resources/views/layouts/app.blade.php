@@ -58,11 +58,11 @@
                         </a>
                     </li>
                     
-                    @if(auth()->user()->peran === 'admin')
+                    @if(auth()->user()?->peran === 'admin')
                     <li>
                         <a href="{{ route('admin.petugas.index') }}" class="flex items-center gap-x-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('admin.petugas.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100' }}">
                             <svg class="flex-shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
-                            Petugas Medis
+                            Petugas
                         </a>
                     </li>
                     @endif
@@ -126,6 +126,8 @@
                 @endphp
                 
                 <ul class="space-y-1 mt-2">
+                    {{-- HIDE SEMENTARA: Informed Consent dan Log Aktivitas --}}
+                    {{-- 
                     <li x-data="{ open: {{ $isConsentActive ? 'true' : 'false' }} }">
                         <button type="button" @click="open = !open" class="w-full text-start flex items-center gap-x-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors" :class="open ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'">
                             <svg class="flex-shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
@@ -145,7 +147,7 @@
                                         Penerbitan & Arsip
                                     </a>
                                 </li>
-                                @if(auth()->user()->peran === 'admin')
+                                @if(auth()->user()?->peran === 'admin')
                                 <li>
                                     <a href="{{ route('admin.template.index') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.template.*') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
                                         <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 2-4 4-4-4"/><path d="M10 6v16"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 18h.01"/><path d="M10 18h.01"/></svg>
@@ -156,6 +158,15 @@
                             </ul>
                         </div>
                     </li>
+                    @if(auth()->user()?->peran === 'admin')
+                    <li>
+                        <a href="{{ route('admin.log.index') }}" class="flex items-center gap-x-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('admin.log.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                            <svg class="flex-shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            Log Aktivitas
+                        </a>
+                    </li>
+                    @endif
+                    --}}
                 </ul>
             </nav>
 
