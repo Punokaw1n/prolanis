@@ -50,6 +50,8 @@ class ImportController extends Controller
         $import = new PoliklinikImport;
         Excel::import($import, $request->file('file'));
 
+        \App\Models\LogAktivitas::catat('IMPORT_POLI', "Melakukan import data Poliklinik dari file Excel.");
+
         return redirect()->route('admin.import.poliklinik')
             ->with('import_summary', $import->summary);
     }
@@ -91,6 +93,8 @@ class ImportController extends Controller
 
         $import = new ApotekImport;
         Excel::import($import, $request->file('file'));
+
+        \App\Models\LogAktivitas::catat('IMPORT_APOTEK', "Melakukan import data Apotek dari file Excel.");
 
         return redirect()->route('admin.import.apotek')
             ->with('import_summary', $import->summary);

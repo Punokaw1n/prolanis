@@ -3,7 +3,7 @@
 @section('content')
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">Petugas Medis</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Petugas</h1>
         <p class="text-sm text-gray-500 mt-1">Kelola data dokter, perawat, dan staf admin klinik.</p>
     </div>
     <div class="flex gap-2">
@@ -66,15 +66,15 @@
 
             <tbody class="divide-y divide-gray-200">
                 @forelse($petugas as $p)
-                <tr class="hover:bg-gray-50 transition-colors">
+                <tr class="hover:bg-gray-50 transition-colors {{ $p->is_active ? '' : 'bg-gray-100 opacity-60' }}">
                     <td class="h-px w-auto whitespace-nowrap">
                         <div class="px-6 py-3">
                             <div class="flex items-center gap-x-3">
-                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full {{ $p->is_active ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-500' }} flex items-center justify-center font-bold text-sm">
                                     {{ strtoupper(substr($p->nama, 0, 1)) }}
                                 </div>
                                 <div>
-                                    <span class="block text-sm font-semibold text-gray-800">{{ $p->nama }}</span>
+                                    <span class="block text-sm font-semibold {{ $p->is_active ? 'text-gray-800' : 'text-gray-500' }}">{{ $p->nama }}</span>
                                     <span class="block text-xs text-gray-500">{{ \Carbon\Carbon::parse($p->tanggal_lahir)->translatedFormat('d F Y') }}</span>
                                 </div>
                             </div>
@@ -82,13 +82,13 @@
                     </td>
                     <td class="h-px w-auto whitespace-nowrap">
                         <div class="px-6 py-3">
-                            <span class="block text-sm text-gray-800">NIK: {{ $p->nik ?? '-' }}</span>
+                            <span class="block text-sm {{ $p->is_active ? 'text-gray-800' : 'text-gray-500' }}">NIK: {{ $p->nik ?? '-' }}</span>
                             <span class="block text-xs text-gray-500 mt-0.5">NIP: {{ $p->nip ?? '-' }}</span>
                         </div>
                     </td>
                     <td class="h-px w-auto whitespace-nowrap">
                         <div class="px-6 py-3">
-                            <span class="inline-flex items-center gap-1.5 py-0.5 px-2 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                            <span class="inline-flex items-center gap-1.5 py-0.5 px-2 rounded-md text-xs font-medium {{ $p->is_active ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-600' }}">
                                 {{ $p->jabatan }}
                             </span>
                             <span class="block text-xs text-gray-500 mt-1 capitalize">{{ $p->peran }} System</span>
@@ -100,10 +100,62 @@
                         </div>
                     </td>
                     <td class="h-px w-auto whitespace-nowrap text-end">
-                        <div class="px-6 py-1.5">
+                        <div class="px-6 py-1.5 flex justify-end gap-x-3 items-center">
                             <a href="{{ route('admin.petugas.edit', $p->id) }}" class="inline-flex items-center gap-x-1 text-sm text-blue-600 decoration-2 hover:underline font-medium">
                                 Edit
                             </a>
+
+                            <div x-data="{ open: false }" class="inline-block">
+                                <button @click="open = true" type="button" class="inline-flex items-center gap-x-1 text-sm {{ $p->is_active ? 'text-amber-600' : 'text-emerald-600' }} decoration-2 hover:underline font-medium">
+                                    {{ $p->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                </button>
+
+                                <template x-teleport="body">
+                                    <div x-show="open" style="display: none;" class="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                                        <!-- Backdrop -->
+                                        <div x-show="open" x-transition.opacity class="fixed inset-0 bg-gray-900/50 transition-opacity"></div>
+
+                                        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+                                            <!-- Modal Panel -->
+                                            <div x-show="open" 
+                                                x-transition:enter="ease-out duration-300" 
+                                                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                                                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                                                x-transition:leave="ease-in duration-200" 
+                                                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                                                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                                                @click.away="open = false"
+                                                class="relative inline-block w-full max-w-lg p-4 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl sm:p-7 rounded-xl sm:my-8 sm:align-middle">
+                                                
+                                                <div class="text-center">
+                                                    @if($p->is_active)
+                                                    <svg class="size-14 mx-auto text-amber-500 mb-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                                    <h3 class="text-lg font-bold text-gray-800" id="modal-title">Nonaktifkan Petugas?</h3>
+                                                    <p class="text-sm text-gray-500 mt-2">Apakah Anda yakin ingin menonaktifkan petugas <strong>{{ $p->nama }}</strong>? Petugas tidak akan bisa login lagi ke sistem.</p>
+                                                    @else
+                                                    <svg class="size-14 mx-auto text-emerald-500 mb-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                                    <h3 class="text-lg font-bold text-gray-800" id="modal-title">Aktifkan Petugas?</h3>
+                                                    <p class="text-sm text-gray-500 mt-2">Apakah Anda yakin ingin mengaktifkan kembali petugas <strong>{{ $p->nama }}</strong>? Petugas akan bisa login lagi ke sistem.</p>
+                                                    @endif
+                                                </div>
+
+                                                <div class="mt-6 flex justify-center gap-x-3">
+                                                    <button @click="open = false" type="button" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50">
+                                                        Batal
+                                                    </button>
+                                                    <form action="{{ route('admin.petugas.toggle-status', $p->id) }}" method="POST" class="inline-block">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent {{ $p->is_active ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700' }} text-white">
+                                                            Ya, {{ $p->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </td>
                 </tr>

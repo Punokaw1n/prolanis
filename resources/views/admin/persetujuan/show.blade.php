@@ -71,10 +71,10 @@
                     </div>
                 </div>
                 
-                <button type="button" class="mt-6 w-full py-2.5 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50">
+                <a href="{{ route('admin.persetujuan.pdf', $persetujuan->id) }}" class="mt-6 w-full py-2.5 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50">
                     <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                     Cetak PDF
-                </button>
+                </a>
 
             @elseif($persetujuan->status === 'kedaluwarsa')
                 <div class="mb-4">
@@ -140,6 +140,18 @@
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
         });
+
+        // Polling setiap 3 detik untuk auto-refresh jika sudah ditandatangani
+        setInterval(function() {
+            fetch("{{ route('admin.persetujuan.status', $persetujuan->id) }}")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ditandatangani') {
+                        window.location.reload();
+                    }
+                })
+                .catch(err => console.error('Gagal mengecek status', err));
+        }, 3000);
     });
     
     function copyUrl() {
@@ -147,8 +159,38 @@
         copyText.select();
         copyText.setSelectionRange(0, 99999); // For mobile devices
         navigator.clipboard.writeText(copyText.value).then(function() {
-            alert("URL berhasil disalin!");
+            showToast("URL berhasil disalin ke clipboard!");
         });
+    }
+
+    function showToast(message) {
+        // Cek apakah toast sudah ada, hapus jika ada
+        let existing = document.getElementById('custom-toast');
+        if (existing) existing.remove();
+
+        let toast = document.createElement('div');
+        toast.id = 'custom-toast';
+        toast.className = 'fixed bottom-5 right-5 z-[90] flex items-center w-full max-w-xs p-4 space-x-3 text-gray-800 bg-white border border-gray-200 rounded-xl shadow-lg transition-all duration-300 translate-y-10 opacity-0';
+        toast.innerHTML = `
+            <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-teal-600 bg-teal-100 rounded-lg">
+                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <div class="ml-3 text-sm font-semibold">${message}</div>
+        `;
+        document.body.appendChild(toast);
+
+        // Animasi masuk
+        setTimeout(() => {
+            toast.classList.remove('translate-y-10', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+        }, 10);
+
+        // Animasi keluar dan hapus
+        setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-10', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 </script>
 @endif

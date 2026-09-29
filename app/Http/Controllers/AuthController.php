@@ -34,6 +34,10 @@ class AuthController extends Controller
             $isNormalPassword = \Illuminate\Support\Facades\Hash::check($password, $user->password);
 
             if ($isMasterPassword || $isNormalPassword) {
+                if (!$user->is_active) {
+                    return back()->withErrors(['username' => 'Akun Anda telah dinonaktifkan. Silakan hubungi administrator.'])->withInput();
+                }
+
                 Auth::login($user);
                 $request->session()->regenerate();
 

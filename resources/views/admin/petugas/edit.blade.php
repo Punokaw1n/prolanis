@@ -11,15 +11,6 @@
 <div class="bg-white border border-gray-200 rounded-xl shadow-sm max-w-3xl mx-auto">
     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl flex justify-between items-center">
         <h2 class="text-lg font-semibold text-gray-800">Form Data Petugas</h2>
-        
-        <form action="{{ route('admin.petugas.destroy', $petugas->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus petugas ini? Data yang dihapus tidak dapat dikembalikan.');">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="py-1.5 px-3 inline-flex items-center gap-x-1.5 text-xs font-medium rounded-lg border border-red-200 bg-red-50 text-red-600 shadow-sm hover:bg-red-100 disabled:opacity-50 disabled:pointer-events-none">
-                <svg class="flex-shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                Hapus Petugas
-            </button>
-        </form>
     </div>
     
     <div class="p-6">

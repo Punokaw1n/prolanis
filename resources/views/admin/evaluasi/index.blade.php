@@ -176,11 +176,6 @@
                                     // Pakai jadwal spesifik pasien ini jika ada
                                     $jadwalPasien = $pasien->jadwalLayanan->first();
                                     
-                                    // Jika belum dijadwalkan khusus, gunakan jadwal umum yang aktif
-                                    if (!$jadwalPasien) {
-                                        $jadwalPasien = \App\Models\JadwalLayanan::where('is_active', true)->first();
-                                    }
-                                    
                                     $tanggalJadwal = $jadwalPasien ? \Carbon\Carbon::parse($jadwalPasien->tanggal)->translatedFormat('d F Y') : 'waktu dekat';
                                     
                                     $pesan = "Halo Bpk/Ibu {$pasien->nama}, ini dari Puskesmas Kalijudan. Kami mengingatkan bahwa sudah waktunya untuk jadwal kontrol Prolanis Anda pada {$tanggalJadwal} di Puskesmas Kalijudan. Mari jaga kesehatan bersama!";

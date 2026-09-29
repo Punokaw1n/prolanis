@@ -110,9 +110,14 @@ class PetugasController extends Controller
         return redirect()->route('admin.petugas.index')->with('success', 'Data petugas berhasil diperbarui.');
     }
 
-    public function destroy(User $petuga)
+    public function toggleStatus(User $petuga)
     {
-        $petuga->delete();
-        return redirect()->route('admin.petugas.index')->with('success', 'Data petugas berhasil dihapus.');
+        $petuga->is_active = !$petuga->is_active;
+        $petuga->save();
+
+        $statusStr = $petuga->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        \App\Models\LogAktivitas::catat('UBAH_STATUS_PETUGAS', "Status petugas {$petuga->nama} {$statusStr}.");
+
+        return redirect()->route('admin.petugas.index')->with('success', "Status petugas berhasil {$statusStr}.");
     }
 }

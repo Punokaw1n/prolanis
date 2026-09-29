@@ -144,6 +144,8 @@ class JadwalLayananController extends Controller
             $jadwal->pasien()->sync($request->pasien_ids);
         }
 
+        \App\Models\LogAktivitas::catat('BUAT_JADWAL', "Menambahkan jadwal layanan baru untuk tanggal: {$jadwal->tanggal}");
+
         return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal layanan berhasil ditambahkan.');
     }
 
@@ -187,12 +189,17 @@ class JadwalLayananController extends Controller
             $jadwal->pasien()->detach();
         }
 
+        \App\Models\LogAktivitas::catat('UPDATE_JADWAL', "Mengubah jadwal layanan pada tanggal: {$jadwal->tanggal}");
+
         return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal layanan berhasil diperbarui.');
     }
 
     public function destroy(JadwalLayanan $jadwal)
     {
+        $tanggal = $jadwal->tanggal;
         $jadwal->delete();
+
+        \App\Models\LogAktivitas::catat('HAPUS_JADWAL', "Menghapus jadwal layanan tanggal: {$tanggal}");
 
         return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal layanan berhasil dihapus.');
     }
