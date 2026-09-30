@@ -41,7 +41,7 @@ class EvaluasiKehadiranController extends Controller
             if ($tanggal) {
                 $q->whereDate('tanggal', $tanggal);
             } else {
-                $q->where('tanggal', '>=', now()->format('Y-m-d'))->orderBy('tanggal', 'asc');
+                $q->orderBy('tanggal', 'desc');
             }
         };
 
@@ -56,7 +56,9 @@ class EvaluasiKehadiranController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
+                    ->orWhere('nik', 'like', "%{$search}%")
                     ->orWhere('no_rm', 'like', "%{$search}%")
+                    ->orWhere('no_bpjs', 'like', "%{$search}%")
                     ->orWhere('no_hp', 'like', "%{$search}%");
             });
         }

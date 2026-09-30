@@ -41,10 +41,14 @@ class JadwalLayananController extends Controller
             $query->where('jadwal_layanan.tanggal', $filterTanggal);
         }
 
-        $peserta = $query->orderBy('jadwal_layanan.tanggal', 'desc')
-                         ->orderBy('pasien.nama', 'asc')
-                         ->paginate(15)
-                         ->withQueryString();
+        if ($search || $filterTanggal) {
+            $peserta = $query->orderBy('jadwal_layanan.tanggal', 'desc')
+                             ->orderBy('pasien.nama', 'asc')
+                             ->paginate(15)
+                             ->withQueryString();
+        } else {
+            $peserta = $query->whereRaw('1 = 0')->paginate(15);
+        }
 
         return view('admin.jadwal.peserta', compact('peserta', 'search', 'filterTanggal'));
     }
