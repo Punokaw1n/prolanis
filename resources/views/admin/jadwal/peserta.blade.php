@@ -133,7 +133,7 @@
                                     @if(request('search') || request('tanggal'))
                                         Tidak ada pasien terjadwal yang cocok dengan filter pencarian.
                                     @else
-                                        Belum ada satupun pasien yang di-ploting ke dalam jadwal.
+                                        Ketik nama/NIK atau pilih tanggal untuk melihat data peserta terjadwal.
                                     @endif
                                 </td>
                             </tr>
@@ -179,7 +179,7 @@
                         @if(request('search') || request('tanggal'))
                             Tidak ada pasien terjadwal yang cocok dengan filter pencarian.
                         @else
-                            Belum ada satupun pasien yang di-ploting ke dalam jadwal.
+                            Ketik nama/NIK atau pilih tanggal untuk melihat data peserta terjadwal.
                         @endif
                     </div>
                     @endforelse

@@ -61,5 +61,9 @@ class DatabaseSeeder extends Seeder
             'pemeriksaan_id' => $pemeriksaan->id,
             'nama_obat' => 'Metformin 500mg',
         ]);
+
+        $this->call([
+            DummyPasienSeeder::class,
+        ]);
     }
 }
