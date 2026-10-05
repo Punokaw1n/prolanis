@@ -22,6 +22,11 @@ class Pasien extends Authenticatable
         return $this->belongsToMany(JadwalLayanan::class, 'jadwal_layanan_pasien', 'pasien_id', 'jadwal_layanan_id')->withPivot('konfirmasi_kehadiran')->withTimestamps();
     }
 
+    public function pasienPrb()
+    {
+        return $this->hasOne(PasienPrb::class, 'pasien_id');
+    }
+
     /**
      * Get the password for the user.
      * We use tanggal_lahir as the password for patient login.
