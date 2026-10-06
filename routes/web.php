@@ -107,6 +107,19 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
     Route::get('/import/apotek', [ImportController::class, 'showApotek'])->name('admin.import.apotek');
     Route::post('/import/apotek', [ImportController::class, 'importApotek'])->name('admin.import.apotek.process');
 
+    // Program Rujuk Balik (PRB)
+    Route::prefix('prb')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PasienPrbController::class, 'index'])->name('admin.prb.index');
+        Route::get('/create', [\App\Http\Controllers\PasienPrbController::class, 'create'])->name('admin.prb.create');
+        Route::post('/check-nik', [\App\Http\Controllers\PasienPrbController::class, 'checkNik'])->name('admin.prb.check-nik');
+        Route::post('/', [\App\Http\Controllers\PasienPrbController::class, 'store'])->name('admin.prb.store');
+        Route::get('/{id}', [\App\Http\Controllers\PasienPrbController::class, 'show'])->name('admin.prb.show');
+        
+        // Riwayat Pengambilan Obat
+        Route::get('/{id}/riwayat/create', [\App\Http\Controllers\PasienPrbController::class, 'createRiwayat'])->name('admin.prb.riwayat.create');
+        Route::post('/{id}/riwayat', [\App\Http\Controllers\PasienPrbController::class, 'storeRiwayat'])->name('admin.prb.riwayat.store');
+    });
+
     Route::get('/log-aktivitas', [\App\Http\Controllers\LogAktivitasController::class, 'index'])->name('admin.log.index');
 });
 
