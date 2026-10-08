@@ -107,6 +107,9 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
     Route::get('/import/apotek', [ImportController::class, 'showApotek'])->name('admin.import.apotek');
     Route::post('/import/apotek', [ImportController::class, 'importApotek'])->name('admin.import.apotek.process');
 
+    Route::get('/import/prb', [ImportController::class, 'showPrb'])->name('admin.import.prb');
+    Route::post('/import/prb', [ImportController::class, 'importPrb'])->name('admin.import.prb.process');
+
     // Program Rujuk Balik (PRB)
     Route::prefix('prb')->group(function () {
         Route::get('/', [\App\Http\Controllers\PasienPrbController::class, 'index'])->name('admin.prb.index');

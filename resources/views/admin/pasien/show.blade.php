@@ -15,7 +15,7 @@
 <div class="grid lg:grid-cols-3 gap-6">
     <!-- Profil Pasien Card -->
     <div class="lg:col-span-1">
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col h-full">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm">
             <div class="p-4 md:p-6">
                 <div class="flex items-center gap-x-4 mb-6">
                     <div class="inline-flex justify-center items-center size-[62px] rounded-full bg-blue-100 text-blue-800">
@@ -81,6 +81,29 @@
 
     <!-- Riwayat Kunjungan -->
     <div class="lg:col-span-2 space-y-6">
+        <!-- Tren Kesehatan Pasien (Charts) -->
+        @if($pasien->pemeriksaans->count() >= 1)
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden p-4 md:p-5">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Tren Kesehatan</h3>
+            <div class="grid lg:grid-cols-2 gap-6">
+                <!-- Grafik Tensi -->
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Tekanan Darah (mmHg)</h4>
+                    <div class="relative h-72" style="height: 288px; width: 100%;">
+                        <canvas id="tensi-chart"></canvas>
+                    </div>
+                </div>
+                <!-- Grafik BB -->
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Berat Badan (kg)</h4>
+                    <div class="relative h-72" style="height: 288px; width: 100%;">
+                        <canvas id="bb-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <h3 class="text-lg font-bold text-gray-800">Riwayat Pemeriksaan</h3>
         
         @forelse($pasien->pemeriksaans as $pemeriksaan)
@@ -101,9 +124,17 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gray-50 rounded-lg p-3 border border-gray-100">
                     <div>
                         <span class="block text-xs text-gray-500 uppercase">BB / TB</span>
-                        <span class="block text-sm font-medium text-gray-800">
-                            {{ $pemeriksaan->berat_badan ?? '-' }} kg / {{ $pemeriksaan->tinggi_badan ?? '-' }} cm
-                        </span>
+                        <div class="flex flex-wrap items-center gap-2 mt-0.5">
+                            <span class="text-sm font-medium text-gray-800">
+                                {{ $pemeriksaan->berat_badan ?? '-' }} kg / {{ $pemeriksaan->tinggi_badan ?? '-' }} cm
+                            </span>
+                            @if($pemeriksaan->nilai_imt)
+                                @php $imtStatus = $pemeriksaan->status_imt; @endphp
+                                <span class="inline-flex items-center gap-x-1 py-0.5 px-1.5 rounded-md text-[10px] font-semibold {{ $imtStatus['color'] }}" title="Nilai IMT: {{ $pemeriksaan->nilai_imt }}">
+                                    {{ $imtStatus['label'] }} ({{ $pemeriksaan->nilai_imt }})
+                                </span>
+                            @endif
+                        </div>
                     </div>
                     <div>
                         <span class="block text-xs text-gray-500 uppercase">Tensi</span>
@@ -175,4 +206,164 @@
         @endforelse
     </div>
 </div>
+
+@if($pasien->pemeriksaans->count() >= 1)
+@php
+    // Urutkan dari yang terlama ke terbaru untuk grafik (kiri ke kanan)
+    $chartData = $pasien->pemeriksaans->sortBy('tanggal_periksa')->values();
+    $categories = $chartData->map(function($item) {
+        return \Carbon\Carbon::parse($item->tanggal_periksa)->format('d M Y');
+    })->toJson();
+    $sistol = $chartData->pluck('tensi_sistol')->map(fn($v) => (float)$v)->toJson();
+    $diastol = $chartData->pluck('tensi_diastol')->map(fn($v) => (float)$v)->toJson();
+    $bb = $chartData->pluck('berat_badan')->map(fn($v) => (float)$v)->toJson();
+@endphp
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const labels = {!! $categories !!};
+        const tensiSistol = {!! $sistol !!};
+        const tensiDiastol = {!! $diastol !!};
+        const bbData = {!! $bb !!};
+        
+        // Chart Tensi (Line Chart dengan 2 data: Sistol & Diastol)
+        const tensiCtx = document.getElementById('tensi-chart').getContext('2d');
+        
+        new Chart(tensiCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Sistolik',
+                        data: tensiSistol,
+                        borderColor: 'rgb(220, 38, 38)', // Red 600
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: 'rgb(220, 38, 38)',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    },
+                    {
+                        label: 'Diastolik',
+                        data: tensiDiastol,
+                        borderColor: 'rgb(59, 130, 246)', // Blue 500
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: 'rgb(59, 130, 246)',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    annotation: {
+                        annotations: {
+                            lineSistolik: {
+                                type: 'line',
+                                yMin: 120,
+                                yMax: 120,
+                                borderColor: 'rgba(220, 38, 38, 0.4)',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                label: {
+                                    display: true,
+                                    content: 'Batas Normal Sistolik (120)',
+                                    position: 'start',
+                                    backgroundColor: 'rgba(220, 38, 38, 0.7)',
+                                    color: 'white',
+                                    font: { size: 10 }
+                                }
+                            },
+                            lineDiastolik: {
+                                type: 'line',
+                                yMin: 80,
+                                yMax: 80,
+                                borderColor: 'rgba(59, 130, 246, 0.4)',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                label: {
+                                    display: true,
+                                    content: 'Batas Normal Diastolik (80)',
+                                    position: 'start',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                                    color: 'white',
+                                    font: { size: 10 }
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        offset: true,
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: 60,
+                        suggestedMax: 180,
+                        title: { display: true, text: 'mmHg' }
+                    }
+                }
+            }
+        });
+
+        // Chart Berat Badan (Bar/Line Chart)
+        const bbCtx = document.getElementById('bb-chart').getContext('2d');
+        
+        let minBb = 40;
+        let maxBb = 100;
+        const validBb = bbData.filter(v => v > 0);
+        if (validBb.length > 0) {
+            minBb = Math.min(...validBb) - 5;
+            maxBb = Math.max(...validBb) + 5;
+        }
+
+        new Chart(bbCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Berat Badan (kg)',
+                    data: bbData,
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)', // Emerald 500
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        offset: true,
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: minBb,
+                        suggestedMax: maxBb,
+                        title: { display: true, text: 'Kilogram (kg)' }
+                    }
+                }
+            }
+        });
+    });
+</script>
+@endpush
+@endif
+
 @endsection
