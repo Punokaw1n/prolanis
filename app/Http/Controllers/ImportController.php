@@ -99,4 +99,48 @@ class ImportController extends Controller
         return redirect()->route('admin.import.apotek')
             ->with('import_summary', $import->summary);
     }
+    public function showPrb()
+    {
+        return view('admin.import.prb');
+    }
+
+    public function importPrb(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:10240',
+        ], [
+            'file.required' => 'File Excel wajib diunggah.',
+            'file.mimes' => 'File harus berformat .xlsx atau .xls.',
+            'file.max' => 'Ukuran file maksimal 10MB.',
+        ]);
+
+        try {
+            $headings = (new HeadingRowImport)->toArray($request->file('file'));
+            $headers = $headings[0][0] ?? [];
+
+            // Memastikan ini format Poliklinik (bukan apotek)
+            $hasKeluhan = in_array('keluhan', $headers) || in_array('icd_x', $headers);
+            $hasNota = in_array('no_nota', $headers);
+
+            if (! $hasKeluhan || $hasNota) {
+                throw ValidationException::withMessages([
+                    'file' => 'File ditolak. File yang Anda unggah sepertinya BUKAN file Register Poliklinik.',
+                ]);
+            }
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            throw ValidationException::withMessages([
+                'file' => 'Gagal membaca format file Excel.',
+            ]);
+        }
+
+        $import = new \App\Imports\PrbImport;
+        Excel::import($import, $request->file('file'));
+
+        \App\Models\LogAktivitas::catat('IMPORT_PRB', "Melakukan import data PRB dari file Excel.");
+
+        return redirect()->route('admin.import.prb')
+            ->with('import_summary', $import->summary);
+    }
 }

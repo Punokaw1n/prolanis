@@ -21,6 +21,9 @@ class RiwayatPengambilanObatPrb extends Model
         $diambil = $this->tanggal_diambil;
 
         if ($diambil) {
+            if (!$jatuhTempo) {
+                return ['label' => 'Sudah Ambil (Import/Tanpa Jadwal)', 'color' => 'bg-blue-100 text-blue-800'];
+            }
             if ($diambil->lte($jatuhTempo)) {
                 return ['label' => 'Sudah Ambil (Tepat Waktu)', 'color' => 'bg-green-100 text-green-800'];
             } else {
