@@ -38,19 +38,46 @@
 <!-- Filter/Search Box -->
 <div x-data="pasienSearch()" class="flex flex-col gap-6">
     <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-        <form @submit.prevent="performSearch" class="flex items-center gap-3">
-        <div class="relative w-full max-w-md">
-            <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none z-20 ps-3.5">
-                <svg class="flex-shrink-0 size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <form @submit.prevent="performSearch" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div class="relative w-full max-w-md">
+                <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none z-20 ps-3.5">
+                    <svg class="flex-shrink-0 size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <input type="text" x-model="query" @input.debounce.500ms="performSearch" class="py-2.5 ps-10 pe-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm" placeholder="Ketik Nama, NIK, No RM, atau No BPJS...">
             </div>
-            <input type="text" x-model="query" @input.debounce.500ms="performSearch" class="py-2.5 ps-10 pe-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm" placeholder="Ketik Nama, NIK, No RM, atau No BPJS...">
-        </div>
-        <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 min-w-[80px] justify-center">
-            <span>Cari</span>
-        </button>
-            <button type="button" @click="resetSearch" x-show="query !== ''" style="display: none;" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50">
-                Reset
-            </button>
+
+            <!-- Clickable Filter Status Pills -->
+            <div class="flex items-center gap-1.5 p-1 bg-gray-100 rounded-lg border border-gray-200 self-start sm:self-auto">
+                <button type="button" 
+                        @click="setStatus('semua')" 
+                        :class="status === 'semua' ? 'bg-white text-blue-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                        class="py-1.5 px-3 rounded-md text-xs transition-all">
+                    Semua Status
+                </button>
+                <button type="button" 
+                        @click="setStatus('aktif')" 
+                        :class="status === 'aktif' ? 'bg-white text-emerald-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                        class="py-1.5 px-3 rounded-md text-xs transition-all flex items-center gap-1.5">
+                    <span class="size-1.5 rounded-full bg-emerald-500"></span>
+                    Aktif
+                </button>
+                <button type="button" 
+                        @click="setStatus('tidak_aktif')" 
+                        :class="status === 'tidak_aktif' ? 'bg-white text-red-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                        class="py-1.5 px-3 rounded-md text-xs transition-all flex items-center gap-1.5">
+                    <span class="size-1.5 rounded-full bg-red-500"></span>
+                    Tidak Aktif
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 min-w-[80px] justify-center shadow-sm">
+                    <span>Cari</span>
+                </button>
+                <button type="button" @click="resetSearch" x-show="query !== '' || status !== null" style="display: none;" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50">
+                    Reset
+                </button>
+            </div>
         </form>
     </div>
 
@@ -78,6 +105,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Pasien</th>
+                            <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                             <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">NIK</th>
                             <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">No RM</th>
                             <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">No BPJS</th>
@@ -91,6 +119,19 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-800">{{ $pasien->nama }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if(($pasien->status_keaktifan ?? 'aktif') === 'aktif')
+                                    <span class="inline-flex items-center gap-x-1.5 py-0.5 px-2.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+                                        <span class="size-1.5 inline-block rounded-full bg-green-500"></span>
+                                        Aktif
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-x-1.5 py-0.5 px-2.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200" title="{{ $pasien->alasan_tidak_aktif }}">
+                                        <span class="size-1.5 inline-block rounded-full bg-red-500"></span>
+                                        Tidak Aktif
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-600">{{ $pasien->nik }}</div>
@@ -122,15 +163,18 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center">
-                                @if(empty($search))
+                            <td colspan="8" class="px-6 py-12 text-center">
+                                @if(empty($search) && empty($status))
                                     <div class="inline-flex flex-col items-center justify-center text-gray-500">
                                         <svg class="size-10 text-gray-400 mb-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                                         <p class="text-base font-medium text-gray-800">Mulai Pencarian</p>
-                                        <p class="text-sm mt-1">Ketik Nama, NIK, No RM, atau No BPJS di atas untuk menampilkan data.</p>
+                                        <p class="text-sm mt-1">Ketik Nama, NIK, No RM, atau No BPJS di atas, atau klik salah satu filter status untuk menampilkan data.</p>
                                     </div>
                                 @else
-                                    <p class="text-gray-500 text-sm">Tidak ada data pasien ditemukan untuk pencarian "<strong>{{ $search }}</strong>".</p>
+                                    <p class="text-gray-500 text-sm">Tidak ada data pasien ditemukan
+                                        @if(!empty($search)) untuk pencarian "<strong>{{ $search }}</strong>"@endif
+                                        @if(!empty($status) && $status !== 'semua') dengan status <strong>{{ $status === 'aktif' ? 'Aktif' : 'Tidak Aktif' }}</strong>@endif.
+                                    </p>
                                 @endif
                             </td>
                         </tr>
@@ -155,39 +199,44 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('pasienSearch', () => ({
         query: '{{ $search ?? '' }}',
+        status: {!! json_encode($status ?? null) !!},
         isLoading: false,
         loadingText: 'Mencari data...',
         
         init() {
-            // Watch dihapus karena kita sudah pakai @input.debounce di elemen input
+        },
+
+        setStatus(newStatus) {
+            this.status = newStatus;
+            this.performSearch();
         },
         
         async performSearch(isReset = false) {
-            this.loadingText = isReset === true ? 'Mereset data...' : 'Mencari data...';
+            this.loadingText = isReset === true ? 'Mereset data...' : 'Memuat data...';
             this.isLoading = true;
             
             try {
-                // Fetch the same page with the new query
-                const response = await fetch(`{{ route('admin.pasien.index') }}?search=${encodeURIComponent(this.query)}`, {
+                const params = new URLSearchParams();
+                if (this.query) params.append('search', this.query);
+                if (this.status) params.append('status', this.status);
+
+                const url = `{{ route('admin.pasien.index') }}${params.toString() ? '?' + params.toString() : ''}`;
+                const response = await fetch(url, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 
                 const html = await response.text();
                 
-                // Parse the returned HTML
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                // Extract just the table HTML and replace it
                 const newTable = doc.querySelector('#pasien-table-container').innerHTML;
                 document.querySelector('#pasien-table-container').innerHTML = newTable;
                 
-                // Update the URL silently so if user refreshes, they stay on the search
-                window.history.pushState({}, '', `{{ route('admin.pasien.index') }}?search=${encodeURIComponent(this.query)}`);
+                window.history.pushState({}, '', url);
             } catch (error) {
                 console.error('Gagal mencari data:', error);
             } finally {
-                // Beri sedikit delay agar animasinya terlihat halus
                 setTimeout(() => {
                     this.isLoading = false;
                 }, 300);
@@ -196,6 +245,7 @@ document.addEventListener('alpine:init', () => {
 
         resetSearch() {
             this.query = '';
+            this.status = null;
             this.performSearch(true);
         }
     }))

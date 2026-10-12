@@ -2,14 +2,16 @@
 
 @section('content')
 <div class="max-w-3xl mx-auto">
-    <header class="mb-8 flex items-center justify-between">
-        <div>
-            <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Catat Pengambilan Obat</h1>
-            <p class="mt-2 text-sm text-gray-600">Pasien: <strong class="text-gray-800">{{ $prb->pasien->nama }}</strong> (NIK: {{ $prb->pasien->nik }})</p>
+    <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-x-4">
+            <a href="{{ route('admin.prb.show', $prb->id) }}" class="inline-flex justify-center items-center size-10 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 transition-colors" title="Kembali ke Detail Pasien">
+                <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </a>
+            <div>
+                <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Catat Pengambilan Obat</h1>
+                <p class="mt-1 text-sm text-gray-600">Pasien: <strong class="text-gray-800">{{ $prb->pasien->nama }}</strong> (NIK: {{ $prb->pasien->nik }})</p>
+            </div>
         </div>
-        <a href="{{ route('admin.prb.show', $prb->id) }}" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50">
-            Batal
-        </a>
     </header>
 
     @if ($errors->any())
@@ -41,7 +43,8 @@
                     <label class="block text-sm font-medium mb-2">Tanggal Jatuh Tempo (Berikutnya) <span class="text-red-500">*</span></label>
                     <div class="flex items-center gap-2">
                         <input type="date" name="tanggal_jatuh_tempo" x-model="tanggalJatuhTempo" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" required>
-                        <button type="button" @click="setSaranJatuhTempo" class="py-3 px-3 inline-flex items-center text-xs font-medium rounded-lg border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100" title="Set ke 30 hari dari tanggal diambil">
+                        <button type="button" @click="setSaranJatuhTempo" class="py-3 px-3 inline-flex items-center gap-x-1 text-xs font-bold rounded-lg border border-transparent bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors shrink-0" title="Set ke 30 hari dari tanggal diambil">
+                            <svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M12 14h.01"/><path d="M12 18h.01"/><path d="M8 14h.01"/><path d="M8 18h.01"/><path d="M16 14h.01"/><path d="M16 18h.01"/></svg>
                             +30 Hari
                         </button>
                     </div>

@@ -20,32 +20,38 @@ use App\Http\Controllers\ConsentPubController;
 use App\Http\Controllers\EvaluasiKehadiranController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\JadwalLayananController;
+use App\Http\Controllers\LogAktivitasController;
 use App\Http\Controllers\PasienAuthController;
 use App\Http\Controllers\PasienController;
+use App\Http\Controllers\PasienPrbController;
 use App\Http\Controllers\PersetujuanController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\PortalPasienController;
 use App\Http\Controllers\TemplatePersetujuanController;
 use App\Models\JadwalLayanan;
+use App\Models\LogAktivitas;
 use App\Models\Pasien;
+use App\Models\Persetujuan;
+use App\Models\User;
+use Carbon\Carbon;
 
 // Admin & Petugas Routes
 Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {
-        $totalPasien = \App\Models\Pasien::count();
-        $totalJadwal = \App\Models\JadwalLayanan::count();
-        $totalPetugas = \App\Models\User::where('is_active', true)->count();
-        $pendingConsent = \App\Models\Persetujuan::where('status', 'menunggu')->count();
-        
-        $upcomingJadwal = \App\Models\JadwalLayanan::where('tanggal', '>=', \Carbon\Carbon::today())
-                                ->orderBy('tanggal', 'asc')
-                                ->take(4)
-                                ->get();
-                                
-        $recentLogs = \App\Models\LogAktivitas::with('user')
-                                ->orderBy('created_at', 'desc')
-                                ->take(5)
-                                ->get();
+        $totalPasien = Pasien::count();
+        $totalJadwal = JadwalLayanan::count();
+        $totalPetugas = User::where('is_active', true)->count();
+        $pendingConsent = Persetujuan::where('status', 'menunggu')->count();
+
+        $upcomingJadwal = JadwalLayanan::where('tanggal', '>=', Carbon::today())
+            ->orderBy('tanggal', 'asc')
+            ->take(4)
+            ->get();
+
+        $recentLogs = LogAktivitas::with('user')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
 
         return view('admin.dashboard', compact(
             'totalPasien', 'totalJadwal', 'totalPetugas', 'pendingConsent',
@@ -70,6 +76,7 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
     Route::get('/pasien', [PasienController::class, 'index'])->name('admin.pasien.index');
     Route::get('/pasien/{id}', [PasienController::class, 'show'])->name('admin.pasien.show');
+    Route::put('/pasien/{id}/toggle-status', [PasienController::class, 'toggleStatus'])->name('admin.pasien.toggle-status');
 
     Route::resource('petugas', PetugasController::class, [
         'names' => [
@@ -80,7 +87,7 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
             'update' => 'admin.petugas.update',
         ],
     ])->except(['destroy']);
-    
+
     Route::patch('/petugas/{petuga}/toggle-status', [PetugasController::class, 'toggleStatus'])->name('admin.petugas.toggle-status');
 
     // Evaluasi Kehadiran
@@ -112,18 +119,23 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
     // Program Rujuk Balik (PRB)
     Route::prefix('prb')->group(function () {
-        Route::get('/', [\App\Http\Controllers\PasienPrbController::class, 'index'])->name('admin.prb.index');
-        Route::get('/create', [\App\Http\Controllers\PasienPrbController::class, 'create'])->name('admin.prb.create');
-        Route::post('/check-nik', [\App\Http\Controllers\PasienPrbController::class, 'checkNik'])->name('admin.prb.check-nik');
-        Route::post('/', [\App\Http\Controllers\PasienPrbController::class, 'store'])->name('admin.prb.store');
-        Route::get('/{id}', [\App\Http\Controllers\PasienPrbController::class, 'show'])->name('admin.prb.show');
-        
+        Route::get('/', [PasienPrbController::class, 'index'])->name('admin.prb.index');
+        Route::get('/pengingat', [PasienPrbController::class, 'pengingat'])->name('admin.prb.pengingat');
+        Route::post('/pengingat/{id}/tandai', [PasienPrbController::class, 'tandaiDiingatkan'])->name('admin.prb.pengingat.tandai');
+        Route::get('/create', [PasienPrbController::class, 'create'])->name('admin.prb.create');
+        Route::post('/check-nik', [PasienPrbController::class, 'checkNik'])->name('admin.prb.check-nik');
+        Route::post('/', [PasienPrbController::class, 'store'])->name('admin.prb.store');
+        Route::get('/{id}', [PasienPrbController::class, 'show'])->name('admin.prb.show');
+        Route::put('/{id}/toggle-status', [PasienPrbController::class, 'toggleStatus'])->name('admin.prb.toggle-status');
         // Riwayat Pengambilan Obat
-        Route::get('/{id}/riwayat/create', [\App\Http\Controllers\PasienPrbController::class, 'createRiwayat'])->name('admin.prb.riwayat.create');
-        Route::post('/{id}/riwayat', [\App\Http\Controllers\PasienPrbController::class, 'storeRiwayat'])->name('admin.prb.riwayat.store');
+        Route::get('/{id}/riwayat/create', [PasienPrbController::class, 'createRiwayat'])->name('admin.prb.riwayat.create');
+        Route::post('/{id}/riwayat', [PasienPrbController::class, 'storeRiwayat'])->name('admin.prb.riwayat.store');
+        Route::get('/riwayat/{riwayat_id}/edit', [PasienPrbController::class, 'editRiwayat'])->name('admin.prb.riwayat.edit');
+        Route::put('/riwayat/{riwayat_id}', [PasienPrbController::class, 'updateRiwayat'])->name('admin.prb.riwayat.update');
+        Route::delete('/riwayat/{riwayat_id}', [PasienPrbController::class, 'destroyRiwayat'])->name('admin.prb.riwayat.destroy');
     });
 
-    Route::get('/log-aktivitas', [\App\Http\Controllers\LogAktivitasController::class, 'index'])->name('admin.log.index');
+    Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])->name('admin.log.index');
 });
 
 // Portal Pasien Routes

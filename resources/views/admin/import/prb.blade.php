@@ -5,7 +5,7 @@
 <!-- Page Heading -->
 <header class="mb-8 text-center">
     <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Import Data PRB</h1>
-    <p class="mt-2 text-lg text-gray-600">Upload file Excel register poliklinik untuk mengimpor riwayat pengambilan obat Program Rujuk Balik (PRB).</p>
+    <p class="mt-1 text-sm text-gray-600">Upload file Excel register poliklinik untuk mengimpor riwayat pengambilan obat Program Rujuk Balik (PRB).</p>
 </header>
 
 {{-- Ringkasan Hasil Import --}}

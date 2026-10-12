@@ -2,15 +2,61 @@
 
 @section('content')
 <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div>
-        <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Detail Pasien PRB</h1>
-        <p class="mt-2 text-lg text-gray-600">Profil pasien dan riwayat pengambilan obat PRB.</p>
-    </div>
-    <div class="sm:ms-auto">
-        <a href="{{ route('admin.prb.index') }}" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50">
+    <div class="flex items-center gap-x-4">
+        <a href="{{ route('admin.prb.index') }}" class="inline-flex justify-center items-center size-10 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none transition-colors" title="Kembali ke Data Pasien PRB">
             <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            Kembali
         </a>
+        <div>
+            <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Detail Pasien PRB</h1>
+            <p class="mt-1 text-sm text-gray-600">Profil pasien dan riwayat pengambilan obat PRB.</p>
+        </div>
+    </div>
+    <div class="sm:ms-auto flex items-center gap-2" x-data="{ toggleStatusModalOpen: false }">
+        <button type="button" @click="toggleStatusModalOpen = true" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 transition-colors">
+            <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-1 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            {{ $prb->status_keaktifan == 'aktif' ? 'Nonaktifkan Pasien' : 'Aktifkan Pasien' }}
+        </button>
+
+        <!-- Toggle Status Modal (Alpine.js) -->
+        <template x-teleport="body">
+            <div x-show="toggleStatusModalOpen" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none; z-index: 9999;">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true" style="background-color: rgba(0,0,0,0.5);"></div>
+                <div class="fixed" style="top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 32rem; padding: 1rem; z-index: 10000;">
+                    <div x-show="toggleStatusModalOpen" 
+                         x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                         class="w-full text-left overflow-hidden shadow-xl transform transition-all" style="background-color: #ffffff; border-radius: 0.75rem;">
+                        
+                        <div class="p-6 sm:p-10 text-center">
+                            <span class="mb-4 inline-flex justify-center items-center size-[62px] rounded-full border-4" style="border-color: #fef3c7; background-color: #fde68a; color: #d97706;">
+                                <svg class="size-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                            </span>
+                            <h3 class="mb-2 text-xl font-bold" id="modal-title" style="color: #1f2937;">
+                                Konfirmasi Perubahan Status
+                            </h3>
+                            <p class="text-sm whitespace-normal" style="color: #6b7280;">
+                                Apakah Anda yakin ingin <strong>{{ $prb->status_keaktifan == 'aktif' ? 'MENONAKTIFKAN' : 'MENGAKTIFKAN KEMBALI' }}</strong> status PRB atas nama pasien {{ $prb->pasien->nama }}?
+                                @if($prb->status_keaktifan == 'aktif')
+                                    <br><br>Pasien yang nonaktif tidak akan muncul lagi di Dashboard Pengingat WA.
+                                @endif
+                            </p>
+                            
+                            <div class="mt-6 flex justify-center gap-x-4">
+                                <button type="button" @click="toggleStatusModalOpen = false" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border shadow-sm transition-colors" style="background-color: #ffffff; border-color: #e5e7eb; color: #1f2937;">
+                                    Batal
+                                </button>
+                                <form action="{{ route('admin.prb.toggle-status', $prb->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('PUT')
+                                    <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent transition-colors" style="background-color: #d97706; color: #ffffff;">
+                                        Ya, {{ $prb->status_keaktifan == 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
     </div>
 </header>
 
@@ -26,13 +72,13 @@
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold text-white">{{ $prb->pasien->nama }}</h3>
-                        <p class="text-blue-100 text-sm">
+                        <div class="flex items-center gap-2 mt-1">
                             @if($prb->status_keaktifan == 'aktif')
-                                <span class="inline-flex items-center gap-x-1.5 py-0.5 px-2 rounded-md text-xs font-medium bg-blue-50 text-blue-800">Aktif PRB</span>
+                                <span class="inline-flex items-center gap-x-1.5 py-0.5 px-2 rounded-md text-xs font-medium bg-blue-50 text-blue-800" title="Pasien PRB Aktif">Aktif PRB</span>
                             @else
-                                <span class="inline-flex items-center gap-x-1.5 py-0.5 px-2 rounded-md text-xs font-medium bg-gray-50 text-gray-800">Tidak Aktif</span>
+                                <span class="inline-flex items-center gap-x-1.5 py-0.5 px-2 rounded-md text-xs font-medium bg-gray-50 text-gray-800" title="Pasien sudah keluar, pindah faskes, atau meninggal">Tidak Aktif</span>
                             @endif
-                        </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -91,12 +137,65 @@
                         @endif
                     </span>
                     
-                    <h3 class="flex items-center mb-1 text-base font-semibold text-gray-900">
-                        Jatuh Tempo: {{ \Carbon\Carbon::parse($r->tanggal_jatuh_tempo)->translatedFormat('d M Y') }}
-                        @if($r->status)
-                            <span class="{{ $r->status['color'] }} text-xs font-medium me-2 px-2.5 py-0.5 rounded ms-3">{{ $r->status['label'] }}</span>
-                        @endif
-                    </h3>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="flex items-center text-base font-semibold text-gray-900">
+                            Jatuh Tempo: {{ \Carbon\Carbon::parse($r->tanggal_jatuh_tempo)->translatedFormat('d M Y') }}
+                            @if($r->status)
+                                <span class="{{ $r->status['color'] }} text-xs font-medium me-2 px-2.5 py-0.5 rounded ms-3">{{ $r->status['label'] }}</span>
+                            @endif
+                        </h3>
+                        <div class="flex items-center gap-3" x-data="{ modalOpen: false }">
+                            <a href="{{ route('admin.prb.riwayat.edit', $r->id) }}" class="text-gray-400 hover:text-blue-600 transition-colors" title="Edit">
+                                <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            </a>
+                            <button type="button" @click="modalOpen = true" class="text-gray-400 hover:text-red-600 transition-colors" title="Hapus">
+                                <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+
+                            <!-- Delete Modal (Alpine.js) -->
+                            <template x-teleport="body">
+                                <div x-show="modalOpen" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none; z-index: 9999;">
+                                    <!-- Overlay -->
+                                    <div class="fixed inset-0 transition-opacity" aria-hidden="true" style="background-color: rgba(0,0,0,0.5);"></div>
+                                    
+                                    <!-- Modal Panel -->
+                                    <div class="fixed" style="top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 32rem; padding: 1rem; z-index: 10000;">
+                                        <div x-show="modalOpen" 
+                                             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                                             class="w-full text-left overflow-hidden shadow-xl transform transition-all" style="background-color: #ffffff; border-radius: 0.75rem;">
+                                            
+                                            <div class="p-6 sm:p-10 text-center">
+                                                <span class="mb-4 inline-flex justify-center items-center size-[62px] rounded-full border-4" style="border-color: #fef2f2; background-color: #fee2e2; color: #ef4444;">
+                                                    <svg class="size-6" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                                    </svg>
+                                                </span>
+                                                <h3 class="mb-2 text-xl font-bold" id="modal-title" style="color: #1f2937;">
+                                                    Hapus Riwayat Pengambilan?
+                                                </h3>
+                                                <p class="text-sm whitespace-normal" style="color: #6b7280;">
+                                                    Tindakan ini tidak dapat dibatalkan. Menghapus riwayat juga akan menghapus daftar rincian obat yang tersimpan di dalamnya.
+                                                </p>
+                                                
+                                                <div class="mt-6 flex justify-center gap-x-4">
+                                                    <button type="button" @click="modalOpen = false" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border shadow-sm transition-colors" style="background-color: #ffffff; border-color: #e5e7eb; color: #1f2937;">
+                                                        Batal
+                                                    </button>
+                                                    <form action="{{ route('admin.prb.riwayat.destroy', $r->id) }}" method="POST" class="inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent transition-colors" style="background-color: #dc2626; color: #ffffff;">
+                                                            Ya, Hapus
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
                     
                     <time class="block mb-2 text-sm font-normal leading-none text-gray-400">
                         Tgl Diambil: {{ $r->tanggal_diambil ? \Carbon\Carbon::parse($r->tanggal_diambil)->translatedFormat('d M Y') : '-' }}

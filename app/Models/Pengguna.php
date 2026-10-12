@@ -15,6 +15,10 @@ class Pengguna extends Authenticatable
 
     protected $guarded = ['id'];
 
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -25,6 +29,7 @@ class Pengguna extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 

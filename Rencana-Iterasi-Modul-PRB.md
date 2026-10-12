@@ -61,9 +61,9 @@ Lanjutan dari modul Prolanis yang sudah berjalan. Setiap langkah dirancang kecil
 
 ## FASE 6 — Penyempurnaan
 
-30. **Review konsistensi desain** — pastikan dashboard pengingat dan halaman PRB lainnya selaras dengan Preline UI dan font yang sudah dipakai di modul Prolanis.
-31. **Uji alur end-to-end** — import data PRB → tandai beberapa riwayat sebagai jatuh tempo hari ini (lewat data dummy) → buka dashboard → hubungi via WA → catat pengambilan obat baru (dengan kategori obat PRB & Non-PRB) dengan tanggal jatuh tempo berikutnya → pastikan pasien hilang dari dashboard pengingat begitu `tanggal_diambil` terisi.
-32. **Minta feedback ke mentor/kepala puskesmas**, khususnya soal alur pencatatan manual, kategori obat, dan tampilan dashboard pengingat.
+30. [x] **Review konsistensi desain** — pastikan dashboard pengingat dan halaman PRB lainnya selaras dengan Preline UI dan font yang sudah dipakai di modul Prolanis. *(Selesai: diselaraskan typography, square back icon button, custom scrollbar horizontal tabel, Tailwind palette emerald/blue, dan sidebar highlight)*.
+31. [x] **Uji alur end-to-end** — import data PRB → tandai beberapa riwayat sebagai jatuh tempo hari ini (lewat data dummy) → buka dashboard → hubungi via WA → catat pengambilan obat baru (dengan kategori obat PRB & Non-PRB) dengan tanggal jatuh tempo berikutnya → pastikan pasien hilang dari dashboard pengingat begitu `tanggal_diambil` terisi. *(Selesai: diuji dengan automated feature test `tests/Feature/PrbEndToEndTest.php`, 100% lulus)*.
+32. [ ] **Minta feedback ke mentor/kepala puskesmas**, khususnya soal alur pencatatan manual, kategori obat, dan tampilan dashboard pengingat. *(Siap didemonstrasikan)*.
 
 ---
 
