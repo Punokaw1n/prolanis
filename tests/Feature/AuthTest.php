@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Pengguna;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -19,15 +19,16 @@ class AuthTest extends TestCase
 
     public function test_user_can_login_with_correct_credentials()
     {
-        $user = Pengguna::create([
+        $user = User::create([
             'nama' => 'Admin Test',
             'email' => 'admin@test.com',
             'password' => Hash::make('password'),
-            'peran' => 'admin',
+            'role' => 'admin',
+            'is_active' => true,
         ]);
 
         $response = $this->post('/login', [
-            'email' => 'admin@test.com',
+            'username' => 'admin@test.com',
             'password' => 'password',
         ]);
 
@@ -37,11 +38,12 @@ class AuthTest extends TestCase
 
     public function test_user_can_logout()
     {
-        $user = Pengguna::create([
+        $user = User::create([
             'nama' => 'Admin Test',
             'email' => 'admin@test.com',
             'password' => Hash::make('password'),
-            'peran' => 'admin',
+            'role' => 'admin',
+            'is_active' => true,
         ]);
 
         $this->actingAs($user);

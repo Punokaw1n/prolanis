@@ -1,14 +1,102 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- Page Heading with Back Button -->
-<header class="mb-8 flex items-center gap-x-4">
-    <a href="{{ route('admin.pasien.index') }}" class="inline-flex justify-center items-center size-10 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none">
-        <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-    </a>
-    <div>
-        <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Detail Pasien</h1>
-        <p class="mt-1 text-sm text-gray-600">Informasi profil dan riwayat pemeriksaan pasien.</p>
+<!-- Page Heading with Back Button and Actions -->
+<header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-x-4">
+        <a href="{{ route('admin.pasien.index') }}" class="inline-flex justify-center items-center size-10 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none">
+            <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+        <div>
+            <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Detail Pasien</h1>
+            <p class="mt-1 text-sm text-gray-600">Informasi profil dan riwayat pemeriksaan pasien.</p>
+        </div>
+    </div>
+    <div class="sm:ms-auto flex items-center gap-2" x-data="{ toggleStatusModalOpen: false, selectedAlasan: 'Meninggal Dunia', customAlasan: '' }">
+        <button type="button" @click="toggleStatusModalOpen = true" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 transition-colors">
+            <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            {{ ($pasien->status_keaktifan ?? 'aktif') === 'aktif' ? 'Nonaktifkan Pasien' : 'Aktifkan Pasien' }}
+        </button>
+
+        <!-- Toggle Status Modal (Alpine.js) -->
+        <template x-teleport="body">
+            <div x-show="toggleStatusModalOpen" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none; z-index: 9999;">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true" style="background-color: rgba(0,0,0,0.5);"></div>
+                <div class="fixed" style="top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 32rem; padding: 1rem; z-index: 10000;">
+                    <div x-show="toggleStatusModalOpen" 
+                         x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                         class="w-full text-left overflow-hidden shadow-xl transform transition-all" style="background-color: #ffffff; border-radius: 0.75rem;">
+                        
+                        <div class="p-6 sm:p-8 text-center">
+                            @if(($pasien->status_keaktifan ?? 'aktif') === 'aktif')
+                                <span class="mb-4 inline-flex justify-center items-center size-[62px] rounded-full border-4" style="border-color: #fee2e2; background-color: #fecaca; color: #dc2626;">
+                                    <svg class="size-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                                </span>
+                                <h3 class="mb-2 text-xl font-bold" id="modal-title" style="color: #1f2937;">
+                                    Nonaktifkan Pasien
+                                </h3>
+                                <p class="text-sm whitespace-normal mb-4" style="color: #6b7280;">
+                                    Apakah Anda yakin ingin menonaktifkan pasien <strong>{{ $pasien->nama }}</strong>?
+                                    <br><span class="text-xs text-gray-500">Pasien tidak akan muncul pada pencarian jadwal Prolanis baru. Seluruh data rekam medis dan riwayatnya tetap tersimpan utuh di sistem.</span>
+                                </p>
+
+                                <form action="{{ route('admin.pasien.toggle-status', $pasien->id) }}" method="POST" class="text-start">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="mb-4">
+                                        <label class="block text-xs font-semibold text-gray-700 mb-1">Alasan Penonaktifan:</label>
+                                        <select x-model="selectedAlasan" class="py-2 px-3 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm">
+                                            <option value="Meninggal Dunia">Meninggal Dunia</option>
+                                            <option value="Pindah Faskes / Domisili">Pindah Faskes / Domisili</option>
+                                                            <option value="Menolak Mengikuti Program">Menolak Mengikuti Program</option>
+                                            <option value="Lainnya">Alasan Lainnya...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-4" x-show="selectedAlasan === 'Lainnya'" style="display: none;">
+                                        <label class="block text-xs font-semibold text-gray-700 mb-1">Tuliskan Alasan:</label>
+                                        <input type="text" x-model="customAlasan" placeholder="Masukkan alasan penonaktifan..." class="py-2 px-3 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm">
+                                    </div>
+                                    <input type="hidden" name="alasan" :value="selectedAlasan === 'Lainnya' ? customAlasan : selectedAlasan">
+
+                                    <div class="mt-6 flex justify-end gap-x-3">
+                                        <button type="button" @click="toggleStatusModalOpen = false" class="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50">
+                                            Batal
+                                        </button>
+                                        <button type="submit" class="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 shadow-sm">
+                                            Ya, Nonaktifkan
+                                        </button>
+                                    </div>
+                                </form>
+                            @else
+                                <span class="mb-4 inline-flex justify-center items-center size-[62px] rounded-full border-4" style="border-color: #dcfce7; background-color: #bbf7d0; color: #16a34a;">
+                                    <svg class="size-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                </span>
+                                <h3 class="mb-2 text-xl font-bold" id="modal-title" style="color: #1f2937;">
+                                    Aktifkan Kembali Pasien
+                                </h3>
+                                <p class="text-sm whitespace-normal mb-6" style="color: #6b7280;">
+                                    Apakah Anda yakin ingin mengaktifkan kembali status pasien <strong>{{ $pasien->nama }}</strong>?
+                                    <br><span class="text-xs text-gray-500">Pasien akan kembali aktif dan dapat dipilih dalam jadwal kegiatan Prolanis.</span>
+                                </p>
+
+                                <form action="{{ route('admin.pasien.toggle-status', $pasien->id) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="flex justify-center gap-x-3">
+                                        <button type="button" @click="toggleStatusModalOpen = false" class="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50">
+                                            Batal
+                                        </button>
+                                        <button type="submit" class="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 shadow-sm">
+                                            Ya, Aktifkan Kembali
+                                        </button>
+                                    </div>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
     </div>
 </header>
 
@@ -30,9 +118,35 @@
                                 </span>
                             @endif
                         </div>
-                        <p class="text-sm text-gray-500 mt-1">No RM: <span class="font-medium text-gray-800">{{ $pasien->no_rm ?? '-' }}</span></p>
+                        <div class="flex items-center gap-2 mt-1">
+                            @if(($pasien->status_keaktifan ?? 'aktif') === 'aktif')
+                                <span class="inline-flex items-center gap-x-1.5 py-0.5 px-2 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+                                    <span class="size-1.5 inline-block rounded-full bg-green-500"></span>
+                                    Aktif
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-x-1.5 py-0.5 px-2 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                                    <span class="size-1.5 inline-block rounded-full bg-red-500"></span>
+                                    Tidak Aktif
+                                </span>
+                            @endif
+                            <span class="text-sm text-gray-500">No RM: <span class="font-medium text-gray-800">{{ $pasien->no_rm ?? '-' }}</span></span>
+                        </div>
                     </div>
                 </div>
+
+                @if(($pasien->status_keaktifan ?? 'aktif') === 'tidak_aktif')
+                <div class="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
+                    <p class="font-semibold flex items-center gap-1.5">
+                        <svg class="size-4 text-red-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                        Status Pasien Tidak Aktif
+                    </p>
+                    <p class="mt-1 text-gray-700"><strong>Alasan:</strong> {{ $pasien->alasan_tidak_aktif ?? 'Tidak dicantumkan' }}</p>
+                    @if($pasien->tanggal_tidak_aktif)
+                        <p class="text-gray-500 mt-0.5">Sejak {{ \Carbon\Carbon::parse($pasien->tanggal_tidak_aktif)->translatedFormat('d F Y') }}</p>
+                    @endif
+                </div>
+                @endif
 
                 <dl class="space-y-4">
                     <div class="grid grid-cols-3 gap-1">

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\JadwalLayanan;
+use App\Models\LogAktivitas;
 use App\Models\Pasien;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -14,7 +16,7 @@ class JadwalLayananController extends Controller
         $search = $request->input('search');
         $filterTanggal = $request->input('tanggal');
 
-        $query = \App\Models\Pasien::query()
+        $query = Pasien::query()
             ->join('jadwal_layanan_pasien', 'pasien.id', '=', 'jadwal_layanan_pasien.pasien_id')
             ->join('jadwal_layanan', 'jadwal_layanan_pasien.jadwal_layanan_id', '=', 'jadwal_layanan.id')
             ->select(
@@ -32,8 +34,8 @@ class JadwalLayananController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('pasien.nama', 'like', "%{$search}%")
-                  ->orWhere('pasien.nik', 'like', "%{$search}%")
-                  ->orWhere('pasien.no_rm', 'like', "%{$search}%");
+                    ->orWhere('pasien.nik', 'like', "%{$search}%")
+                    ->orWhere('pasien.no_rm', 'like', "%{$search}%");
             });
         }
 
@@ -43,9 +45,9 @@ class JadwalLayananController extends Controller
 
         if ($search || $filterTanggal) {
             $peserta = $query->orderBy('jadwal_layanan.tanggal', 'desc')
-                             ->orderBy('pasien.nama', 'asc')
-                             ->paginate(15)
-                             ->withQueryString();
+                ->orderBy('pasien.nama', 'asc')
+                ->paginate(15)
+                ->withQueryString();
         } else {
             $peserta = $query->whereRaw('1 = 0')->paginate(15);
         }
@@ -74,33 +76,33 @@ class JadwalLayananController extends Controller
         $status = $request->get('status');
         $tanggal = $request->get('tanggal');
 
-        if (!$status && strlen($search) < 2) {
+        if (! $status && strlen($search) < 2) {
             return response()->json([]);
         }
 
-        $query = Pasien::with(['pemeriksaans' => function($q) {
+        $query = Pasien::where('status_keaktifan', 'aktif')->with(['pemeriksaans' => function ($q) {
             $q->orderBy('tanggal_periksa', 'desc')->select('id', 'pasien_id', 'tanggal_periksa');
         }]);
 
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
-                  ->orWhere('nik', 'like', "%{$search}%")
-                  ->orWhere('no_rm', 'like', "%{$search}%");
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhere('no_rm', 'like', "%{$search}%");
             });
         }
 
         $pasiens = $query->orderBy('nama', 'asc')->get(['id', 'nama', 'nik', 'alamat', 'no_rm']);
 
-        $targetDate = $tanggal ? \Carbon\Carbon::parse($tanggal)->startOfMonth() : now()->startOfMonth();
+        $targetDate = $tanggal ? Carbon::parse($tanggal)->startOfMonth() : now()->startOfMonth();
 
         $pasiens = $pasiens->map(function ($p) use ($targetDate) {
             $lastPemeriksaan = $p->pemeriksaans->first();
-            $p->kunjungan_terakhir = $lastPemeriksaan ? \Carbon\Carbon::parse($lastPemeriksaan->tanggal_periksa)->translatedFormat('d F Y') : null;
-            
+            $p->kunjungan_terakhir = $lastPemeriksaan ? Carbon::parse($lastPemeriksaan->tanggal_periksa)->translatedFormat('d F Y') : null;
+
             $p->status_kehadiran = 'Pasif';
             if ($lastPemeriksaan) {
-                $bulanTerlewat = (int) \Carbon\Carbon::parse($lastPemeriksaan->tanggal_periksa)->copy()->startOfMonth()->diffInMonths($targetDate);
+                $bulanTerlewat = (int) Carbon::parse($lastPemeriksaan->tanggal_periksa)->copy()->startOfMonth()->diffInMonths($targetDate);
                 if ($bulanTerlewat <= 1) {
                     $p->status_kehadiran = 'Rutin';
                 } elseif ($bulanTerlewat <= 3) {
@@ -109,13 +111,14 @@ class JadwalLayananController extends Controller
                     $p->status_kehadiran = 'Pasif';
                 }
             }
-            
+
             unset($p->pemeriksaans);
+
             return $p;
         });
 
         if ($status) {
-            $pasiens = $pasiens->filter(function($p) use ($status) {
+            $pasiens = $pasiens->filter(function ($p) use ($status) {
                 return $p->status_kehadiran === $status;
             })->values();
         }
@@ -148,21 +151,22 @@ class JadwalLayananController extends Controller
             $jadwal->pasien()->sync($request->pasien_ids);
         }
 
-        \App\Models\LogAktivitas::catat('BUAT_JADWAL', "Menambahkan jadwal layanan baru untuk tanggal: {$jadwal->tanggal}");
+        LogAktivitas::catat('BUAT_JADWAL', "Menambahkan jadwal layanan baru untuk tanggal: {$jadwal->tanggal}");
 
         return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal layanan berhasil ditambahkan.');
     }
 
     public function edit(JadwalLayanan $jadwal)
     {
-        $initialPasiens = $jadwal->pasien()->with(['pemeriksaans' => function($q) {
-                $q->orderBy('tanggal_periksa', 'desc')->select('id', 'pasien_id', 'tanggal_periksa');
-            }])->get(['pasien.id', 'nama', 'nik', 'alamat', 'no_rm'])->map(function($p) {
-                $p->kunjungan_terakhir = $p->pemeriksaans->first() ? \Carbon\Carbon::parse($p->pemeriksaans->first()->tanggal_periksa)->translatedFormat('d F Y') : null;
-                unset($p->pemeriksaans);
-                return $p;
-            });
-            
+        $initialPasiens = $jadwal->pasien()->with(['pemeriksaans' => function ($q) {
+            $q->orderBy('tanggal_periksa', 'desc')->select('id', 'pasien_id', 'tanggal_periksa');
+        }])->get(['pasien.id', 'nama', 'nik', 'alamat', 'no_rm'])->map(function ($p) {
+            $p->kunjungan_terakhir = $p->pemeriksaans->first() ? Carbon::parse($p->pemeriksaans->first()->tanggal_periksa)->translatedFormat('d F Y') : null;
+            unset($p->pemeriksaans);
+
+            return $p;
+        });
+
         $patientSchedules = $this->getPatientSchedules();
 
         return view('admin.jadwal.edit', compact('jadwal', 'initialPasiens', 'patientSchedules'));
@@ -193,7 +197,7 @@ class JadwalLayananController extends Controller
             $jadwal->pasien()->detach();
         }
 
-        \App\Models\LogAktivitas::catat('UPDATE_JADWAL', "Mengubah jadwal layanan pada tanggal: {$jadwal->tanggal}");
+        LogAktivitas::catat('UPDATE_JADWAL', "Mengubah jadwal layanan pada tanggal: {$jadwal->tanggal}");
 
         return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal layanan berhasil diperbarui.');
     }
@@ -203,7 +207,7 @@ class JadwalLayananController extends Controller
         $tanggal = $jadwal->tanggal;
         $jadwal->delete();
 
-        \App\Models\LogAktivitas::catat('HAPUS_JADWAL', "Menghapus jadwal layanan tanggal: {$tanggal}");
+        LogAktivitas::catat('HAPUS_JADWAL', "Menghapus jadwal layanan tanggal: {$tanggal}");
 
         return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal layanan berhasil dihapus.');
     }
@@ -218,15 +222,15 @@ class JadwalLayananController extends Controller
         $patientSchedules = [];
         foreach ($allSchedules as $schedule) {
             $month = substr($schedule->tanggal, 0, 7); // Format: YYYY-MM
-            $formattedDate = \Carbon\Carbon::parse($schedule->tanggal)->translatedFormat('d F Y');
-            
-            if (!isset($patientSchedules[$schedule->pasien_id])) {
+            $formattedDate = Carbon::parse($schedule->tanggal)->translatedFormat('d F Y');
+
+            if (! isset($patientSchedules[$schedule->pasien_id])) {
                 $patientSchedules[$schedule->pasien_id] = [];
             }
             $patientSchedules[$schedule->pasien_id][] = [
                 'month' => $month,
                 'jadwal_id' => $schedule->jadwal_id,
-                'formatted_date' => $formattedDate
+                'formatted_date' => $formattedDate,
             ];
         }
 

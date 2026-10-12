@@ -2,9 +2,16 @@
 
 @section('content')
 <div class="max-w-3xl mx-auto">
-    <header class="mb-8">
-        <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Daftar Pasien PRB</h1>
-        <p class="mt-2 text-lg text-gray-600">Daftarkan pasien ke dalam Program Rujuk Balik.</p>
+    <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-x-4">
+            <a href="{{ route('admin.prb.index') }}" class="inline-flex justify-center items-center size-10 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 transition-colors" title="Kembali ke Data Pasien PRB">
+                <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </a>
+            <div>
+                <h1 class="block text-2xl font-bold text-gray-800 sm:text-3xl">Daftar Pasien PRB</h1>
+                <p class="mt-1 text-sm text-gray-600">Daftarkan pasien ke dalam Program Rujuk Balik.</p>
+            </div>
+        </div>
     </header>
 
     @if(session('error'))

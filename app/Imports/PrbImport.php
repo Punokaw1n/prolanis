@@ -27,16 +27,20 @@ class PrbImport implements ToArray, WithHeadingRow
         foreach ($rows as $index => $row) {
             $nik = preg_replace('/[^0-9]/', '', $row['nik'] ?? '');
             $isInvalid = empty($nik) || strlen($nik) < 16 || str_ends_with($nik, '0');
-            
+
             if ($isInvalid) {
                 $nama = trim($row['nama'] ?? 'Tanpa Nama');
                 $rowNumber = $index + 2;
-                
+
                 $alasan = 'tidak valid';
-                if (empty($nik)) $alasan = 'kosong';
-                elseif (strlen($nik) < 16) $alasan = 'kurang dari 16 digit';
-                elseif (str_ends_with($nik, '0')) $alasan = 'berakhiran angka 0';
-                
+                if (empty($nik)) {
+                    $alasan = 'kosong';
+                } elseif (strlen($nik) < 16) {
+                    $alasan = 'kurang dari 16 digit';
+                } elseif (str_ends_with($nik, '0')) {
+                    $alasan = 'berakhiran angka 0';
+                }
+
                 throw ValidationException::withMessages([
                     'file' => "Upload dibatalkan! NIK {$alasan} pada pasien '{$nama}' di baris {$rowNumber} (NIK: {$nik}). Harap perbaiki NIK di file Excel.",
                 ]);
@@ -60,17 +64,11 @@ class PrbImport implements ToArray, WithHeadingRow
      */
     private function processRow(array $row, int $rowNumber): void
     {
-        // === Filter Keluhan (hanya ambil jika mengandung "ambil obat prb") ===
-        $keluhan = strtolower(trim($row['keluhan'] ?? ''));
-        if (!str_contains($keluhan, 'ambil obat prb')) {
+        // === Filter PRB (Cari kata "prb" di seluruh kolom untuk keamanan ekstra) ===
+        $rowString = strtolower(implode(' ', array_filter(array_values($row))));
+        if (! str_contains($rowString, 'prb')) {
             $this->summary['riwayat_skip']++;
-            return;
-        }
 
-        // === Filter Poli (LANSIA / UMUM) ===
-        $poli = strtoupper(trim($row['poli'] ?? $row['klinik'] ?? ''));
-        if (!in_array($poli, ['LANSIA', 'UMUM'])) {
-            $this->summary['riwayat_skip']++;
             return;
         }
 
@@ -81,6 +79,7 @@ class PrbImport implements ToArray, WithHeadingRow
         if (! $tanggalPeriksa) {
             $this->summary['baris_gagal']++;
             $this->summary['errors'][] = "Baris {$rowNumber}: Format tanggal tidak valid '{$row['tanggal']}'.";
+
             return;
         }
 
@@ -91,7 +90,7 @@ class PrbImport implements ToArray, WithHeadingRow
         $pasien = Pasien::where('nik', $nik)->first();
 
         $noRm = trim($row['no_index'] ?? '');
-        
+
         $dataPasien = [
             'no_rm' => $noRm,
             'nama' => trim($row['nama'] ?? ''),
@@ -100,7 +99,7 @@ class PrbImport implements ToArray, WithHeadingRow
             'jenis_kelamin' => trim($row['jk'] ?? ''),
             'pendidikan' => trim($row['pendidikan'] ?? ''),
             'pekerjaan' => trim($row['pekerjaan'] ?? ''),
-            'no_hp' => preg_replace('/[^0-9]/', '', $row['hp'] ?? ''),
+            'no_hp' => $this->normalizePhoneNumber($row['hp'] ?? ''),
             'no_bpjs' => preg_replace('/[^0-9]/', '', $row['no_kartu'] ?? ''),
             'tipe_pasien' => 'PRB',
         ];
@@ -124,7 +123,7 @@ class PrbImport implements ToArray, WithHeadingRow
             ['pasien_id' => $pasien->id],
             [
                 'status_keaktifan' => 'aktif',
-                'tanggal_terdaftar' => $tanggalPeriksa // gunakan tanggal visit sebagai tgl daftar jika baru
+                'tanggal_terdaftar' => $tanggalPeriksa, // gunakan tanggal visit sebagai tgl daftar jika baru
             ]
         );
 
@@ -136,6 +135,7 @@ class PrbImport implements ToArray, WithHeadingRow
 
         if ($existingRiwayat) {
             $this->summary['riwayat_skip']++;
+
             return;
         }
 
@@ -152,18 +152,48 @@ class PrbImport implements ToArray, WithHeadingRow
 
     private function parseDate(mixed $value): ?string
     {
-        if (empty($value)) return null;
+        if (empty($value)) {
+            return null;
+        }
         $value = trim((string) $value);
 
         if (preg_match('/^\d{2}-\d{2}-\d{4}$/', $value)) {
-            try { return Carbon::createFromFormat('d-m-Y', $value)->toDateString(); } catch (\Throwable) { return null; }
+            try {
+                return Carbon::createFromFormat('d-m-Y', $value)->toDateString();
+            } catch (\Throwable) {
+                return null;
+            }
         }
         if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
-            try { return Carbon::parse($value)->toDateString(); } catch (\Throwable) { return null; }
+            try {
+                return Carbon::parse($value)->toDateString();
+            } catch (\Throwable) {
+                return null;
+            }
         }
         if (is_numeric($value)) {
-            try { return Carbon::createFromTimestamp(($value - 25569) * 86400)->toDateString(); } catch (\Throwable) { return null; }
+            try {
+                return Carbon::createFromTimestamp(($value - 25569) * 86400)->toDateString();
+            } catch (\Throwable) {
+                return null;
+            }
         }
+
         return null;
+    }
+
+    private function normalizePhoneNumber(mixed $phone): ?string
+    {
+        if (empty($phone)) {
+            return null;
+        }
+
+        $phone = preg_replace('/[\s\-\(\)\+]+/', '', (string) $phone);
+
+        if (str_starts_with($phone, '0')) {
+            $phone = '62'.substr($phone, 1);
+        }
+
+        return $phone ?: null;
     }
 }
