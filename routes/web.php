@@ -117,6 +117,12 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
     Route::get('/import/prb', [ImportController::class, 'showPrb'])->name('admin.import.prb');
     Route::post('/import/prb', [ImportController::class, 'importPrb'])->name('admin.import.prb.process');
 
+    Route::get('/import/obat-prb', [ImportController::class, 'showObatPrb'])->name('admin.import.obat-prb');
+    Route::post('/import/obat-prb', [ImportController::class, 'importObatPrb'])->name('admin.import.obat-prb.process');
+
+    Route::get('/import/obat-umum', [ImportController::class, 'showObatUmum'])->name('admin.import.obat-umum');
+    Route::post('/import/obat-umum', [ImportController::class, 'importObatUmum'])->name('admin.import.obat-umum.process');
+
     // Program Rujuk Balik (PRB)
     Route::prefix('prb')->group(function () {
         Route::get('/', [PasienPrbController::class, 'index'])->name('admin.prb.index');

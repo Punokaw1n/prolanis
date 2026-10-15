@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LogAktivitas;
 use App\Models\Pasien;
 use App\Models\Persetujuan;
 use App\Models\TemplatePersetujuan;
@@ -79,13 +80,16 @@ class PersetujuanController extends Controller
             $text = str_replace('{nik}', $pasien->nik ?? '-', $text);
             $text = str_replace('{no_rm}', $pasien->no_rm ?? '-', $text);
             $text = str_replace('{tanggal_lahir}', $pasien->tanggal_lahir ? Carbon::parse($pasien->tanggal_lahir)->translatedFormat('d F Y') : '-', $text);
-            
+
             // Format jenis kelamin
             $jk = '-';
-            if ($pasien->jenis_kelamin === 'L') $jk = 'Laki-laki';
-            elseif ($pasien->jenis_kelamin === 'P') $jk = 'Perempuan';
+            if ($pasien->jenis_kelamin === 'L') {
+                $jk = 'Laki-laki';
+            } elseif ($pasien->jenis_kelamin === 'P') {
+                $jk = 'Perempuan';
+            }
             $text = str_replace('{jenis_kelamin}', $jk, $text);
-            
+
             $text = str_replace('{alamat}', $pasien->alamat ?? '-', $text);
             $text = str_replace('{tanggal}', now()->translatedFormat('d F Y'), $text);
 
@@ -109,7 +113,7 @@ class PersetujuanController extends Controller
             'kedaluwarsa_pada' => now()->addHour(),
         ]);
 
-        \App\Models\LogAktivitas::catat('TERBIT_CONSENT', "Menerbitkan Informed Consent untuk pasien: {$pasien->nama}");
+        LogAktivitas::catat('TERBIT_CONSENT', "Menerbitkan Informed Consent untuk pasien: {$pasien->nama}");
 
         return redirect()->route('admin.persetujuan.show', $persetujuan->id)
             ->with('success', 'Informed Consent berhasil diterbitkan. Silakan minta pasien untuk memindai QR Code.');
@@ -157,6 +161,7 @@ class PersetujuanController extends Controller
     public function checkStatus(int $id)
     {
         $persetujuan = Persetujuan::findOrFail($id);
+
         return response()->json(['status' => $persetujuan->status]);
     }
 }

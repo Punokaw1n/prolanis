@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class LogAktivitas extends Model
 {
     protected $table = 'log_aktivitas';
+
     protected $guarded = ['id'];
 
     public function user()
@@ -23,7 +24,7 @@ class LogAktivitas extends Model
             'user_id' => auth()->check() ? auth()->id() : null,
             'aksi' => $aksi,
             'deskripsi' => $deskripsi,
-            'ip_address' => request()->ip()
+            'ip_address' => request()->ip(),
         ]);
     }
 }

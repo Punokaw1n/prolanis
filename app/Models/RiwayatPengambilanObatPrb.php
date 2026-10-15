@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class RiwayatPengambilanObatPrb extends Model
 {
     protected $guarded = ['id'];
-    
+
     // cast dates
     protected $casts = [
         'tanggal_jatuh_tempo' => 'date',
@@ -21,13 +21,14 @@ class RiwayatPengambilanObatPrb extends Model
         $diambil = $this->tanggal_diambil;
 
         if ($diambil) {
-            if (!$jatuhTempo) {
+            if (! $jatuhTempo) {
                 return ['label' => 'Sudah Ambil (Import/Tanpa Jadwal)', 'color' => 'bg-blue-100 text-blue-800'];
             }
             if ($diambil->lte($jatuhTempo)) {
                 return ['label' => 'Sudah Ambil (Tepat Waktu)', 'color' => 'bg-green-100 text-green-800'];
             } else {
                 $selisih = abs($diambil->diffInDays($jatuhTempo));
+
                 return ['label' => "Sudah Ambil (Terlambat {$selisih} Hari)", 'color' => 'bg-amber-100 text-amber-800'];
             }
         } else {
@@ -46,7 +47,7 @@ class RiwayatPengambilanObatPrb extends Model
 
         if ($diambil && $jatuhTempo) {
             return $diambil->diffInDays($jatuhTempo, false) * -1; // positive means late
-        } elseif (!$diambil && $jatuhTempo) {
+        } elseif (! $diambil && $jatuhTempo) {
             return now()->startOfDay()->diffInDays($jatuhTempo, false) * -1;
         }
 

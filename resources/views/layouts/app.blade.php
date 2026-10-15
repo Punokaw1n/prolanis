@@ -122,7 +122,7 @@
                 </ul>
                 
                 @php
-                    $isPrbActive = request()->routeIs('admin.prb.*') || request()->routeIs('admin.import.prb*');
+                    $isPrbActive = request()->routeIs('admin.prb.*') || request()->routeIs('admin.import.prb*') || request()->routeIs('admin.import.obat-*');
                     $isConsentActive = request()->routeIs('admin.persetujuan.*') || request()->routeIs('admin.template.*');
                 @endphp
                 
@@ -156,6 +156,18 @@
                                     <a href="{{ route('admin.import.prb') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.import.prb') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
                                         <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                                         Import Data PRB
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.import.obat-prb') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.import.obat-prb') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
+                                        <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+                                        Import Obat PRB
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.import.obat-umum') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.import.obat-umum') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
+                                        <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-4.24 4.24a3 3 0 0 0 0 4.24l.39.39"/></svg>
+                                        Import Obat Umum (SIMBOK)
                                     </a>
                                 </li>
                             </ul>
