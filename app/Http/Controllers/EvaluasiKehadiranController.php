@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Pasien;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -20,13 +22,14 @@ class EvaluasiKehadiranController extends Controller
         $page = $request->get('page');
 
         // Jika tidak ada parameter pencarian sama sekali, anggap ini loading awal
-        $isInitialLoad = !$search && !$statusFilter && !$tanggal && !$konfirmasiFilter && !$page && !$request->ajax();
+        $isInitialLoad = ! $search && ! $statusFilter && ! $tanggal && ! $konfirmasiFilter && ! $page && ! $request->ajax();
 
         if ($isInitialLoad) {
-            $paginatedPasiens = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedPasiens = new LengthAwarePaginator(
                 collect([]), 0, 15, 1,
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+                ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
             );
+
             return view('admin.evaluasi.index', [
                 'pasiens' => $paginatedPasiens,
                 'search' => $search,
@@ -69,10 +72,10 @@ class EvaluasiKehadiranController extends Controller
         $pasiens = $query->get()->map(function ($pasien) use ($targetDate) {
             $kunjunganTerakhir = $pasien->pemeriksaans->first();
             $jadwalPasien = $pasien->jadwalLayanan->first();
-            
+
             $pasien->konfirmasi = $jadwalPasien ? $jadwalPasien->pivot->konfirmasi_kehadiran : 'Menunggu';
             $pasien->jadwal_terkait_id = $jadwalPasien ? $jadwalPasien->id : null;
-            
+
             $pasien->tanggal_kunjungan_terakhir = $kunjunganTerakhir ? Carbon::parse($kunjunganTerakhir->tanggal_periksa) : null;
             $pasien->status_kehadiran = 'Pasif'; // Default jika belum pernah periksa
             $pasien->bulan_terlewat = null;
@@ -119,14 +122,14 @@ class EvaluasiKehadiranController extends Controller
         $pasiens = $pasiens->sortByDesc('hari_terlewat');
 
         // Manual Pagination karena collection
-        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+        $page = Paginator::resolveCurrentPage() ?: 1;
         $perPage = 15;
-        $paginatedPasiens = new \Illuminate\Pagination\LengthAwarePaginator(
+        $paginatedPasiens = new LengthAwarePaginator(
             $pasiens->forPage($page, $perPage),
             $pasiens->count(),
             $perPage,
             $page,
-            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+            ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
         );
 
         $isInitialLoad = false;
@@ -145,12 +148,12 @@ class EvaluasiKehadiranController extends Controller
     {
         $request->validate([
             'jadwal_id' => 'required|exists:jadwal_layanan,id',
-            'status' => 'required|string|in:Hadir,Tidak Hadir,Menunggu'
+            'status' => 'required|string|in:Hadir,Tidak Hadir,Menunggu',
         ]);
 
         $pasien = Pasien::findOrFail($pasienId);
         $pasien->jadwalLayanan()->updateExistingPivot($request->jadwal_id, [
-            'konfirmasi_kehadiran' => $request->status
+            'konfirmasi_kehadiran' => $request->status,
         ]);
 
         return response()->json(['success' => true]);
@@ -158,17 +161,17 @@ class EvaluasiKehadiranController extends Controller
 
     private function exportExcel($pasiens, $tanggal)
     {
-        $fileName = 'Absensi_Prolanis_' . ($tanggal ? $tanggal : 'Semua') . '.xlsx';
+        $fileName = 'Absensi_Prolanis_'.($tanggal ? $tanggal : 'Semua').'.xlsx';
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
-        
+
         // Set Header
         $columns = ['No', 'Nama', 'NIK', 'Alamat', 'Tanggal', 'Tanda Tangan'];
         $colIndex = 'A';
         foreach ($columns as $header) {
-            $sheet->setCellValue($colIndex . '1', $header);
-            $sheet->getStyle($colIndex . '1')->getFont()->setBold(true);
+            $sheet->setCellValue($colIndex.'1', $header);
+            $sheet->getStyle($colIndex.'1')->getFont()->setBold(true);
             $colIndex++;
         }
 
@@ -178,18 +181,18 @@ class EvaluasiKehadiranController extends Controller
         foreach ($pasiens as $pasien) {
             $jadwal = $pasien->jadwalLayanan->first();
             $tglJadwal = $jadwal ? Carbon::parse($jadwal->tanggal)->translatedFormat('d F Y') : '-';
-            
-            $sheet->setCellValue('A' . $row, $i++);
-            $sheet->setCellValue('B' . $row, $pasien->nama);
+
+            $sheet->setCellValue('A'.$row, $i++);
+            $sheet->setCellValue('B'.$row, $pasien->nama);
             // Prefix with ' to ensure NIK is treated as text, avoiding scientific notation
-            $sheet->setCellValue('C' . $row, "'" . $pasien->nik);
-            $sheet->setCellValue('D' . $row, $pasien->alamat ?? '-');
-            $sheet->setCellValue('E' . $row, $tglJadwal);
-            
+            $sheet->setCellValue('C'.$row, "'".$pasien->nik);
+            $sheet->setCellValue('D'.$row, $pasien->alamat ?? '-');
+            $sheet->setCellValue('E'.$row, $tglJadwal);
+
             // Tanda Tangan is empty, we just need space
             // Set row height for signing
             $sheet->getRowDimension($row)->setRowHeight(35);
-            
+
             $row++;
         }
 
@@ -197,18 +200,18 @@ class EvaluasiKehadiranController extends Controller
         foreach (range('A', 'E') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-        
+
         // Manually set a wide column for Tanda Tangan (Column F)
         $sheet->getColumnDimension('F')->setWidth(25);
 
         // Stream the file back
-        $response = new StreamedResponse(function() use ($spreadsheet) {
+        $response = new StreamedResponse(function () use ($spreadsheet) {
             $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
         });
 
         $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        $response->headers->set('Content-Disposition', 'attachment;filename="' . $fileName . '"');
+        $response->headers->set('Content-Disposition', 'attachment;filename="'.$fileName.'"');
         $response->headers->set('Cache-Control', 'max-age=0');
 
         return $response;

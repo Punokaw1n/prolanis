@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('alamat')->nullable()->after('tanggal_lahir');
             $table->string('no_hp')->nullable()->after('alamat');
             $table->string('jabatan')->nullable()->after('no_hp'); // Dokter Umum, Perawat, dll
-            
+
             // Karena login pakai NIK/NIP, email bisa jadi nullable
             $table->string('email')->nullable()->change();
         });

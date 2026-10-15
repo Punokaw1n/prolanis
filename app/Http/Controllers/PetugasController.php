@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LogAktivitas;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
 
 class PetugasController extends Controller
 {
@@ -15,10 +16,10 @@ class PetugasController extends Controller
 
         if ($request->has('q')) {
             $search = $request->q;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
-                  ->orWhere('nik', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%");
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhere('nip', 'like', "%{$search}%");
             });
         }
 
@@ -50,7 +51,7 @@ class PetugasController extends Controller
             'nik.required' => 'NIK wajib diisi.',
             'nip.required' => 'NIP wajib diisi.',
             'nama.required' => 'Nama lengkap wajib diisi.',
-            'no_hp.required' => 'Nomor HP wajib diisi.'
+            'no_hp.required' => 'Nomor HP wajib diisi.',
         ]);
 
         // Generate password from tanggal_lahir (DDMMYYYY)
@@ -75,6 +76,7 @@ class PetugasController extends Controller
     public function edit(User $petuga)
     {
         $petugas = $petuga; // Because parameter in route is 'petuga' when resource is 'petugas'
+
         return view('admin.petugas.edit', compact('petugas'));
     }
 
@@ -83,8 +85,8 @@ class PetugasController extends Controller
         $petugas = $petuga;
         $request->validate([
             'nama' => 'required|string|max:255',
-            'nik' => 'required|numeric|digits:16|unique:pengguna,nik,' . $petugas->id,
-            'nip' => 'required|numeric|unique:pengguna,nip,' . $petugas->id,
+            'nik' => 'required|numeric|digits:16|unique:pengguna,nik,'.$petugas->id,
+            'nip' => 'required|numeric|unique:pengguna,nip,'.$petugas->id,
             'tanggal_lahir' => 'required|date',
             'alamat' => 'nullable|string',
             'no_hp' => 'required|string|max:255',
@@ -97,14 +99,14 @@ class PetugasController extends Controller
             'nik.required' => 'NIK wajib diisi.',
             'nip.required' => 'NIP wajib diisi.',
             'nama.required' => 'Nama lengkap wajib diisi.',
-            'no_hp.required' => 'Nomor HP wajib diisi.'
+            'no_hp.required' => 'Nomor HP wajib diisi.',
         ]);
 
         $data = $request->except(['_token', '_method']);
-        
-        // If tanggal_lahir changes, we DO NOT automatically change the password unless requested. 
+
+        // If tanggal_lahir changes, we DO NOT automatically change the password unless requested.
         // But for simplicity in this clinic system, we can leave the old password.
-        
+
         $petugas->update($data);
 
         return redirect()->route('admin.petugas.index')->with('success', 'Data petugas berhasil diperbarui.');
@@ -112,11 +114,11 @@ class PetugasController extends Controller
 
     public function toggleStatus(User $petuga)
     {
-        $petuga->is_active = !$petuga->is_active;
+        $petuga->is_active = ! $petuga->is_active;
         $petuga->save();
 
         $statusStr = $petuga->is_active ? 'diaktifkan' : 'dinonaktifkan';
-        \App\Models\LogAktivitas::catat('UBAH_STATUS_PETUGAS', "Status petugas {$petuga->nama} {$statusStr}.");
+        LogAktivitas::catat('UBAH_STATUS_PETUGAS', "Status petugas {$petuga->nama} {$statusStr}.");
 
         return redirect()->route('admin.petugas.index')->with('success', "Status petugas berhasil {$statusStr}.");
     }

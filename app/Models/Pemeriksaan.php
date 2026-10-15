@@ -43,7 +43,7 @@ class Pemeriksaan extends Model
 
         $tinggiMeter = $this->tinggi_badan / 100;
         $imt = $this->berat_badan / ($tinggiMeter * $tinggiMeter);
-        
+
         return round($imt, 1);
     }
 
@@ -54,7 +54,7 @@ class Pemeriksaan extends Model
     {
         $imt = $this->nilai_imt;
 
-        if (!$imt) {
+        if (! $imt) {
             return ['label' => 'Belum Diukur', 'color' => 'bg-gray-100 text-gray-800'];
         }
 

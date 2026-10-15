@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MasterObat;
 use App\Models\Pasien;
 use App\Models\PasienPrb;
 use App\Models\RiwayatPengambilanObatPrb;
@@ -159,8 +160,10 @@ class PasienPrbController extends Controller
     public function createRiwayat($id)
     {
         $prb = PasienPrb::with('pasien')->findOrFail($id);
+        $masterObatPrb = MasterObat::prb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
+        $masterObatNonPrb = MasterObat::nonPrb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
 
-        return view('admin.prb.riwayat_create', compact('prb'));
+        return view('admin.prb.riwayat_create', compact('prb', 'masterObatPrb', 'masterObatNonPrb'));
     }
 
     public function storeRiwayat(Request $request, $id)
@@ -226,8 +229,10 @@ class PasienPrbController extends Controller
     {
         $riwayat = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien', 'obatPrb'])->findOrFail($riwayat_id);
         $prb = $riwayat->pasienPrb;
+        $masterObatPrb = MasterObat::prb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
+        $masterObatNonPrb = MasterObat::nonPrb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
 
-        return view('admin.prb.riwayat_edit', compact('prb', 'riwayat'));
+        return view('admin.prb.riwayat_edit', compact('prb', 'riwayat', 'masterObatPrb', 'masterObatNonPrb'));
     }
 
     public function updateRiwayat(Request $request, $riwayat_id)

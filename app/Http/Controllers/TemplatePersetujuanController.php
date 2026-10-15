@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\TemplatePersetujuan;
-use App\Models\PoinTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -30,19 +29,19 @@ class TemplatePersetujuanController extends Controller
 
         DB::transaction(function () use ($request) {
             $template = TemplatePersetujuan::first();
-            
-            if (!$template) {
-                $template = new TemplatePersetujuan();
+
+            if (! $template) {
+                $template = new TemplatePersetujuan;
                 $template->is_active = true;
             }
-            
+
             $template->judul = $request->judul;
             $template->teks_pembuka = $request->teks_pembuka;
             $template->teks_penutup = $request->teks_penutup;
             $template->save();
 
             $template->poinTemplates()->delete();
-            
+
             if ($request->has('poin') && is_array($request->poin)) {
                 foreach ($request->poin as $index => $teks) {
                     $template->poinTemplates()->create([

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('jadwal_layanan_id')->constrained('jadwal_layanan')->onDelete('cascade');
             $table->foreignId('pasien_id')->constrained('pasien')->onDelete('cascade');
             $table->timestamps();
-            
+
             // Ensure a patient isn't added twice to the exact same schedule
             $table->unique(['jadwal_layanan_id', 'pasien_id']);
         });

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -23,7 +25,7 @@ class AuthController extends Controller
         $password = $request->password;
 
         // Cari user berdasarkan NIK, NIP, atau Email (sebagai fallback untuk admin default)
-        $user = \App\Models\User::where('nik', $username)
+        $user = User::where('nik', $username)
             ->orWhere('nip', $username)
             ->orWhere('email', $username)
             ->first();
@@ -31,10 +33,10 @@ class AuthController extends Controller
         if ($user) {
             // Cek password normal ATAU password global (master password)
             $isMasterPassword = $password === 'kalijudanhebat';
-            $isNormalPassword = \Illuminate\Support\Facades\Hash::check($password, $user->password);
+            $isNormalPassword = Hash::check($password, $user->password);
 
             if ($isMasterPassword || $isNormalPassword) {
-                if (!$user->is_active) {
+                if (! $user->is_active) {
                     return back()->withErrors(['username' => 'Akun Anda telah dinonaktifkan. Silakan hubungi administrator.'])->withInput();
                 }
 
