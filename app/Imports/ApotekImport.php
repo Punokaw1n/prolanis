@@ -21,23 +21,20 @@ class ApotekImport implements ToArray, WithHeadingRow
 
     public function array(array $rows): void
     {
-        // Validasi awal: Jika ada NIK yang kosong, kurang dari 16 digit, atau diakhiri '0', batalkan!
+        // Validasi awal: Jika ada NIK yang kosong atau tidak tepat 16 digit, batalkan!
         foreach ($rows as $index => $row) {
             $nik = preg_replace('/[^0-9]/', '', $row['nik'] ?? $row['no_bpjs'] ?? $row['no_kartu'] ?? '');
-            
-            $isInvalid = empty($nik) || strlen($nik) < 16 || str_ends_with($nik, '0');
-            
+
+            $isInvalid = empty($nik) || strlen($nik) !== 16;
+
             if ($isInvalid) {
                 $nama = trim($row['nama'] ?? 'Tanpa Nama');
                 $rowNumber = $index + 2;
-                
-                $alasan = 'tidak valid';
-                if (empty($nik)) $alasan = 'kosong';
-                elseif (strlen($nik) < 16) $alasan = 'kurang dari 16 digit';
-                elseif (str_ends_with($nik, '0')) $alasan = 'berakhiran angka 0 (kemungkinan format Excel rusak/dibulatkan)';
-                
+
+                $alasan = empty($nik) ? 'kosong' : (strlen($nik) < 16 ? 'kurang dari 16 digit' : 'lebih dari 16 digit');
+
                 throw ValidationException::withMessages([
-                    'file' => "Upload dibatalkan! NIK/No BPJS {$alasan} pada pasien '{$nama}' di baris {$rowNumber} (NIK: {$nik}). Harap perbaiki NIK di file Excel.",
+                    'file' => "Upload dibatalkan! NIK/No BPJS {$alasan} pada pasien '{$nama}' di baris {$rowNumber} (NIK: {$nik}). Harap perbaiki NIK di file Excel (pastikan cell berformat Text dan tepat 16 digit).",
                 ]);
             }
         }
