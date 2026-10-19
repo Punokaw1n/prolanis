@@ -149,7 +149,7 @@ class PasienPrbController extends Controller
 
     public function show($id)
     {
-        $prb = PasienPrb::with(['pasien', 'riwayatPengambilan.obatPrb'])->findOrFail($id);
+        $prb = PasienPrb::with(['pasien', 'riwayatPengambilan.obatPrb', 'riwayatPengambilan.pencatat'])->findOrFail($id);
 
         // Sorting history desc
         $riwayat = $prb->riwayatPengambilan->sortByDesc('tanggal_jatuh_tempo');
@@ -163,7 +163,13 @@ class PasienPrbController extends Controller
         $masterObatPrb = MasterObat::prb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
         $masterObatNonPrb = MasterObat::nonPrb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
 
-        return view('admin.prb.riwayat_create', compact('prb', 'masterObatPrb', 'masterObatNonPrb'));
+        $lastRiwayat = $prb->riwayatPengambilan()
+            ->whereHas('obatPrb')
+            ->orderByDesc('tanggal_jatuh_tempo')
+            ->with('obatPrb')
+            ->first();
+
+        return view('admin.prb.riwayat_create', compact('prb', 'masterObatPrb', 'masterObatNonPrb', 'lastRiwayat'));
     }
 
     public function storeRiwayat(Request $request, $id)
@@ -173,9 +179,14 @@ class PasienPrbController extends Controller
         $request->validate([
             'tanggal_diambil' => 'required|date',
             'tanggal_jatuh_tempo' => 'required|date',
+            'catatan' => 'nullable|string',
             'obat' => 'nullable|array',
             'obat.*.nama' => 'required_with:obat|string|max:255',
             'obat.*.kategori' => 'required_with:obat|in:prb,non_prb',
+            'obat.*.signa' => 'nullable|string|max:100',
+            'obat.*.jumlah_hari' => 'nullable|integer|min:1',
+            'obat.*.jumlah_obat' => 'nullable|integer|min:1',
+            'obat.*.aturan_minum' => 'nullable|string|max:100',
         ]);
 
         // 1. Cari riwayat yang belum diambil (pending)
@@ -188,6 +199,7 @@ class PasienPrbController extends Controller
             // Update riwayat yang sudah dijadwalkan sebelumnya
             $pendingRiwayat->update([
                 'tanggal_diambil' => $request->tanggal_diambil,
+                'catatan' => $request->catatan,
                 'sumber' => 'manual',
                 'dicatat_oleh' => auth()->id() ?? null,
             ]);
@@ -198,6 +210,7 @@ class PasienPrbController extends Controller
             $riwayatToAttach = $prb->riwayatPengambilan()->create([
                 'tanggal_jatuh_tempo' => $request->tanggal_diambil, // Anggap tepat waktu
                 'tanggal_diambil' => $request->tanggal_diambil,
+                'catatan' => $request->catatan,
                 'sumber' => 'manual',
                 'dicatat_oleh' => auth()->id() ?? null,
             ]);
@@ -206,11 +219,28 @@ class PasienPrbController extends Controller
         // 2. Simpan daftar obat ke riwayat yang baru saja diambil
         if ($request->has('obat') && is_array($request->obat)) {
             foreach ($request->obat as $obatData) {
+                $namaObatClean = trim($obatData['nama']);
                 $riwayatToAttach->obatPrb()->create([
-                    'nama_obat' => $obatData['nama'],
+                    'nama_obat' => $namaObatClean,
                     'kategori' => $obatData['kategori'],
+                    'signa' => $obatData['signa'] ?? '1 x 1',
+                    'jumlah_hari' => $obatData['jumlah_hari'] ?? 30,
+                    'jumlah_obat' => $obatData['jumlah_obat'] ?? 30,
+                    'aturan_minum' => $obatData['aturan_minum'] ?? 'Sesudah Makan',
                     'sumber' => 'manual',
                 ]);
+
+                // Auto-register ke MasterObat jika belum ada
+                MasterObat::firstOrCreate(
+                    [
+                        'nama_obat' => $namaObatClean,
+                        'kategori' => $obatData['kategori'],
+                    ],
+                    [
+                        'sumber' => 'manual',
+                        'is_active' => true,
+                    ]
+                );
             }
         }
 
@@ -232,7 +262,14 @@ class PasienPrbController extends Controller
         $masterObatPrb = MasterObat::prb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
         $masterObatNonPrb = MasterObat::nonPrb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
 
-        return view('admin.prb.riwayat_edit', compact('prb', 'riwayat', 'masterObatPrb', 'masterObatNonPrb'));
+        $lastRiwayat = $prb->riwayatPengambilan()
+            ->where('id', '!=', $riwayat->id)
+            ->whereHas('obatPrb')
+            ->orderByDesc('tanggal_jatuh_tempo')
+            ->with('obatPrb')
+            ->first();
+
+        return view('admin.prb.riwayat_edit', compact('prb', 'riwayat', 'masterObatPrb', 'masterObatNonPrb', 'lastRiwayat'));
     }
 
     public function updateRiwayat(Request $request, $riwayat_id)
@@ -242,14 +279,20 @@ class PasienPrbController extends Controller
         $request->validate([
             'tanggal_jatuh_tempo' => 'required|date',
             'tanggal_diambil' => 'nullable|date',
+            'catatan' => 'nullable|string',
             'obat' => 'nullable|array',
             'obat.*.nama' => 'required_with:obat|string|max:255',
             'obat.*.kategori' => 'required_with:obat|in:prb,non_prb',
+            'obat.*.signa' => 'nullable|string|max:100',
+            'obat.*.jumlah_hari' => 'nullable|integer|min:1',
+            'obat.*.jumlah_obat' => 'nullable|integer|min:1',
+            'obat.*.aturan_minum' => 'nullable|string|max:100',
         ]);
 
         $riwayat->update([
             'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
             'tanggal_diambil' => $request->tanggal_diambil,
+            'catatan' => $request->catatan,
         ]);
 
         // Sync Obat (Delete all and recreate)
@@ -257,11 +300,28 @@ class PasienPrbController extends Controller
 
         if ($request->has('obat') && is_array($request->obat)) {
             foreach ($request->obat as $obatData) {
+                $namaObatClean = trim($obatData['nama']);
                 $riwayat->obatPrb()->create([
-                    'nama_obat' => $obatData['nama'],
+                    'nama_obat' => $namaObatClean,
                     'kategori' => $obatData['kategori'],
+                    'signa' => $obatData['signa'] ?? '1 x 1',
+                    'jumlah_hari' => $obatData['jumlah_hari'] ?? 30,
+                    'jumlah_obat' => $obatData['jumlah_obat'] ?? 30,
+                    'aturan_minum' => $obatData['aturan_minum'] ?? 'Sesudah Makan',
                     'sumber' => 'manual',
                 ]);
+
+                // Auto-register ke MasterObat jika belum ada
+                MasterObat::firstOrCreate(
+                    [
+                        'nama_obat' => $namaObatClean,
+                        'kategori' => $obatData['kategori'],
+                    ],
+                    [
+                        'sumber' => 'manual',
+                        'is_active' => true,
+                    ]
+                );
             }
         }
 
