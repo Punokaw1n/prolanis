@@ -312,9 +312,9 @@
                                     <th scope="col" class="py-3 px-3 text-center w-10">No</th>
                                     <th scope="col" class="py-3 px-3 w-20">Kode</th>
                                     <th scope="col" class="py-3 px-4 min-w-[200px]">Nama Obat</th>
-                                    <th scope="col" class="py-3 px-3 min-w-[200px] w-56 whitespace-nowrap">Signa (Aturan)</th>
+                                    <th scope="col" class="py-3 px-3 text-center min-w-[140px] w-40 whitespace-nowrap">Signa</th>
                                     <th scope="col" class="py-3 px-2 text-center w-16">Hari</th>
-                                    <th scope="col" class="py-3 px-3 text-center w-24">Qty</th>
+                                    <th scope="col" class="py-3 px-3 text-center w-24">Jumlah</th>
                                     <th scope="col" class="py-3 px-3 min-w-[190px] w-52 whitespace-nowrap">Waktu Minum</th>
                                     <th scope="col" class="py-3 px-3 text-center w-12 no-print">#</th>
                                 </tr>
@@ -353,75 +353,22 @@
                                             <input type="hidden" :name="'obat[' + index + '][kategori]'" :value="obat.kategori">
                                         </td>
 
-                                        <!-- Signa (Aturan Pakai) with Custom Clean Dropdown -->
-                                        <td class="py-2.5 px-3 align-middle min-w-[170px]">
-                                            <div class="relative" x-data="{ openSigna: false }" @click.outside="openSigna = false">
-                                                <div class="relative flex items-center">
-                                                    <input type="text" 
-                                                        x-model="obat.signa" 
-                                                        @focus="openSigna = true"
-                                                        @input="hitungOtomatisJumlah(obat)"
-                                                        @change="hitungOtomatisJumlah(obat)"
-                                                        :name="'obat[' + index + '][signa]'"
-                                                        placeholder="misal: 1 x 1"
-                                                        autocomplete="off"
-                                                        class="py-1 px-2 pe-7 block w-full border border-gray-300 rounded-md text-xs font-mono font-bold text-gray-800 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-2xs">
-                                                    <button type="button" 
-                                                        @click="openSigna = !openSigna"
-                                                        tabindex="-1"
-                                                        class="absolute end-1 text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
-                                                        title="Pilih aturan pakai">
-                                                        <svg class="size-3.5 transition-transform" :class="openSigna ? 'rotate-180 text-blue-600' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-
-                                                <!-- Keterangan Signa yang Terang dan Jelas -->
-                                                <div class="mt-1 min-h-[16px]">
-                                                    <template x-if="getSignaDesc(obat.signa)">
-                                                        <div class="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50/80 px-1.5 py-0.5 rounded border border-blue-200/60 leading-tight">
-                                                            <svg class="size-3 text-blue-500 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-                                                            </svg>
-                                                            <span x-text="getSignaDesc(obat.signa)"></span>
-                                                        </div>
-                                                    </template>
-                                                    <template x-if="!getSignaDesc(obat.signa) && !obat.signa">
-                                                        <span class="text-[10px] text-gray-400 italic">Pilih atau ketik aturan</span>
-                                                    </template>
-                                                </div>
-
-                                                <!-- Popover Pilihan Signa Cepat -->
-                                                <div x-show="openSigna" 
-                                                    x-transition:enter="transition ease-out duration-100"
-                                                    x-transition:enter-start="opacity-0 translate-y-1 scale-95"
-                                                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                                                    x-transition:leave="transition ease-in duration-75"
-                                                    x-transition:leave-start="opacity-100 scale-100"
-                                                    x-transition:leave-end="opacity-0 translate-y-1 scale-95"
-                                                    style="display: none; position: absolute; top: 100%; left: 0; z-index: 60; width: 290px; max-height: 380px; overflow-y: auto;"
-                                                    class="mt-1 bg-white border border-gray-200 rounded-xl shadow-xl p-1.5 space-y-0.5 text-xs">
-                                                    <div class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100 mb-1 flex items-center justify-between">
-                                                        <span>Pilihan Signa</span>
-                                                        <span class="text-[9px] font-normal text-gray-400">klik untuk pilih</span>
-                                                    </div>
-                                                    <template x-for="p in signaPresets" :key="p.val">
-                                                        <button type="button" 
-                                                            @click="obat.signa = p.val; hitungOtomatisJumlah(obat); openSigna = false"
-                                                            class="w-full text-start px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors group"
-                                                            :class="obat.signa === p.val ? 'bg-blue-50 text-blue-700 font-bold' : 'hover:bg-gray-50 text-gray-700 font-medium'">
-                                                            <div>
-                                                                <span class="font-bold text-gray-800 group-hover:text-blue-700 block text-xs" x-text="p.val"></span>
-                                                                <span class="text-[10px] text-gray-500 group-hover:text-blue-600 block" x-text="p.desc"></span>
-                                                            </div>
-                                                            <svg x-show="obat.signa === p.val" class="size-3.5 text-blue-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                                                            </svg>
-                                                        </button>
-                                                    </template>
-                                                </div>
+                                        <!-- Signa (SIMPUS-style: signa1 x signa2) -->
+                                        <td class="py-2.5 px-2 align-middle text-center">
+                                            <div class="inline-flex items-center justify-center gap-1">
+                                                <input type="number" step="any" min="0"
+                                                    x-model="obat.signa1"
+                                                    @input="hitungOtomatisJumlah(obat)"
+                                                    class="py-1 px-1 text-center w-12 border border-gray-300 rounded-md text-xs font-mono font-bold text-gray-800 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-2xs"
+                                                    placeholder="1">
+                                                <span class="text-xs font-bold text-gray-400 select-none">×</span>
+                                                <input type="number" step="any" min="0"
+                                                    x-model="obat.signa2"
+                                                    @input="hitungOtomatisJumlah(obat)"
+                                                    class="py-1 px-1 text-center w-12 border border-gray-300 rounded-md text-xs font-mono font-bold text-gray-800 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-2xs"
+                                                    placeholder="1">
                                             </div>
+                                            <input type="hidden" :name="'obat[' + index + '][signa]'" :value="(obat.signa1 || 1) + ' x ' + (obat.signa2 || 1)">
                                         </td>
 
                                         <!-- Hari -->
@@ -455,17 +402,20 @@
                                                 <!-- Trigger Button -->
                                                 <button type="button" 
                                                     @click="openAturan = !openAturan" 
-                                                    class="py-1 px-2.5 w-full bg-white border border-gray-300 hover:border-blue-400 rounded-md text-xs font-semibold text-gray-800 flex items-center justify-between shadow-2xs transition-colors">
+                                                    class="py-1 px-2.5 w-full bg-white border border-gray-300 hover:border-blue-400 rounded-md text-xs font-semibold flex items-center justify-between shadow-2xs transition-colors"
+                                                    :class="obat.aturan_minum ? 'text-gray-800' : 'text-gray-400'">
                                                     <span class="truncate flex items-center gap-1.5">
-                                                        <span class="size-2 rounded-full shrink-0" :class="{
-                                                            'bg-emerald-500': obat.aturan_minum === 'Sesudah Makan',
-                                                            'bg-amber-500': obat.aturan_minum === 'Sebelum Makan',
-                                                            'bg-blue-500': obat.aturan_minum === 'Bersama Makan',
-                                                            'bg-purple-500': obat.aturan_minum === 'Malam Hari',
-                                                            'bg-sky-500': obat.aturan_minum === 'Pagi Hari',
-                                                            'bg-rose-500': obat.aturan_minum === 'Bila Perlu (PRN)'
-                                                        }"></span>
-                                                        <span x-text="obat.aturan_minum || 'Sesudah Makan'"></span>
+                                                        <template x-if="obat.aturan_minum">
+                                                            <span class="size-2 rounded-full shrink-0" :class="{
+                                                                'bg-emerald-500': obat.aturan_minum === 'Sesudah Makan',
+                                                                'bg-amber-500': obat.aturan_minum === 'Sebelum Makan',
+                                                                'bg-blue-500': obat.aturan_minum === 'Bersama Makan',
+                                                                'bg-purple-500': obat.aturan_minum === 'Malam Hari',
+                                                                'bg-sky-500': obat.aturan_minum === 'Pagi Hari',
+                                                                'bg-rose-500': obat.aturan_minum === 'Bila Perlu (PRN)'
+                                                            }"></span>
+                                                        </template>
+                                                        <span x-text="obat.aturan_minum || 'Pilih waktu minum...'"></span>
                                                     </span>
                                                     <svg class="size-3.5 text-gray-400 transition-transform shrink-0 ms-1" :class="openAturan ? 'rotate-180 text-blue-600' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -1397,7 +1347,8 @@ function riwayatForm() {
                 id: Date.now() + Math.random(),
                 nama: item.nama,
                 kategori: item.kategori,
-                signa: item.signa || '1 x 1',
+                signa1: item.signa1 || 1,
+                signa2: item.signa2 || 1,
                 jumlah_hari: this.defaultHari || item.jumlah_hari || 30,
                 jumlah_obat: item.jumlah_obat || 30,
                 aturan_minum: item.aturan_minum || 'Sesudah Makan',
@@ -1488,11 +1439,29 @@ function riwayatForm() {
             return 1;
         },
 
+        parseSignaToParts(signaStr) {
+            if (!signaStr) return { s1: 1, s2: 1 };
+            const s = String(signaStr).trim();
+            const match = s.match(/^(\d+(?:[.,]\d+)?)\s*(?:x|\*)\s*(\d+(?:[.,]\d+)?)$/i);
+            if (match) {
+                return {
+                    s1: parseFloat(match[1].replace(',', '.')) || 1,
+                    s2: parseFloat(match[2].replace(',', '.')) || 1,
+                };
+            }
+            const single = parseFloat(s.replace(',', '.'));
+            if (!isNaN(single) && single > 0) {
+                return { s1: single, s2: 1 };
+            }
+            return { s1: 1, s2: 1 };
+        },
+
         hitungOtomatisJumlah(obat) {
-            const dailyDose = this.parseSigna(obat.signa);
+            const s1 = parseFloat(obat.signa1) || 0;
+            const s2 = parseFloat(obat.signa2) || 0;
             const days = parseInt(obat.jumlah_hari) || 0;
-            if (dailyDose > 0 && days > 0) {
-                obat.jumlah_obat = Math.ceil(dailyDose * days);
+            if (s1 > 0 && s2 > 0 && days > 0) {
+                obat.jumlah_obat = Math.ceil(s1 * s2 * days);
             }
         },
 
@@ -1551,18 +1520,19 @@ function riwayatForm() {
             const isNew = !targetMaster.some(m => m.toLowerCase() === obatNama.toLowerCase());
 
             const hari = this.defaultHari;
-            const defaultSigna = '1 x 1';
-            const dailyDose = this.parseSigna(defaultSigna);
-            const jumlah = Math.ceil(dailyDose * hari);
+            const defaultS1 = 1;
+            const defaultS2 = 1;
+            const jumlah = Math.ceil(defaultS1 * defaultS2 * hari);
 
             this.obatList.push({
                 id: Date.now() + Math.random(),
                 nama: obatNama,
                 kategori: this.selectedKategori,
-                signa: defaultSigna,
+                signa1: defaultS1,
+                signa2: defaultS2,
                 jumlah_hari: hari,
                 jumlah_obat: jumlah,
-                aturan_minum: 'Sesudah Makan',
+                aturan_minum: '',
                 is_new: isNew
             });
 
@@ -1588,6 +1558,19 @@ function riwayatForm() {
 
         kosongkanObat() {
             this.showConfirmKosongkan = true;
+        },
+
+        init() {
+            // Parse signa string dari server menjadi signa1 & signa2
+            this.obatList = this.obatList.map(item => {
+                const parts = this.parseSignaToParts(item.signa || '1 x 1');
+                return { ...item, signa1: parts.s1, signa2: parts.s2 };
+            });
+            // Parse signa dari lastResep juga
+            this.lastResep = this.lastResep.map(item => {
+                const parts = this.parseSignaToParts(item.signa || '1 x 1');
+                return { ...item, signa1: parts.s1, signa2: parts.s2 };
+            });
         }
     }
 }
