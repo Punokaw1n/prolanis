@@ -126,6 +126,8 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
     // Program Rujuk Balik (PRB)
     Route::prefix('prb')->group(function () {
         Route::get('/', [PasienPrbController::class, 'index'])->name('admin.prb.index');
+        Route::get('/register', [PasienPrbController::class, 'register'])->name('admin.prb.register');
+        Route::get('/register/cetak', [PasienPrbController::class, 'cetakRegister'])->name('admin.prb.register.cetak');
         Route::get('/pengingat', [PasienPrbController::class, 'pengingat'])->name('admin.prb.pengingat');
         Route::post('/pengingat/{id}/tandai', [PasienPrbController::class, 'tandaiDiingatkan'])->name('admin.prb.pengingat.tandai');
         Route::get('/create', [PasienPrbController::class, 'create'])->name('admin.prb.create');

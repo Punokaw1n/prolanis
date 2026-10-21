@@ -6,6 +6,7 @@ use App\Models\MasterObat;
 use App\Models\Pasien;
 use App\Models\PasienPrb;
 use App\Models\RiwayatPengambilanObatPrb;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class PasienPrbController extends Controller
@@ -35,6 +36,132 @@ class PasienPrbController extends Controller
             ->withQueryString();
 
         return view('admin.prb.index', compact('pasienPrb', 'search', 'status'));
+    }
+
+    public function register(Request $request)
+    {
+        $mode = $request->get('mode', 'harian'); // 'harian', 'bulan', 'rentang'
+        $tanggal = $request->get('tanggal', now()->toDateString());
+        $bulan = (int) $request->get('bulan', now()->month);
+        $tahun = (int) $request->get('tahun', now()->year);
+        $tanggalMulai = $request->get('tanggal_mulai', now()->startOfMonth()->toDateString());
+        $tanggalAkhir = $request->get('tanggal_akhir', now()->toDateString());
+        $search = $request->get('search');
+
+        $query = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien', 'obatPrb'])
+            ->whereNotNull('tanggal_diambil');
+
+        if ($mode === 'bulan') {
+            $query->whereYear('tanggal_diambil', $tahun)
+                ->whereMonth('tanggal_diambil', $bulan);
+        } elseif ($mode === 'rentang') {
+            if ($tanggalMulai && $tanggalAkhir) {
+                $query->whereBetween('tanggal_diambil', [$tanggalMulai, $tanggalAkhir]);
+            }
+        } else {
+            $query->whereDate('tanggal_diambil', $tanggal);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('pasienPrb.pasien', function ($qp) use ($search) {
+                    $qp->where('nama', 'like', "%{$search}%")
+                        ->orWhere('nik', 'like', "%{$search}%")
+                        ->orWhere('no_bpjs', 'like', "%{$search}%");
+                })->orWhereHas('obatPrb', function ($qo) use ($search) {
+                    $qo->where('nama_obat', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $allMatching = (clone $query)->get();
+        $totalKunjungan = $allMatching->count();
+        $totalPasien = $allMatching->pluck('pasien_prb_id')->unique()->count();
+        $totalButirObat = $allMatching->sum(fn ($r) => $r->obatPrb->sum('jumlah_obat'));
+
+        $riwayatList = $query->orderBy('tanggal_diambil', 'asc')
+            ->orderBy('id', 'asc')
+            ->paginate(25)
+            ->withQueryString();
+
+        $namaBulanIndo = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        if ($mode === 'bulan') {
+            $periodeLabel = 'Bulan '.($namaBulanIndo[$bulan] ?? '').' '.$tahun;
+        } elseif ($mode === 'rentang') {
+            $periodeLabel = Carbon::parse($tanggalMulai)->translatedFormat('d M Y').' s/d '.Carbon::parse($tanggalAkhir)->translatedFormat('d M Y');
+        } else {
+            $periodeLabel = Carbon::parse($tanggal)->translatedFormat('l, d F Y');
+        }
+
+        return view('admin.prb.register', compact(
+            'riwayatList', 'mode', 'tanggal', 'bulan', 'tahun',
+            'tanggalMulai', 'tanggalAkhir', 'search', 'totalKunjungan',
+            'totalPasien', 'totalButirObat', 'periodeLabel', 'namaBulanIndo'
+        ));
+    }
+
+    public function cetakRegister(Request $request)
+    {
+        $mode = $request->get('mode', 'harian');
+        $tanggal = $request->get('tanggal', now()->toDateString());
+        $bulan = (int) $request->get('bulan', now()->month);
+        $tahun = (int) $request->get('tahun', now()->year);
+        $tanggalMulai = $request->get('tanggal_mulai', now()->startOfMonth()->toDateString());
+        $tanggalAkhir = $request->get('tanggal_akhir', now()->toDateString());
+        $search = $request->get('search');
+
+        $query = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien', 'obatPrb'])
+            ->whereNotNull('tanggal_diambil');
+
+        if ($mode === 'bulan') {
+            $query->whereYear('tanggal_diambil', $tahun)
+                ->whereMonth('tanggal_diambil', $bulan);
+        } elseif ($mode === 'rentang') {
+            if ($tanggalMulai && $tanggalAkhir) {
+                $query->whereBetween('tanggal_diambil', [$tanggalMulai, $tanggalAkhir]);
+            }
+        } else {
+            $query->whereDate('tanggal_diambil', $tanggal);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('pasienPrb.pasien', function ($qp) use ($search) {
+                    $qp->where('nama', 'like', "%{$search}%")
+                        ->orWhere('nik', 'like', "%{$search}%")
+                        ->orWhere('no_bpjs', 'like', "%{$search}%");
+                })->orWhereHas('obatPrb', function ($qo) use ($search) {
+                    $qo->where('nama_obat', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $riwayatList = $query->orderBy('tanggal_diambil', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $namaBulanIndo = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        if ($mode === 'bulan') {
+            $periodeJudul = 'BULAN : '.strtoupper(($namaBulanIndo[$bulan] ?? '').' '.$tahun);
+        } elseif ($mode === 'rentang') {
+            $periodeJudul = 'PERIODE : '.strtoupper(Carbon::parse($tanggalMulai)->translatedFormat('d M Y').' S/D '.Carbon::parse($tanggalAkhir)->translatedFormat('d M Y'));
+        } else {
+            $periodeJudul = 'TANGGAL : '.strtoupper(Carbon::parse($tanggal)->translatedFormat('d F Y'));
+        }
+
+        return view('admin.prb.register_cetak', compact(
+            'riwayatList', 'mode', 'periodeJudul', 'tanggal', 'bulan', 'tahun'
+        ));
     }
 
     public function pengingat(Request $request)
