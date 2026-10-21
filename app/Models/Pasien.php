@@ -27,6 +27,11 @@ class Pasien extends Authenticatable
         return $this->hasOne(PasienPrb::class, 'pasien_id');
     }
 
+    public function getDiagnosaAttribute(): ?string
+    {
+        return $this->pasienPrb?->diagnosa;
+    }
+
     /**
      * Get the password for the user.
      * We use tanggal_lahir as the password for patient login.

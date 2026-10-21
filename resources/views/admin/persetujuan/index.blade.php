@@ -127,7 +127,7 @@
         </table>
     </div>
     
-    @if($persetujuans->hasPages())
+    @if($persetujuans->total() > 0)
     <div class="px-6 py-4 border-t border-gray-200 bg-white">
         {{ $persetujuans->links() }}
     </div>

@@ -7,6 +7,7 @@ use App\Imports\MasterObatPrbImport;
 use App\Imports\MasterObatUmumImport;
 use App\Imports\PoliklinikImport;
 use App\Imports\PrbImport;
+use App\Imports\RegisterPrbImport;
 use App\Models\LogAktivitas;
 use App\Models\MasterObat;
 use Illuminate\Http\Request;
@@ -124,25 +125,18 @@ class ImportController extends Controller
             $headings = (new HeadingRowImport)->toArray($request->file('file'));
             $headers = $headings[0][0] ?? [];
 
-            // Memastikan ini format Poliklinik (bukan apotek)
-            $hasKeluhan = in_array('keluhan', $headers) || in_array('icd_x', $headers);
-            $hasNota = in_array('no_nota', $headers);
+            // Jika file poli simpus (memiliki keluhan / icd_x), gunakan PrbImport
+            $isPoli = in_array('keluhan', $headers) || in_array('icd_x', $headers);
+            $import = $isPoli ? new PrbImport : new RegisterPrbImport($request->file('file')->getRealPath());
 
-            if (! $hasKeluhan || $hasNota) {
-                throw ValidationException::withMessages([
-                    'file' => 'File ditolak. File yang Anda unggah sepertinya BUKAN file Register Poliklinik.',
-                ]);
-            }
+            Excel::import($import, $request->file('file'));
         } catch (ValidationException $e) {
             throw $e;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw ValidationException::withMessages([
-                'file' => 'Gagal membaca format file Excel.',
+                'file' => 'Gagal memproses file Excel: '.$e->getMessage(),
             ]);
         }
-
-        $import = new PrbImport;
-        Excel::import($import, $request->file('file'));
 
         LogAktivitas::catat('IMPORT_PRB', 'Melakukan import data PRB dari file Excel.');
 

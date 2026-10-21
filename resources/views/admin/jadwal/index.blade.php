@@ -121,8 +121,8 @@
                 <!-- End Table -->
 
                 <!-- Footer -->
-                @if($jadwal->hasPages())
-                <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200">
+                @if($jadwal->total() > 0)
+                <div class="px-6 py-4 border-t border-gray-200">
                     {{ $jadwal->links() }}
                 </div>
                 @endif

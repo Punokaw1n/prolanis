@@ -88,11 +88,7 @@
             </div>
         </div>
 
-        <div class="text-xs text-gray-500 flex items-center gap-2">
-            <span>Pasien: <strong class="text-gray-800">{{ $prb->pasien->nama }}</strong></span>
-            <span class="text-gray-300">•</span>
-            <span>NIK: <span class="font-mono text-gray-700">{{ $prb->pasien->nik }}</span></span>
-        </div>
+    
     </header>
 
     @if ($errors->any())
@@ -311,7 +307,7 @@
                                     <th scope="col" class="py-3 px-3 text-center min-w-[140px] w-40 whitespace-nowrap">Signa</th>
                                     <th scope="col" class="py-3 px-2 text-center w-16">Hari</th>
                                     <th scope="col" class="py-3 px-3 text-center w-24">Jumlah</th>
-                                    <th scope="col" class="py-3 px-3 min-w-[190px] w-52 whitespace-nowrap">Waktu Minum</th>
+                                    {{-- <th scope="col" class="py-3 px-3 min-w-[190px] w-52 whitespace-nowrap">Waktu Minum</th> --}}
                                     <th scope="col" class="py-3 px-3 text-center w-12 no-print">#</th>
                                 </tr>
                             </thead>
@@ -319,7 +315,7 @@
                                 <!-- Empty State -->
                                 <template x-if="obatList.length === 0">
                                     <tr>
-                                        <td colspan="8" class="py-10 text-center text-gray-400">
+                                        <td colspan="7" class="py-10 text-center text-gray-400">
                                             <svg class="size-8 text-gray-300 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                             </svg>
@@ -389,7 +385,7 @@
                                             </div>
                                         </td>
 
-                                        <!-- Waktu Minum with Custom Styled Select Dropdown -->
+                                        {{-- <!-- Waktu Minum with Custom Styled Select Dropdown -->
                                         <td class="py-2.5 px-3 align-middle min-w-[170px]">
                                             <div class="relative" x-data="{ openAturan: false }" @click.outside="openAturan = false">
                                                 <!-- Hidden input for Laravel Form POST -->
@@ -447,7 +443,7 @@
                                                     </template>
                                                 </div>
                                             </div>
-                                        </td>
+                                        </td> --}}
                                         <!-- Aksi Hapus (ala Gambar 1: Tong Sampah Biru) -->
                                         <td class="py-2.5 px-3 text-center no-print">
                                             <button type="button" @click="hapusObat(index)" class="text-sky-600 hover:text-red-600 p-1 rounded-md hover:bg-red-50 transition-colors" title="Hapus obat">

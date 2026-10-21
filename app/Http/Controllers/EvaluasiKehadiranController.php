@@ -24,9 +24,12 @@ class EvaluasiKehadiranController extends Controller
         // Jika tidak ada parameter pencarian sama sekali, anggap ini loading awal
         $isInitialLoad = ! $search && ! $statusFilter && ! $tanggal && ! $konfirmasiFilter && ! $page && ! $request->ajax();
 
+        $perPage = $request->integer('per_page', 15);
+        $perPage = ($perPage > 0) ? $perPage : 15;
+
         if ($isInitialLoad) {
             $paginatedPasiens = new LengthAwarePaginator(
-                collect([]), 0, 15, 1,
+                collect([]), 0, $perPage, 1,
                 ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
             );
 
@@ -123,7 +126,6 @@ class EvaluasiKehadiranController extends Controller
 
         // Manual Pagination karena collection
         $page = Paginator::resolveCurrentPage() ?: 1;
-        $perPage = 15;
         $paginatedPasiens = new LengthAwarePaginator(
             $pasiens->forPage($page, $perPage),
             $pasiens->count(),

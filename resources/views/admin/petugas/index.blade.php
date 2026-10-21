@@ -173,7 +173,7 @@
         </table>
     </div>
     
-    @if($petugas->hasPages())
+    @if($petugas->total() > 0)
     <div class="px-6 py-4 border-t border-gray-200 bg-white">
         {{ $petugas->links() }}
     </div>
