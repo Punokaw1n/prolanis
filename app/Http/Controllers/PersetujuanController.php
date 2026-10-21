@@ -29,7 +29,7 @@ class PersetujuanController extends Controller
             $query->where('status', $request->status);
         }
 
-        $persetujuans = $query->paginate(15);
+        $persetujuans = $query->paginate($request->integer('per_page', 15))->withQueryString();
 
         return view('admin.persetujuan.index', compact('persetujuans'));
     }

@@ -94,6 +94,7 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Pasien</th>
+                        <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Diagnosa</th>
                         <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Status PRB</th>
                         <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Tgl Terdaftar</th>
                         <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Jatuh Tempo Terdekat</th>
@@ -106,6 +107,15 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-gray-800">{{ $prb->pasien->nama }}</div>
                             <div class="text-xs text-gray-500">NIK: {{ $prb->pasien->nik }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($prb->diagnosa)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200" title="Kode Diagnosa PRB">
+                                    {{ $prb->diagnosa }}
+                                </span>
+                            @else
+                                <span class="text-xs text-gray-400 italic">-</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($prb->status_keaktifan == 'aktif')
@@ -141,7 +151,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-12 text-center text-gray-500 text-sm">
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500 text-sm">
                             Tidak ada data pasien PRB
                             @if(request('search')) untuk pencarian "<strong>{{ request('search') }}</strong>"@endif
                             @if(!empty($status) && $status !== 'semua') dengan status <strong>{{ $status === 'aktif' ? 'Aktif' : 'Tidak Aktif' }}</strong>@endif.
@@ -152,7 +162,7 @@
             </table>
         </div>
         
-        @if($pasienPrb->hasPages())
+        @if($pasienPrb->total() > 0)
         <div class="px-6 py-4 border-t border-gray-200">
             {{ $pasienPrb->links() }}
         </div>

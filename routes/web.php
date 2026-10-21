@@ -76,6 +76,7 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
     Route::get('/pasien', [PasienController::class, 'index'])->name('admin.pasien.index');
     Route::get('/pasien/{id}', [PasienController::class, 'show'])->name('admin.pasien.show');
+    Route::put('/pasien/{id}', [PasienController::class, 'update'])->name('admin.pasien.update');
     Route::put('/pasien/{id}/toggle-status', [PasienController::class, 'toggleStatus'])->name('admin.pasien.toggle-status');
 
     Route::resource('petugas', PetugasController::class, [

@@ -43,21 +43,26 @@ class JadwalLayananController extends Controller
             $query->where('jadwal_layanan.tanggal', $filterTanggal);
         }
 
+        $perPage = $request->integer('per_page', 15);
+        $perPage = ($perPage > 0) ? $perPage : 15;
+
         if ($search || $filterTanggal) {
             $peserta = $query->orderBy('jadwal_layanan.tanggal', 'desc')
                 ->orderBy('pasien.nama', 'asc')
-                ->paginate(15)
+                ->paginate($perPage)
                 ->withQueryString();
         } else {
-            $peserta = $query->whereRaw('1 = 0')->paginate(15);
+            $peserta = $query->whereRaw('1 = 0')->paginate($perPage)->withQueryString();
         }
 
         return view('admin.jadwal.peserta', compact('peserta', 'search', 'filterTanggal'));
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $jadwal = JadwalLayanan::with('pembuat')->orderBy('tanggal', 'desc')->paginate(10);
+        $perPage = $request->integer('per_page', 10);
+        $perPage = ($perPage > 0) ? $perPage : 10;
+        $jadwal = JadwalLayanan::with('pembuat')->orderBy('tanggal', 'desc')->paginate($perPage)->withQueryString();
 
         return view('admin.jadwal.index', compact('jadwal'));
     }

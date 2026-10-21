@@ -156,7 +156,7 @@
             </table>
         </div>
         
-        @if($riwayatPengingat->hasPages())
+        @if($riwayatPengingat->total() > 0)
         <div class="px-6 py-4 border-t border-gray-200">
             {{ $riwayatPengingat->links() }}
         </div>

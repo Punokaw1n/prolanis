@@ -23,7 +23,7 @@ class PetugasController extends Controller
             });
         }
 
-        $petugas = $query->orderBy('nama', 'asc')->paginate(15);
+        $petugas = $query->orderBy('nama', 'asc')->paginate($request->integer('per_page', 15))->withQueryString();
 
         return view('admin.petugas.index', compact('petugas'));
     }

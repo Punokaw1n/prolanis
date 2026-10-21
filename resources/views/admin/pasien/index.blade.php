@@ -118,7 +118,14 @@
                         @forelse ($pasiens as $pasien)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-800">{{ $pasien->nama }}</div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-medium text-gray-800">{{ $pasien->nama }}</span>
+                                    @if($pasien->diagnosa)
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200" title="Kode Diagnosa PRB">
+                                            {{ $pasien->diagnosa }}
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if(($pasien->status_keaktifan ?? 'aktif') === 'aktif')
@@ -184,7 +191,7 @@
             </div>
             
             <!-- Pagination -->
-            @if($pasiens->hasPages())
+            @if($pasiens->total() > 0)
             <div class="px-6 py-4 border-t border-gray-200">
                 {{ $pasiens->links() }}
             </div>

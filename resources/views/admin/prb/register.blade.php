@@ -244,6 +244,7 @@
                         <th scope="col" class="py-3 px-3 text-center w-12 border-r border-gray-200">NO</th>
                         <th scope="col" class="py-3 px-3 text-center w-24 border-r border-gray-200">TGL</th>
                         <th scope="col" class="py-3 px-4 min-w-[200px] border-r border-gray-200">NAMA PASIEN</th>
+                        <th scope="col" class="py-3 px-3 text-center w-24 border-r border-gray-200">DIAGNOSA</th>
                         <th scope="col" class="py-3 px-4 min-w-[280px] border-r border-gray-200">NAMA OBAT & SIGNA (ATURAN)</th>
                         <th scope="col" class="py-3 px-4 min-w-[200px] border-r border-gray-200">ALAMAT / NO HP</th>
                         <th scope="col" class="py-3 px-3 text-center w-16">AKSI</th>
@@ -288,6 +289,17 @@
                                         </svg>
                                         <span>{{ $r->catatan }}</span>
                                     </div>
+                                @endif
+                            </td>
+
+                            <!-- DIAGNOSA -->
+                            <td class="py-3.5 px-3 text-center border-r border-gray-100 align-top whitespace-nowrap">
+                                @if($r->pasienPrb?->diagnosa)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200" title="Kode Diagnosa PRB">
+                                        {{ $r->pasienPrb->diagnosa }}
+                                    </span>
+                                @else
+                                    <span class="text-gray-400 font-normal text-xs">-</span>
                                 @endif
                             </td>
 
@@ -353,7 +365,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-12 text-center bg-gray-50/50">
+                            <td colspan="7" class="py-12 text-center bg-gray-50/50">
                                 <div class="max-w-sm mx-auto text-center">
                                     <div class="size-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
                                         <svg class="size-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -377,7 +389,7 @@
             </table>
         </div>
 
-        @if($riwayatList->hasPages())
+        @if($riwayatList->total() > 0)
             <div class="p-4 border-t border-gray-200">
                 {{ $riwayatList->links() }}
             </div>

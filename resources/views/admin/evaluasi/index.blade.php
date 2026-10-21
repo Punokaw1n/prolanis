@@ -227,7 +227,7 @@
     </div>
     
     <!-- Pagination -->
-    @if($pasiens->hasPages())
+    @if($pasiens->total() > 0)
     <div class="px-6 py-4 border-t border-gray-200 bg-white">
         {{ $pasiens->links() }}
     </div>

@@ -31,8 +31,9 @@ class PasienPrbController extends Controller
             });
         }
 
+        $perPage = $request->integer('per_page', 15);
         $pasienPrb = $query->orderBy('created_at', 'desc')
-            ->paginate(15)
+            ->paginate($perPage > 0 ? $perPage : 15)
             ->withQueryString();
 
         return view('admin.prb.index', compact('pasienPrb', 'search', 'status'));
@@ -79,9 +80,10 @@ class PasienPrbController extends Controller
         $totalPasien = $allMatching->pluck('pasien_prb_id')->unique()->count();
         $totalButirObat = $allMatching->sum(fn ($r) => $r->obatPrb->sum('jumlah_obat'));
 
+        $perPage = $request->integer('per_page', 25);
         $riwayatList = $query->orderBy('tanggal_diambil', 'asc')
             ->orderBy('id', 'asc')
-            ->paginate(25)
+            ->paginate($perPage > 0 ? $perPage : 25)
             ->withQueryString();
 
         $namaBulanIndo = [
@@ -182,7 +184,7 @@ class PasienPrbController extends Controller
             })
             // Sort by earliest tanggal_jatuh_tempo (most overdue)
             ->orderBy('tanggal_jatuh_tempo', 'asc')
-            ->paginate(15)
+            ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
         return view('admin.prb.pengingat', compact('riwayatPengingat', 'search'));
@@ -353,7 +355,7 @@ class PasienPrbController extends Controller
                     'signa' => $obatData['signa'] ?? '1 x 1',
                     'jumlah_hari' => $obatData['jumlah_hari'] ?? 30,
                     'jumlah_obat' => $obatData['jumlah_obat'] ?? 30,
-                    'aturan_minum' => $obatData['aturan_minum'] ?? 'Sesudah Makan',
+                    'aturan_minum' => $obatData['aturan_minum'] ?? null,
                     'sumber' => 'manual',
                 ]);
 
@@ -434,7 +436,7 @@ class PasienPrbController extends Controller
                     'signa' => $obatData['signa'] ?? '1 x 1',
                     'jumlah_hari' => $obatData['jumlah_hari'] ?? 30,
                     'jumlah_obat' => $obatData['jumlah_obat'] ?? 30,
-                    'aturan_minum' => $obatData['aturan_minum'] ?? 'Sesudah Makan',
+                    'aturan_minum' => $obatData['aturan_minum'] ?? null,
                     'sumber' => 'manual',
                 ]);
 

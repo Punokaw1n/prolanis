@@ -12,11 +12,20 @@
             <p class="mt-1 text-sm text-gray-600">Informasi profil dan riwayat pemeriksaan pasien.</p>
         </div>
     </div>
-    <div class="sm:ms-auto flex items-center gap-2" x-data="{ toggleStatusModalOpen: false, selectedAlasan: 'Meninggal Dunia', customAlasan: '' }">
+    <div class="sm:ms-auto flex items-center gap-2" x-data="{ toggleStatusModalOpen: false, selectedAlasan: 'Meninggal Dunia', customAlasan: '', editPasienModalOpen: @json($errors->any()) }">
+        <button type="button" @click="editPasienModalOpen = true" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-blue-200 bg-blue-50/70 text-blue-700 shadow-sm hover:bg-blue-100 hover:border-blue-300 transition-colors">
+            <svg class="flex-shrink-0 size-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+            </svg>
+            Edit Profil Pasien
+        </button>
+
         <button type="button" @click="toggleStatusModalOpen = true" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 transition-colors">
             <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
             {{ ($pasien->status_keaktifan ?? 'aktif') === 'aktif' ? 'Nonaktifkan Pasien' : 'Aktifkan Pasien' }}
         </button>
+
+        @include('admin.pasien._modal_edit', ['pasien' => $pasien])
 
         <!-- Toggle Status Modal (Alpine.js) -->
         <template x-teleport="body">
@@ -184,6 +193,16 @@
                         <dt class="text-sm font-medium text-gray-500">Pendidikan</dt>
                         <dd class="text-sm font-medium text-gray-800 col-span-2">{{ $pasien->pendidikan ?? '-' }}</dd>
                     </div>
+                    @if($pasien->diagnosa)
+                    <div class="grid grid-cols-3 gap-1">
+                        <dt class="text-sm font-medium text-gray-500">Diagnosa PRB</dt>
+                        <dd class="text-sm font-medium text-gray-800 col-span-2">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                {{ $pasien->diagnosa }}
+                            </span>
+                        </dd>
+                    </div>
+                    @endif
                     <div class="grid grid-cols-3 gap-1">
                         <dt class="text-sm font-medium text-gray-500">Alamat</dt>
                         <dd class="text-sm font-medium text-gray-800 col-span-2">{{ $pasien->alamat ?? '-' }}</dd>
