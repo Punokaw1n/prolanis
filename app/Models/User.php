@@ -7,10 +7,11 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'nik', 'nip', 'tanggal_lahir', 'alamat', 'no_hp', 'jabatan', 'peran', 'nama'])]
+#[Fillable(['name', 'email', 'password', 'nik', 'nip', 'tanggal_lahir', 'alamat', 'no_hp', 'jabatan', 'peran', 'nama', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -29,6 +30,15 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Relasi ke data profil pegawai (tabel pegawai)
+     */
+    public function pegawai(): HasOne
+    {
+        return $this->hasOne(Pegawai::class, 'nik', 'nik');
     }
 }
