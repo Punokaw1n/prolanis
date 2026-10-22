@@ -79,6 +79,8 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
     Route::put('/pasien/{id}', [PasienController::class, 'update'])->name('admin.pasien.update');
     Route::put('/pasien/{id}/toggle-status', [PasienController::class, 'toggleStatus'])->name('admin.pasien.toggle-status');
 
+    Route::post('/petugas/import', [PetugasController::class, 'processImport'])->name('admin.petugas.import');
+
     Route::resource('petugas', PetugasController::class, [
         'names' => [
             'index' => 'admin.petugas.index',
