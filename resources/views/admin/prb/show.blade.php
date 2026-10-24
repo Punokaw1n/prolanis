@@ -185,7 +185,18 @@
                     <div>
                         <dt class="text-sm text-gray-500">Kode Diagnosa PRB</dt>
                         <dd class="text-sm font-medium text-gray-800">
-                            @if($prb->diagnosa)
+                            @if(isset($diagnosaGroups) && $diagnosaGroups->count() > 0)
+                                <div class="flex flex-wrap gap-1.5 mt-1">
+                                    @foreach($diagnosaGroups as $dg)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200" title="{{ $dg['diagnosa'] ?? $dg['label'] ?? '' }}">
+                                            @if(!empty($dg['kode']))
+                                                <span class="font-mono font-bold mr-1">{{ $dg['kode'] }}</span>
+                                            @endif
+                                            <span>{{ $dg['diagnosa'] ?? $dg['label'] ?? '-' }}</span>
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @elseif($prb->diagnosa)
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
                                     {{ $prb->diagnosa }}
                                 </span>
@@ -204,19 +215,53 @@
     </div>
 
     <!-- Riwayat Section -->
-    <div class="lg:col-span-2">
+    <div class="lg:col-span-2" x-data="{ activeDiagnosa: 'semua' }">
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-bold text-gray-800">Riwayat Pengambilan Obat</h2>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">Riwayat Pengambilan Obat</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Kelompokkan dan lacak riwayat kunjungan per diagnosa / program PRB</p>
+                </div>
                 <a href="{{ route('admin.prb.riwayat.create', $prb->id) }}" class="py-2 px-3 inline-flex items-center gap-x-2 text-xs font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700">
                     + Catat Pengambilan
                 </a>
             </div>
 
+            <!-- Tab Filter Diagnosa -->
+            @if(isset($diagnosaGroups) && $diagnosaGroups->count() > 1)
+                <div class="mb-5 p-2 bg-slate-50 border border-slate-200 rounded-xl flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-semibold text-gray-500 px-2 flex items-center gap-1.5">
+                        <svg class="size-3.5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                        Filter Program:
+                    </span>
+                    <button type="button" 
+                        @click="activeDiagnosa = 'semua'"
+                        :class="activeDiagnosa === 'semua' ? 'bg-blue-600 text-white shadow-2xs font-semibold' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100 font-medium'"
+                        class="px-3 py-1.5 rounded-lg text-xs transition-colors inline-flex items-center gap-1.5">
+                        <span>Semua Diagnosa</span>
+                        <span class="px-1.5 py-0.2 rounded-full text-[10px]" :class="activeDiagnosa === 'semua' ? 'bg-blue-800 text-blue-100' : 'bg-gray-100 text-gray-700'">{{ $riwayat->count() }}</span>
+                    </button>
+                    @foreach($diagnosaGroups as $group)
+                        <button type="button" 
+                            @click="activeDiagnosa = '{{ $group['key'] }}'"
+                            :class="activeDiagnosa === '{{ $group['key'] }}' ? 'bg-teal-600 text-white shadow-2xs font-semibold' : 'bg-white text-teal-800 border border-teal-200 hover:bg-teal-50 font-medium'"
+                            class="px-3 py-1.5 rounded-lg text-xs transition-colors inline-flex items-center gap-1.5">
+                            @if(!empty($group['kode']))
+                                <span class="font-mono font-bold text-[11px] px-1.5 py-0.2 rounded" :class="activeDiagnosa === '{{ $group['key'] }}' ? 'bg-teal-700 text-white' : 'bg-teal-100 text-teal-800'">{{ $group['kode'] }}</span>
+                            @endif
+                            <span>{{ $group['diagnosa'] ?? $group['label'] }}</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px]" :class="activeDiagnosa === '{{ $group['key'] }}' ? 'bg-teal-800 text-teal-100' : 'bg-teal-100 text-teal-800'">{{ $group['count'] }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+
             <div class="border-l border-gray-200 ml-3">
                 @forelse($riwayat as $r)
                 <!-- Item -->
-                <div class="mb-8 pl-6 relative">
+                <div class="mb-8 pl-6 relative transition-all" 
+                     x-show="activeDiagnosa === 'semua' || activeDiagnosa === '{{ $r->diagnosa_group_key }}'"
+                     x-transition>
                     <span class="absolute flex items-center justify-center w-6 h-6 rounded-full -left-3 top-0 ring-4 ring-white {{ $r->tanggal_diambil ? 'bg-green-100' : 'bg-amber-100' }}">
                         @if($r->tanggal_diambil)
                             <svg class="size-3 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -225,14 +270,23 @@
                         @endif
                     </span>
                     
-                    <div class="flex items-center justify-between mb-1">
-                        <h3 class="flex items-center text-base font-semibold text-gray-900">
-                            Jatuh Tempo: {{ \Carbon\Carbon::parse($r->tanggal_jatuh_tempo)->translatedFormat('d M Y') }}
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h3 class="flex items-center text-base font-semibold text-gray-900">
+                                Jatuh Tempo: {{ \Carbon\Carbon::parse($r->tanggal_jatuh_tempo)->translatedFormat('d M Y') }}
+                            </h3>
                             @if($r->status)
-                                <span class="{{ $r->status['color'] }} text-xs font-medium me-2 px-2.5 py-0.5 rounded ms-3">{{ $r->status['label'] }}</span>
+                                <span class="{{ $r->status['color'] }} text-xs font-medium px-2.5 py-0.5 rounded">{{ $r->status['label'] }}</span>
                             @endif
-                        </h3>
-                        <div class="flex items-center gap-2" x-data="{ modalOpen: false }">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium bg-teal-50 text-teal-800 border border-teal-200" title="Diagnosa / Program PRB Pengambilan Ini">
+                                <svg class="size-3 text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                @if($r->kode_diagnosa)
+                                    <span class="font-mono font-bold text-teal-900">{{ $r->kode_diagnosa }}</span> - 
+                                @endif
+                                <span>{{ $r->diagnosa ?: ($prb->diagnosa ?: 'PRB') }}</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2 self-start sm:self-auto" x-data="{ modalOpen: false }">
                             @if($r->obatPrb->count() > 0)
                             @php
                                 $rDoctor = $r->pencatat ?? auth()->user();
