@@ -68,4 +68,57 @@ class RiwayatPengambilanObatPrb extends Model
     {
         return $this->belongsTo(Pengguna::class, 'dicatat_oleh');
     }
+
+    public function petugasFarmasi()
+    {
+        return $this->belongsTo(Pengguna::class, 'petugas_farmasi_id');
+    }
+
+    public function getStatusFarmasiBadgeAttribute(): array
+    {
+        return match ($this->status_farmasi) {
+            'sudah' => [
+                'label' => 'Sudah',
+                'class' => 'bg-teal-500 text-white shadow-2xs',
+                'style' => 'background-color: #14b8a6; color: #ffffff;',
+            ],
+            'tidak_lengkap' => [
+                'label' => 'Sudah Diberikan Tidak Lengkap',
+                'class' => 'bg-amber-400 text-gray-900 font-bold border border-amber-500 shadow-2xs',
+                'style' => 'background-color: #fbbf24; color: #111827; border: 1px solid #f59e0b;',
+            ],
+            default => [
+                'label' => 'Belum Diracik',
+                'class' => 'bg-gray-100 text-gray-700 border border-gray-300 shadow-2xs',
+                'style' => 'background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db;',
+            ],
+        };
+    }
+
+    public function getDiagnosaLengkapAttribute(): string
+    {
+        $diag = $this->diagnosa ?: ($this->pasienPrb?->diagnosa ?: 'PRB');
+        $kode = $this->kode_diagnosa;
+
+        if ($kode && $diag && ! str_starts_with($diag, $kode)) {
+            return "{$kode} - {$diag}";
+        }
+
+        return $diag ?: ($kode ?: 'PRB');
+    }
+
+    public function getDiagnosaGroupKeyAttribute(): string
+    {
+        if ($this->kode_diagnosa) {
+            return strtoupper(trim($this->kode_diagnosa));
+        }
+        if ($this->diagnosa) {
+            return strtoupper(trim($this->diagnosa));
+        }
+        if ($this->pasienPrb?->diagnosa) {
+            return strtoupper(trim($this->pasienPrb->diagnosa));
+        }
+
+        return 'LAINNYA';
+    }
 }

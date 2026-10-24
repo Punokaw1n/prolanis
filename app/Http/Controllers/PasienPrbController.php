@@ -283,7 +283,23 @@ class PasienPrbController extends Controller
         // Sorting history desc
         $riwayat = $prb->riwayatPengambilan->sortByDesc('tanggal_jatuh_tempo');
 
-        return view('admin.prb.show', compact('prb', 'riwayat'));
+        // Kelompokkan riwayat berdasarkan diagnosa_group_key
+        $diagnosaGroups = $riwayat->groupBy(function ($r) {
+            return $r->diagnosa_group_key;
+        })->map(function ($items, $key) {
+            $first = $items->first();
+
+            return [
+                'key' => $key,
+                'kode' => $first?->kode_diagnosa,
+                'diagnosa' => $first?->diagnosa,
+                'label' => $first?->diagnosa_lengkap ?? $key,
+                'count' => $items->count(),
+                'items' => $items,
+            ];
+        });
+
+        return view('admin.prb.show', compact('prb', 'riwayat', 'diagnosaGroups'));
     }
 
     public function createRiwayat($id)
@@ -292,13 +308,23 @@ class PasienPrbController extends Controller
         $masterObatPrb = MasterObat::prb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
         $masterObatNonPrb = MasterObat::nonPrb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
 
+        $programPasien = $this->buildProgramPasien($prb);
+        $presetDiagnosaPrb = $this->getPresetDiagnosaPrb();
+
         $lastRiwayat = $prb->riwayatPengambilan()
             ->whereHas('obatPrb')
             ->orderByDesc('tanggal_jatuh_tempo')
             ->with('obatPrb')
             ->first();
 
-        return view('admin.prb.riwayat_create', compact('prb', 'masterObatPrb', 'masterObatNonPrb', 'lastRiwayat'));
+        // Ambil daftar diagnosa unik yang pernah dicatat untuk pasien ini sebagai saran
+        $saranDiagnosa = $prb->riwayatPengambilan()
+            ->whereNotNull('diagnosa')
+            ->pluck('diagnosa', 'kode_diagnosa')
+            ->filter()
+            ->toArray();
+
+        return view('admin.prb.riwayat_create', compact('prb', 'masterObatPrb', 'masterObatNonPrb', 'lastRiwayat', 'saranDiagnosa', 'programPasien', 'presetDiagnosaPrb'));
     }
 
     public function storeRiwayat(Request $request, $id)
@@ -308,6 +334,8 @@ class PasienPrbController extends Controller
         $request->validate([
             'tanggal_diambil' => 'required|date',
             'tanggal_jatuh_tempo' => 'required|date',
+            'kode_diagnosa' => 'nullable|string|max:50',
+            'diagnosa' => 'nullable|string|max:255',
             'catatan' => 'nullable|string',
             'obat' => 'nullable|array',
             'obat.*.nama' => 'required_with:obat|string|max:255',
@@ -328,6 +356,8 @@ class PasienPrbController extends Controller
             // Update riwayat yang sudah dijadwalkan sebelumnya
             $pendingRiwayat->update([
                 'tanggal_diambil' => $request->tanggal_diambil,
+                'kode_diagnosa' => $request->kode_diagnosa,
+                'diagnosa' => $request->diagnosa ?: ($prb->diagnosa ?: null),
                 'catatan' => $request->catatan,
                 'sumber' => 'manual',
                 'dicatat_oleh' => auth()->id() ?? null,
@@ -339,6 +369,8 @@ class PasienPrbController extends Controller
             $riwayatToAttach = $prb->riwayatPengambilan()->create([
                 'tanggal_jatuh_tempo' => $request->tanggal_diambil, // Anggap tepat waktu
                 'tanggal_diambil' => $request->tanggal_diambil,
+                'kode_diagnosa' => $request->kode_diagnosa,
+                'diagnosa' => $request->diagnosa ?: ($prb->diagnosa ?: null),
                 'catatan' => $request->catatan,
                 'sumber' => 'manual',
                 'dicatat_oleh' => auth()->id() ?? null,
@@ -377,6 +409,8 @@ class PasienPrbController extends Controller
         $prb->riwayatPengambilan()->create([
             'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
             'tanggal_diambil' => null, // Belum diambil
+            'kode_diagnosa' => $request->kode_diagnosa,
+            'diagnosa' => $request->diagnosa ?: ($prb->diagnosa ?: null),
             'sumber' => 'manual',
             'dicatat_oleh' => auth()->id() ?? null,
         ]);
@@ -391,6 +425,9 @@ class PasienPrbController extends Controller
         $masterObatPrb = MasterObat::prb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
         $masterObatNonPrb = MasterObat::nonPrb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
 
+        $programPasien = $this->buildProgramPasien($prb, $riwayat->id);
+        $presetDiagnosaPrb = $this->getPresetDiagnosaPrb();
+
         $lastRiwayat = $prb->riwayatPengambilan()
             ->where('id', '!=', $riwayat->id)
             ->whereHas('obatPrb')
@@ -398,7 +435,14 @@ class PasienPrbController extends Controller
             ->with('obatPrb')
             ->first();
 
-        return view('admin.prb.riwayat_edit', compact('prb', 'riwayat', 'masterObatPrb', 'masterObatNonPrb', 'lastRiwayat'));
+        // Ambil daftar diagnosa unik yang pernah dicatat untuk pasien ini sebagai saran
+        $saranDiagnosa = $prb->riwayatPengambilan()
+            ->whereNotNull('diagnosa')
+            ->pluck('diagnosa', 'kode_diagnosa')
+            ->filter()
+            ->toArray();
+
+        return view('admin.prb.riwayat_edit', compact('prb', 'riwayat', 'masterObatPrb', 'masterObatNonPrb', 'lastRiwayat', 'saranDiagnosa', 'programPasien', 'presetDiagnosaPrb'));
     }
 
     public function updateRiwayat(Request $request, $riwayat_id)
@@ -408,6 +452,8 @@ class PasienPrbController extends Controller
         $request->validate([
             'tanggal_jatuh_tempo' => 'required|date',
             'tanggal_diambil' => 'nullable|date',
+            'kode_diagnosa' => 'nullable|string|max:50',
+            'diagnosa' => 'nullable|string|max:255',
             'catatan' => 'nullable|string',
             'obat' => 'nullable|array',
             'obat.*.nama' => 'required_with:obat|string|max:255',
@@ -421,6 +467,8 @@ class PasienPrbController extends Controller
         $riwayat->update([
             'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
             'tanggal_diambil' => $request->tanggal_diambil,
+            'kode_diagnosa' => $request->kode_diagnosa,
+            'diagnosa' => $request->diagnosa ?: ($riwayat->diagnosa ?: null),
             'catatan' => $request->catatan,
         ]);
 
@@ -492,5 +540,74 @@ class PasienPrbController extends Controller
         $prb->save();
 
         return redirect()->back()->with('success', 'Status keaktifan pasien berhasil diubah menjadi: '.($prb->status_keaktifan == 'aktif' ? 'Aktif' : 'Tidak Aktif'));
+    }
+
+    /**
+     * @return array<int, array{kode: string, nama: string}>
+     */
+    private function getPresetDiagnosaPrb(): array
+    {
+        return [
+            ['kode' => 'E11', 'nama' => 'Diabetes Melitus'],
+            ['kode' => 'I10', 'nama' => 'Hipertensi'],
+            ['kode' => 'I25', 'nama' => 'Penyakit Jantung'],
+            ['kode' => 'J45', 'nama' => 'Asma Bronkial'],
+            ['kode' => 'J44', 'nama' => 'PPOK'],
+            ['kode' => 'I69', 'nama' => 'Stroke / Pasca Stroke'],
+            ['kode' => 'F20', 'nama' => 'Skizofrenia'],
+            ['kode' => 'G40', 'nama' => 'Epilepsi'],
+            ['kode' => 'M32', 'nama' => 'SLE'],
+        ];
+    }
+
+    private function buildProgramPasien(PasienPrb $prb, ?int $excludeRiwayatId = null)
+    {
+        $riwayatDenganObat = $prb->riwayatPengambilan()
+            ->when($excludeRiwayatId, function ($q) use ($excludeRiwayatId) {
+                return $q->where('id', '!=', $excludeRiwayatId);
+            })
+            ->whereHas('obatPrb')
+            ->with('obatPrb')
+            ->orderByDesc('tanggal_jatuh_tempo')
+            ->get();
+
+        $programPasien = $riwayatDenganObat->groupBy(function ($r) {
+            return $r->diagnosa_group_key;
+        })->map(function ($items, $key) {
+            $last = $items->first();
+
+            return [
+                'key' => $key,
+                'kode' => $last->kode_diagnosa ?: '',
+                'diagnosa' => $last->diagnosa ?: $key,
+                'label' => $last->diagnosa_lengkap,
+                'count_riwayat' => $items->count(),
+                'last_date' => $last->tanggal_diambil ? $last->tanggal_diambil->format('d/m/Y') : ($last->tanggal_jatuh_tempo ? $last->tanggal_jatuh_tempo->format('d/m/Y') : '-'),
+                'obat_list' => $last->obatPrb->map(function ($o) {
+                    return [
+                        'nama' => $o->nama_obat,
+                        'kategori' => $o->kategori,
+                        'signa' => $o->signa ?? '1 x 1',
+                        'jumlah_hari' => $o->jumlah_hari ?? 30,
+                        'jumlah_obat' => $o->jumlah_obat ?? 30,
+                        'aturan_minum' => $o->aturan_minum ?? 'Sesudah Makan',
+                    ];
+                })->values()->toArray(),
+            ];
+        })->values();
+
+        if ($programPasien->isEmpty() && ! empty($prb->diagnosa)) {
+            $programPasien->push([
+                'key' => strtoupper(trim($prb->diagnosa)),
+                'kode' => '',
+                'diagnosa' => $prb->diagnosa,
+                'label' => $prb->diagnosa,
+                'count_riwayat' => 0,
+                'last_date' => '-',
+                'obat_list' => [],
+            ]);
+        }
+
+        return $programPasien;
     }
 }

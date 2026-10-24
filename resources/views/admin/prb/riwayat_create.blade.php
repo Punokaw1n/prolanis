@@ -178,26 +178,141 @@
                             </div>
                         </div>
 
-                        <!-- Bar Pengaturan Tanggal & Periode Obat -->
-                        <div class="mt-4 pt-3.5 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 gap-4 no-print">
-                            <div>
-                                <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
-                                    Tanggal Diambil Pasien <span class="text-red-500">*</span>
-                                </label>
-                                <input type="date" name="tanggal_diambil" x-model="tanggalDiambil" @change="updateAllHari()" class="py-2 px-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs" required>
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
-                                    Jadwal Jatuh Tempo (Berikutnya) <span class="text-red-500">*</span>
-                                </label>
-                                <div class="flex items-center gap-1.5">
-                                    <input type="date" name="tanggal_jatuh_tempo" x-model="tanggalJatuhTempo" @change="updateAllHari()" class="py-2 px-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs" required>
-                                    <button type="button" @click="setSaranJatuhTempo" class="py-2 px-2.5 inline-flex items-center gap-1 text-[11px] font-bold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shrink-0 transition-colors" title="Set ke 30 hari dari tanggal diambil">
-                                        <svg class="size-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                                        +30 Hari
-                                    </button>
+                        <!-- ================= BAR PENGATURAN PROGRAM PRB & JADWAL KUNJUNGAN ================= -->
+                        <div class="mt-4 pt-4 border-t border-slate-200/80 space-y-4 no-print">
+                            
+                            <!-- 1. Pemilihan Program Diagnosa / Penyakit PRB -->
+                            <div class="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="size-6 rounded-md bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs">
+                                            <svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        </span>
+                                        <div>
+                                            <span class="text-xs font-bold text-gray-800 uppercase tracking-wide">Program Diagnosa PRB Kunjungan Ini</span>
+                                            <span class="text-red-500 font-bold">*</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-[11px] text-gray-500">Pilih program penyakit yang dilayani atau tambah diagnosa baru jika ada penyakit lain</span>
+                                </div>
+
+                                <!-- Segmented Cards Pilihan Program Pasien -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                    @foreach($programPasien as $p)
+                                        <div @click="pilihProgram('{{ $p['key'] }}')"
+                                            class="relative p-2.5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 text-left group"
+                                            :class="selectedProgramKey === '{{ $p['key'] }}' ? 'border-teal-600 bg-teal-50/80 shadow-2xs' : 'border-gray-200 hover:border-teal-300 bg-white'">
+                                            <div class="min-w-0">
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    @if(!empty($p['kode']))
+                                                        <span class="font-mono font-bold text-[11px] px-1.5 py-0.2 rounded"
+                                                            :class="selectedProgramKey === '{{ $p['key'] }}' ? 'bg-teal-700 text-white' : 'bg-teal-100 text-teal-800'">
+                                                            {{ $p['kode'] }}
+                                                        </span>
+                                                    @endif
+                                                    <strong class="text-xs font-bold text-gray-900 truncate">{{ $p['diagnosa'] }}</strong>
+                                                </div>
+                                                <p class="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1">
+                                                    <span class="size-1 rounded-full bg-gray-400"></span>
+                                                    <span>{{ count($p['obat_list']) }} obat tersimpan</span>
+                                                    @if($p['last_date'] !== '-')
+                                                        <span>• Tgl: {{ $p['last_date'] }}</span>
+                                                    @endif
+                                                </p>
+                                            </div>
+                                            <div class="size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                                                :class="selectedProgramKey === '{{ $p['key'] }}' ? 'border-teal-600 bg-teal-600' : 'border-gray-300 group-hover:border-teal-400'">
+                                                <span class="size-1.5 rounded-full bg-white" x-show="selectedProgramKey === '{{ $p['key'] }}'"></span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+
+                                    <!-- Tombol Kartu: Tambah Diagnosa Baru / Penyakit Berbeda -->
+                                    <div @click="pilihProgram('baru')"
+                                        class="relative p-2.5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 text-left group"
+                                        :class="selectedProgramKey === 'baru' ? 'border-teal-600 bg-teal-50/80 shadow-2xs' : 'border-dashed border-gray-300 hover:border-teal-400 bg-slate-50/60'">
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-1.5 text-teal-700 font-bold text-xs">
+                                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                                <span>+ Diagnosa Baru / Lainnya</span>
+                                            </div>
+                                            <p class="text-[10px] text-gray-500 mt-0.5">Jika pasien datang dengan penyakit/rujukan baru</p>
+                                        </div>
+                                        <div class="size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                                            :class="selectedProgramKey === 'baru' ? 'border-teal-600 bg-teal-600' : 'border-gray-300 group-hover:border-teal-400'">
+                                            <span class="size-1.5 rounded-full bg-white" x-show="selectedProgramKey === 'baru'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Input Hidden untuk POST Laravel Form -->
+                                <input type="hidden" name="kode_diagnosa" :value="kodeDiagnosa">
+                                <input type="hidden" name="diagnosa" :value="diagnosa">
+
+                                <!-- Panel Input Terbuka Jika Memilih 'Diagnosa Baru' -->
+                                <div x-show="selectedProgramKey === 'baru'" x-transition class="mt-3 pt-3 border-t border-teal-100">
+                                    <div class="text-[11px] font-bold text-teal-800 mb-2 flex items-center gap-1.5">
+                                        <svg class="size-3.5 text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        <span>Input Data Diagnosa Baru Pasien:</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-2.5">
+                                        <div class="sm:col-span-4">
+                                            <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                                Kode ICD-10 <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" x-model="kodeDiagnosa" placeholder="Misal: I10, J45, E11" class="py-2 px-3 block w-full border border-gray-300 rounded-lg text-xs font-mono font-bold uppercase text-gray-800 bg-white focus:border-teal-500 focus:ring-teal-500 shadow-2xs">
+                                        </div>
+                                        <div class="sm:col-span-8">
+                                            <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                                Nama Diagnosa / Penyakit <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" x-model="diagnosa" placeholder="Misal: Hipertensi, Asma Bronkial, Diabetes Melitus" class="py-2 px-3 block w-full border border-gray-300 rounded-lg text-xs font-medium text-gray-800 bg-white focus:border-teal-500 focus:ring-teal-500 shadow-2xs">
+                                        </div>
+                                    </div>
+
+                                    <!-- Tombol Preset Cepat Diagnosa Standar PRB BPJS -->
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-[10px] font-semibold text-gray-500">Pilih Cepat Standar PRB:</span>
+                                        @foreach($presetDiagnosaPrb as $preset)
+                                            <button type="button" 
+                                                @click="pilihPresetDiagnosa('{{ $preset['kode'] }}', '{{ $preset['nama'] }}')"
+                                                class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 hover:bg-teal-100 text-slate-700 hover:text-teal-800 border border-slate-200 hover:border-teal-300 transition-colors inline-flex items-center gap-1">
+                                                <span class="font-mono font-bold text-[10px]">{{ $preset['kode'] }}</span>
+                                                <span>{{ $preset['nama'] }}</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- 2. Pengaturan Tanggal Pelayanan & Jadwal Jatuh Tempo (Layout 2 Kolom Luas & Seimbang) -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                                        <span>Tanggal Pelayanan / Diambil</span>
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="date" name="tanggal_diambil" x-model="tanggalDiambil" @change="updateAllHari()" class="py-2.5 px-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs" required>
+                                    <p class="text-[11px] text-gray-500 mt-1.5">Tanggal pasien datang menerima obat di Puskesmas.</p>
+                                </div>
+
+                                <div class="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                                        <span>Jadwal Jatuh Tempo (Berikutnya)</span>
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="date" name="tanggal_jatuh_tempo" x-model="tanggalJatuhTempo" @change="updateAllHari()" class="py-2.5 px-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs" required>
+                                        <button type="button" @click="setSaranJatuhTempo" class="py-2.5 px-3.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shrink-0 transition-colors shadow-2xs whitespace-nowrap" title="Set otomatis ke +30 hari dari tanggal diambil">
+                                            <svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                            <span>+30 Hari</span>
+                                        </button>
+                                    </div>
+                                    <p class="text-[11px] text-gray-500 mt-1.5">Siklus 30 hari untuk jadwal pengambilan obat bulan depan.</p>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
@@ -1145,6 +1260,53 @@ function riwayatForm() {
     return {
         tanggalDiambil: new Date().toISOString().split('T')[0],
         tanggalJatuhTempo: '',
+        programPasien: @json($programPasien ?? []),
+        presetDiagnosaPrb: @json($presetDiagnosaPrb ?? []),
+        selectedProgramKey: '',
+        kodeDiagnosa: '',
+        diagnosa: '',
+
+        init() {
+            if (this.programPasien && this.programPasien.length > 0) {
+                const first = this.programPasien[0];
+                this.selectedProgramKey = first.key;
+                this.kodeDiagnosa = first.kode || '';
+                this.diagnosa = first.diagnosa || '';
+                this.lastResep = first.obat_list || [];
+            } else {
+                this.selectedProgramKey = 'baru';
+                this.kodeDiagnosa = @json($prb->diagnosa ?? '');
+                this.diagnosa = @json($prb->diagnosa ?? '');
+            }
+        },
+
+        pilihProgram(key) {
+            this.selectedProgramKey = key;
+            if (key === 'baru') {
+                this.kodeDiagnosa = '';
+                this.diagnosa = '';
+                this.showAlert('Silakan tentukan kode ICD-10 dan nama diagnosa baru.');
+            } else {
+                const prog = this.programPasien.find(p => p.key === key);
+                if (prog) {
+                    this.kodeDiagnosa = prog.kode || '';
+                    this.diagnosa = prog.diagnosa || '';
+                    this.lastResep = prog.obat_list || [];
+                    
+                    if (this.obatList.length === 0 && prog.obat_list && prog.obat_list.length > 0) {
+                        this.salinResepTerakhir();
+                    } else if (prog.obat_list && prog.obat_list.length > 0) {
+                        this.showAlert(`Program diganti ke: ${prog.label}. Klik "Salin Resep Bulan Lalu" jika ingin memuat paket obat ini.`);
+                    }
+                }
+            }
+        },
+
+        pilihPresetDiagnosa(kode, nama) {
+            this.kodeDiagnosa = kode;
+            this.diagnosa = nama;
+        },
+
         masterPrb: {!! json_encode($masterObatPrb ?? []) !!},
         masterNonPrb: {!! json_encode($masterObatNonPrb ?? []) !!},
         lastResep: {!! json_encode($lastRiwayat ? $lastRiwayat->obatPrb->map(function($o) {

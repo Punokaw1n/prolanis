@@ -211,15 +211,20 @@ class RegisterPrbImport implements ToArray, WithCalculatedFormulas
             if ($tglAmbil) {
                 $lastAmbilDate = $tglAmbil;
 
-                // Cek duplikat riwayat
+                // Cek duplikat riwayat (dicek per tanggal dan per kode diagnosa jika ada)
                 $existingRiwayat = $pasienPrb->riwayatPengambilan()
                     ->whereDate('tanggal_diambil', $tglAmbil)
+                    ->when($diagnosa, function ($q) use ($diagnosa) {
+                        return $q->where('kode_diagnosa', $diagnosa);
+                    })
                     ->first();
 
                 if (! $existingRiwayat) {
                     $riwayat = $pasienPrb->riwayatPengambilan()->create([
                         'tanggal_jatuh_tempo' => $tglJatuhTempo,
                         'tanggal_diambil' => $tglAmbil,
+                        'kode_diagnosa' => $diagnosa,
+                        'diagnosa' => ! empty($row[10]) ? trim((string) $row[10]) : null,
                         'sumber' => 'import',
                         'catatan' => $isRujuk ? 'Dirujuk kembali ke RS/FKRTL' : null,
                         'dicatat_oleh' => auth()->id() ?? null,
@@ -256,6 +261,9 @@ class RegisterPrbImport implements ToArray, WithCalculatedFormulas
                 $existingRujuk = $pasienPrb->riwayatPengambilan()
                     ->whereYear('tanggal_jatuh_tempo', 2026)
                     ->whereMonth('tanggal_jatuh_tempo', $month)
+                    ->when($diagnosa, function ($q) use ($diagnosa) {
+                        return $q->where('kode_diagnosa', $diagnosa);
+                    })
                     ->whereNotNull('catatan')
                     ->first();
 
@@ -263,6 +271,8 @@ class RegisterPrbImport implements ToArray, WithCalculatedFormulas
                     $pasienPrb->riwayatPengambilan()->create([
                         'tanggal_jatuh_tempo' => $tglJatuhTempo,
                         'tanggal_diambil' => null,
+                        'kode_diagnosa' => $diagnosa,
+                        'diagnosa' => ! empty($row[10]) ? trim((string) $row[10]) : null,
                         'sumber' => 'import',
                         'catatan' => 'Dirujuk kembali ke FKRTL (Rumah Sakit)',
                         'dicatat_oleh' => auth()->id() ?? null,

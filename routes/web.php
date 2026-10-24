@@ -18,6 +18,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 use App\Http\Controllers\ConsentPubController;
 use App\Http\Controllers\EvaluasiKehadiranController;
+use App\Http\Controllers\FarmasiPrbController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\JadwalLayananController;
 use App\Http\Controllers\LogAktivitasController;
@@ -129,6 +130,9 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
     // Program Rujuk Balik (PRB)
     Route::prefix('prb')->group(function () {
         Route::get('/', [PasienPrbController::class, 'index'])->name('admin.prb.index');
+        Route::get('/farmasi', [FarmasiPrbController::class, 'index'])->name('admin.prb.farmasi.index');
+        Route::get('/farmasi/{id}', [FarmasiPrbController::class, 'show'])->name('admin.prb.farmasi.show');
+        Route::post('/farmasi/{id}/beri-obat', [FarmasiPrbController::class, 'beriObat'])->name('admin.prb.farmasi.beri-obat');
         Route::get('/register', [PasienPrbController::class, 'register'])->name('admin.prb.register');
         Route::get('/register/cetak', [PasienPrbController::class, 'cetakRegister'])->name('admin.prb.register.cetak');
         Route::get('/pengingat', [PasienPrbController::class, 'pengingat'])->name('admin.prb.pengingat');
