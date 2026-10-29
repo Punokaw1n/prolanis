@@ -88,7 +88,7 @@ class RiwayatPengambilanObatPrb extends Model
                 'style' => 'background-color: #fbbf24; color: #111827; border: 1px solid #f59e0b;',
             ],
             default => [
-                'label' => 'Belum Diracik',
+                'label' => 'Belum Dipersiapkan',
                 'class' => 'bg-gray-100 text-gray-700 border border-gray-300 shadow-2xs',
                 'style' => 'background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db;',
             ],
@@ -120,5 +120,13 @@ class RiwayatPengambilanObatPrb extends Model
         }
 
         return 'LAINNYA';
+    }
+
+    /**
+     * Cek apakah status obat di menu farmasi sudah selesai (sudah diserahkan ke pasien)
+     */
+    public function isFarmasiSudah(): bool
+    {
+        return in_array($this->status_farmasi, ['sudah', 'tidak_lengkap'], true);
     }
 }

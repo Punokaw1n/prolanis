@@ -154,7 +154,7 @@ class FarmasiPrbController extends Controller
             $pesan = 'Sebagian obat telah diberikan kepada pasien.';
         } else {
             $statusFarmasi = 'belum';
-            $pesan = 'Status obat disimpan sebagai belum diracik / belum diberikan.';
+            $pesan = 'Status obat disimpan sebagai belum dipersiapkan / belum diberikan.';
         }
 
         $riwayat->update([

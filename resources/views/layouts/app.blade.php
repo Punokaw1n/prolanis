@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="light">
 
-    <title>{{ config('app.name', 'Prolanis') }} - Admin</title>
+    <title>{{ config('app.name', 'Prolanis') }}</title>
 
     <!-- Google Fonts Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,6 +68,7 @@
                     </li>
                     @endif
 
+                    @if(auth()->user()?->peran === 'admin')
                     @php
                         $isProlanisActive = request()->routeIs('admin.evaluasi.*') || request()->routeIs('admin.import.poliklinik') || request()->routeIs('admin.import.apotek') || request()->routeIs('admin.jadwal.*');
                     @endphp
@@ -120,13 +121,19 @@
                             </ul>
                         </div>
                     </li>
+                    @endif
                 </ul>
                 
                 @php
+                    $user = auth()->user();
+                    $canAccessPrb = $user?->canAccessPrb();
+                    $canAccessFarmasi = $user?->canAccessFarmasi();
+                    $canAccessPengingat = $user?->canAccessPengingat();
                     $isPrbActive = request()->routeIs('admin.prb.*') || request()->routeIs('admin.import.prb*') || request()->routeIs('admin.import.obat-*');
                     $isConsentActive = request()->routeIs('admin.persetujuan.*') || request()->routeIs('admin.template.*');
                 @endphp
                 
+                @if($canAccessPrb)
                 <ul class="space-y-1 mt-2">
                     <li x-data="{ open: {{ $isPrbActive ? 'true' : 'false' }} }">
                         <button type="button" @click="open = !open" class="w-full text-start flex items-center gap-x-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors" :class="open ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'">
@@ -153,18 +160,22 @@
                                         Register / Absensi PRB
                                     </a>
                                 </li>
+                                @if($canAccessFarmasi)
                                 <li>
                                     <a href="{{ route('admin.prb.farmasi.index') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.prb.farmasi.*') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
                                         <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
                                         Farmasi PRB
                                     </a>
                                 </li>
+                                @endif
+                                @if($canAccessPengingat)
                                 <li>
                                     <a href="{{ route('admin.prb.pengingat') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.prb.pengingat') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
                                         <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                         Dashboard Pengingat WA
                                     </a>
                                 </li>
+                                @endif
                                 <li>
                                     <a href="{{ route('admin.import.prb') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.import.prb') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
                                         <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
@@ -187,7 +198,9 @@
                         </div>
                     </li>
                 </ul>
+                @endif
                 
+                @if(auth()->user()?->peran === 'admin')
                 <ul class="space-y-1 mt-2">
                     <li x-data="{ open: {{ $isConsentActive ? 'true' : 'false' }} }">
                         <button type="button" @click="open = !open" class="w-full text-start flex items-center gap-x-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors" :class="open ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'">
@@ -208,26 +221,23 @@
                                         Penerbitan & Arsip
                                     </a>
                                 </li>
-                                @if(auth()->user()?->peran === 'admin')
                                 <li>
                                     <a href="{{ route('admin.template.index') }}" class="flex items-center gap-x-3 py-2 px-2.5 text-sm rounded-lg {{ request()->routeIs('admin.template.*') ? 'text-blue-600 font-medium' : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50' }}">
                                         <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 2-4 4-4-4"/><path d="M10 6v16"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 18h.01"/><path d="M10 18h.01"/></svg>
                                         Template Surat
                                     </a>
                                 </li>
-                                @endif
                             </ul>
                         </div>
                     </li>
-                    @if(auth()->user()?->peran === 'admin')
                     <li>
                         <a href="{{ route('admin.log.index') }}" class="flex items-center gap-x-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('admin.log.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100' }}">
                             <svg class="flex-shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                             Log Aktivitas
                         </a>
                     </li>
-                    @endif
                 </ul>
+                @endif
             </nav>
 
             <!-- User Info at Bottom -->
@@ -237,8 +247,8 @@
                         {{ strtoupper(substr(auth()->user()->nama ?? 'A', 0, 1)) }}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-800 truncate">{{ auth()->user()->nama ?? 'Admin' }}</p>
-                        <p class="text-xs text-gray-500 truncate capitalize">{{ auth()->user()->peran ?? 'admin' }}</p>
+                        <p class="text-sm font-medium text-gray-800 truncate" title="{{ auth()->user()->nama ?? 'Pengguna' }}">{{ auth()->user()->nama ?? 'Pengguna' }}</p>
+                        <p class="text-xs text-gray-500 truncate" title="{{ auth()->user()->role_or_jabatan ?? 'Petugas' }}">{{ auth()->user()->role_or_jabatan ?? 'Petugas' }}</p>
                     </div>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf

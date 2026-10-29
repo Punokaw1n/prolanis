@@ -421,6 +421,12 @@ class PasienPrbController extends Controller
     public function editRiwayat($riwayat_id)
     {
         $riwayat = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien', 'obatPrb'])->findOrFail($riwayat_id);
+
+        if ($riwayat->isFarmasiSudah()) {
+            return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
+                ->with('error', 'Data riwayat obat tidak dapat diubah karena status obat di menu farmasi sudah selesai.');
+        }
+
         $prb = $riwayat->pasienPrb;
         $masterObatPrb = MasterObat::prb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
         $masterObatNonPrb = MasterObat::nonPrb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
@@ -448,6 +454,11 @@ class PasienPrbController extends Controller
     public function updateRiwayat(Request $request, $riwayat_id)
     {
         $riwayat = RiwayatPengambilanObatPrb::findOrFail($riwayat_id);
+
+        if ($riwayat->isFarmasiSudah()) {
+            return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
+                ->with('error', 'Data riwayat obat tidak dapat diubah karena status obat di menu farmasi sudah selesai.');
+        }
 
         $request->validate([
             'tanggal_jatuh_tempo' => 'required|date',
@@ -508,6 +519,12 @@ class PasienPrbController extends Controller
     public function destroyRiwayat($riwayat_id)
     {
         $riwayat = RiwayatPengambilanObatPrb::findOrFail($riwayat_id);
+
+        if ($riwayat->isFarmasiSudah()) {
+            return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
+                ->with('error', 'Data riwayat obat tidak dapat dihapus karena status obat di menu farmasi sudah selesai.');
+        }
+
         $pasien_prb_id = $riwayat->pasien_prb_id;
 
         $riwayat->obatPrb()->delete();

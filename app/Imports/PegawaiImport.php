@@ -252,8 +252,6 @@ class PegawaiImport implements ToArray, WithCalculatedFormulas
     {
         $adminKeywords = [
             'kepala puskesmas',
-            'pj tu',
-            'tata usaha',
             'administrator kesehatan',
             'analis data',
         ];

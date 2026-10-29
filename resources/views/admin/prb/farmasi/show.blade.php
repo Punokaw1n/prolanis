@@ -932,7 +932,7 @@
                     };
                 } else {
                     return {
-                        label: 'Belum Diracik',
+                        label: 'Belum Dipersiapkan',
                         class: 'bg-gray-100 text-gray-700 border-gray-300 font-semibold',
                         desc: 'Belum diproses farmasi'
                     };

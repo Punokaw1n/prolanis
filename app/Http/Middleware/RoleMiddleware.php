@@ -27,8 +27,24 @@ class RoleMiddleware
             return $next($request);
         }
 
-        if (in_array($user->peran, $roles)) {
+        if ($user->peran === 'admin' || in_array($user->peran, $roles, true)) {
             return $next($request);
+        }
+
+        // Cek kemampuan akses berbasis profesi/jabatan
+        foreach ($roles as $role) {
+            if ($role === 'prb' && method_exists($user, 'canAccessPrb') && $user->canAccessPrb()) {
+                return $next($request);
+            }
+            if ($role === 'farmasi' && method_exists($user, 'canAccessFarmasi') && $user->canAccessFarmasi()) {
+                return $next($request);
+            }
+            if ($role === 'pengingat' && method_exists($user, 'canAccessPengingat') && $user->canAccessPengingat()) {
+                return $next($request);
+            }
+            if ($role === 'dokter' && method_exists($user, 'isDokter') && ($user->isAdmin() || $user->isDokter())) {
+                return $next($request);
+            }
         }
 
         abort(403, 'Anda tidak memiliki akses ke halaman ini.');

@@ -43,6 +43,8 @@ class MasterObatImportTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.import.obat-umum'));
         $response->assertStatus(200);
         $response->assertSee('Import Master Obat Umum (SIMBOK)');
+        $response->assertSee(route('admin.import.obat-umum.template'));
+        $response->assertSee('Download Template Excel');
     }
 
     public function test_import_obat_prb_via_array(): void
@@ -99,5 +101,13 @@ class MasterObatImportTest extends TestCase
             ]);
 
         $response->assertSessionHasErrors('file');
+    }
+
+    public function test_can_download_template_obat_umum(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.import.obat-umum.template'));
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Disposition', 'attachment; filename=obat-umum-simbok.xlsx');
     }
 }

@@ -60,97 +60,103 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
         ));
     })->name('admin.dashboard');
 
-    Route::get('/peserta-terjadwal', [JadwalLayananController::class, 'peserta'])->name('admin.jadwal.peserta');
-
-    Route::get('/jadwal/search-pasien', [JadwalLayananController::class, 'searchPasien'])->name('admin.jadwal.searchPasien');
-
-    Route::resource('jadwal', JadwalLayananController::class, [
-        'names' => [
-            'index' => 'admin.jadwal.index',
-            'create' => 'admin.jadwal.create',
-            'store' => 'admin.jadwal.store',
-            'edit' => 'admin.jadwal.edit',
-            'update' => 'admin.jadwal.update',
-            'destroy' => 'admin.jadwal.destroy',
-        ],
-    ])->except(['show']);
-
+    // Pasien Routes (Admin & Petugas)
     Route::get('/pasien', [PasienController::class, 'index'])->name('admin.pasien.index');
     Route::get('/pasien/{id}', [PasienController::class, 'show'])->name('admin.pasien.show');
     Route::put('/pasien/{id}', [PasienController::class, 'update'])->name('admin.pasien.update');
     Route::put('/pasien/{id}/toggle-status', [PasienController::class, 'toggleStatus'])->name('admin.pasien.toggle-status');
 
-    Route::post('/petugas/import', [PetugasController::class, 'processImport'])->name('admin.petugas.import');
+    // Program Rujuk Balik (PRB) - Khusus Dokter, Farmasi & Admin
+    Route::middleware('role:prb')->group(function () {
+        Route::prefix('prb')->group(function () {
+            // Farmasi PRB - Khusus Farmasi & Admin
+            Route::middleware('role:farmasi')->group(function () {
+                Route::get('/farmasi', [FarmasiPrbController::class, 'index'])->name('admin.prb.farmasi.index');
+                Route::get('/farmasi/{id}', [FarmasiPrbController::class, 'show'])->name('admin.prb.farmasi.show');
+                Route::post('/farmasi/{id}/beri-obat', [FarmasiPrbController::class, 'beriObat'])->name('admin.prb.farmasi.beri-obat');
+            });
 
-    Route::resource('petugas', PetugasController::class, [
-        'names' => [
-            'index' => 'admin.petugas.index',
-            'create' => 'admin.petugas.create',
-            'store' => 'admin.petugas.store',
-            'edit' => 'admin.petugas.edit',
-            'update' => 'admin.petugas.update',
-        ],
-    ])->except(['destroy']);
+            Route::get('/', [PasienPrbController::class, 'index'])->name('admin.prb.index');
+            Route::get('/register', [PasienPrbController::class, 'register'])->name('admin.prb.register');
+            Route::get('/register/cetak', [PasienPrbController::class, 'cetakRegister'])->name('admin.prb.register.cetak');
+            // Pengingat WA - Khusus Dokter & Admin (Bukan Apoteker / Asisten Apoteker)
+            Route::middleware('role:pengingat')->group(function () {
+                Route::get('/pengingat', [PasienPrbController::class, 'pengingat'])->name('admin.prb.pengingat');
+                Route::post('/pengingat/{id}/tandai', [PasienPrbController::class, 'tandaiDiingatkan'])->name('admin.prb.pengingat.tandai');
+            });
+            Route::get('/create', [PasienPrbController::class, 'create'])->name('admin.prb.create');
+            Route::post('/check-nik', [PasienPrbController::class, 'checkNik'])->name('admin.prb.check-nik');
+            Route::post('/', [PasienPrbController::class, 'store'])->name('admin.prb.store');
+            Route::get('/{id}', [PasienPrbController::class, 'show'])->name('admin.prb.show');
+            Route::put('/{id}/toggle-status', [PasienPrbController::class, 'toggleStatus'])->name('admin.prb.toggle-status');
+            // Riwayat Pengambilan Obat (Catat, Edit, Hapus) - Khusus Dokter & Admin
+            Route::middleware('role:dokter')->group(function () {
+                Route::get('/{id}/riwayat/create', [PasienPrbController::class, 'createRiwayat'])->name('admin.prb.riwayat.create');
+                Route::post('/{id}/riwayat', [PasienPrbController::class, 'storeRiwayat'])->name('admin.prb.riwayat.store');
+                Route::get('/riwayat/{riwayat_id}/edit', [PasienPrbController::class, 'editRiwayat'])->name('admin.prb.riwayat.edit');
+                Route::put('/riwayat/{riwayat_id}', [PasienPrbController::class, 'updateRiwayat'])->name('admin.prb.riwayat.update');
+                Route::delete('/riwayat/{riwayat_id}', [PasienPrbController::class, 'destroyRiwayat'])->name('admin.prb.riwayat.destroy');
+            });
+        });
 
-    Route::patch('/petugas/{petuga}/toggle-status', [PetugasController::class, 'toggleStatus'])->name('admin.petugas.toggle-status');
+        // Import PRB & Obat
+        Route::get('/import/prb', [ImportController::class, 'showPrb'])->name('admin.import.prb');
+        Route::post('/import/prb', [ImportController::class, 'importPrb'])->name('admin.import.prb.process');
+        Route::get('/import/obat-prb', [ImportController::class, 'showObatPrb'])->name('admin.import.obat-prb');
+        Route::post('/import/obat-prb', [ImportController::class, 'importObatPrb'])->name('admin.import.obat-prb.process');
+        Route::get('/import/obat-umum', [ImportController::class, 'showObatUmum'])->name('admin.import.obat-umum');
+        Route::get('/import/obat-umum/template', [ImportController::class, 'downloadTemplateObatUmum'])->name('admin.import.obat-umum.template');
+        Route::post('/import/obat-umum', [ImportController::class, 'importObatUmum'])->name('admin.import.obat-umum.process');
+    });
 
-    // Evaluasi Kehadiran
-    Route::get('/evaluasi-kehadiran', [EvaluasiKehadiranController::class, 'index'])->name('admin.evaluasi.index');
-    Route::post('/evaluasi-kehadiran/{pasien}/konfirmasi', [EvaluasiKehadiranController::class, 'updateKonfirmasi'])->name('admin.evaluasi.konfirmasi');
-    // Template Persetujuan (Hanya Admin yang bisa kelola)
+    // Menu & Fitur Khusus Admin (Petugas, Prolanis, Informed Consent, Log Aktivitas)
     Route::middleware('role:admin')->group(function () {
+        // Data Petugas
+        Route::post('/petugas/import', [PetugasController::class, 'processImport'])->name('admin.petugas.import');
+        Route::resource('petugas', PetugasController::class, [
+            'names' => [
+                'index' => 'admin.petugas.index',
+                'create' => 'admin.petugas.create',
+                'store' => 'admin.petugas.store',
+                'edit' => 'admin.petugas.edit',
+                'update' => 'admin.petugas.update',
+            ],
+        ])->except(['destroy']);
+        Route::patch('/petugas/{petuga}/toggle-status', [PetugasController::class, 'toggleStatus'])->name('admin.petugas.toggle-status');
+
+        // Prolanis
+        Route::get('/peserta-terjadwal', [JadwalLayananController::class, 'peserta'])->name('admin.jadwal.peserta');
+        Route::get('/jadwal/search-pasien', [JadwalLayananController::class, 'searchPasien'])->name('admin.jadwal.searchPasien');
+        Route::resource('jadwal', JadwalLayananController::class, [
+            'names' => [
+                'index' => 'admin.jadwal.index',
+                'create' => 'admin.jadwal.create',
+                'store' => 'admin.jadwal.store',
+                'edit' => 'admin.jadwal.edit',
+                'update' => 'admin.jadwal.update',
+                'destroy' => 'admin.jadwal.destroy',
+            ],
+        ])->except(['show']);
+        Route::get('/evaluasi-kehadiran', [EvaluasiKehadiranController::class, 'index'])->name('admin.evaluasi.index');
+        Route::post('/evaluasi-kehadiran/{pasien}/konfirmasi', [EvaluasiKehadiranController::class, 'updateKonfirmasi'])->name('admin.evaluasi.konfirmasi');
+        Route::get('/import/poliklinik', [ImportController::class, 'showPoliklinik'])->name('admin.import.poliklinik');
+        Route::post('/import/poliklinik', [ImportController::class, 'importPoliklinik'])->name('admin.import.poliklinik.process');
+        Route::get('/import/apotek', [ImportController::class, 'showApotek'])->name('admin.import.apotek');
+        Route::post('/import/apotek', [ImportController::class, 'importApotek'])->name('admin.import.apotek.process');
+
+        // Informed Consent
         Route::get('/template-persetujuan', [TemplatePersetujuanController::class, 'index'])->name('admin.template.index');
         Route::post('/template-persetujuan', [TemplatePersetujuanController::class, 'store'])->name('admin.template.store');
+        Route::get('/persetujuan/buat', [PersetujuanController::class, 'create'])->name('admin.persetujuan.create');
+        Route::post('/persetujuan/buat', [PersetujuanController::class, 'store'])->name('admin.persetujuan.store');
+        Route::get('/persetujuan/{id}', [PersetujuanController::class, 'show'])->name('admin.persetujuan.show');
+        Route::get('/persetujuan/{id}/status', [PersetujuanController::class, 'checkStatus'])->name('admin.persetujuan.status');
+        Route::get('/persetujuan/{id}/pdf', [PersetujuanController::class, 'exportPdf'])->name('admin.persetujuan.pdf');
+        Route::get('/persetujuan', [PersetujuanController::class, 'index'])->name('admin.persetujuan.index');
+
+        // Log Aktivitas
+        Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])->name('admin.log.index');
     });
-
-    // Penerbitan & Kelola Informed Consent
-    Route::get('/persetujuan/buat', [PersetujuanController::class, 'create'])->name('admin.persetujuan.create');
-    Route::post('/persetujuan/buat', [PersetujuanController::class, 'store'])->name('admin.persetujuan.store');
-    Route::get('/persetujuan/{id}', [PersetujuanController::class, 'show'])->name('admin.persetujuan.show');
-    Route::get('/persetujuan/{id}/status', [PersetujuanController::class, 'checkStatus'])->name('admin.persetujuan.status');
-    Route::get('/persetujuan/{id}/pdf', [PersetujuanController::class, 'exportPdf'])->name('admin.persetujuan.pdf');
-    Route::get('/persetujuan', [PersetujuanController::class, 'index'])->name('admin.persetujuan.index'); // Arsip
-
-    // Import Routes
-    Route::get('/import/poliklinik', [ImportController::class, 'showPoliklinik'])->name('admin.import.poliklinik');
-    Route::post('/import/poliklinik', [ImportController::class, 'importPoliklinik'])->name('admin.import.poliklinik.process');
-
-    Route::get('/import/apotek', [ImportController::class, 'showApotek'])->name('admin.import.apotek');
-    Route::post('/import/apotek', [ImportController::class, 'importApotek'])->name('admin.import.apotek.process');
-
-    Route::get('/import/prb', [ImportController::class, 'showPrb'])->name('admin.import.prb');
-    Route::post('/import/prb', [ImportController::class, 'importPrb'])->name('admin.import.prb.process');
-
-    Route::get('/import/obat-prb', [ImportController::class, 'showObatPrb'])->name('admin.import.obat-prb');
-    Route::post('/import/obat-prb', [ImportController::class, 'importObatPrb'])->name('admin.import.obat-prb.process');
-
-    Route::get('/import/obat-umum', [ImportController::class, 'showObatUmum'])->name('admin.import.obat-umum');
-    Route::post('/import/obat-umum', [ImportController::class, 'importObatUmum'])->name('admin.import.obat-umum.process');
-
-    // Program Rujuk Balik (PRB)
-    Route::prefix('prb')->group(function () {
-        Route::get('/', [PasienPrbController::class, 'index'])->name('admin.prb.index');
-        Route::get('/farmasi', [FarmasiPrbController::class, 'index'])->name('admin.prb.farmasi.index');
-        Route::get('/farmasi/{id}', [FarmasiPrbController::class, 'show'])->name('admin.prb.farmasi.show');
-        Route::post('/farmasi/{id}/beri-obat', [FarmasiPrbController::class, 'beriObat'])->name('admin.prb.farmasi.beri-obat');
-        Route::get('/register', [PasienPrbController::class, 'register'])->name('admin.prb.register');
-        Route::get('/register/cetak', [PasienPrbController::class, 'cetakRegister'])->name('admin.prb.register.cetak');
-        Route::get('/pengingat', [PasienPrbController::class, 'pengingat'])->name('admin.prb.pengingat');
-        Route::post('/pengingat/{id}/tandai', [PasienPrbController::class, 'tandaiDiingatkan'])->name('admin.prb.pengingat.tandai');
-        Route::get('/create', [PasienPrbController::class, 'create'])->name('admin.prb.create');
-        Route::post('/check-nik', [PasienPrbController::class, 'checkNik'])->name('admin.prb.check-nik');
-        Route::post('/', [PasienPrbController::class, 'store'])->name('admin.prb.store');
-        Route::get('/{id}', [PasienPrbController::class, 'show'])->name('admin.prb.show');
-        Route::put('/{id}/toggle-status', [PasienPrbController::class, 'toggleStatus'])->name('admin.prb.toggle-status');
-        // Riwayat Pengambilan Obat
-        Route::get('/{id}/riwayat/create', [PasienPrbController::class, 'createRiwayat'])->name('admin.prb.riwayat.create');
-        Route::post('/{id}/riwayat', [PasienPrbController::class, 'storeRiwayat'])->name('admin.prb.riwayat.store');
-        Route::get('/riwayat/{riwayat_id}/edit', [PasienPrbController::class, 'editRiwayat'])->name('admin.prb.riwayat.edit');
-        Route::put('/riwayat/{riwayat_id}', [PasienPrbController::class, 'updateRiwayat'])->name('admin.prb.riwayat.update');
-        Route::delete('/riwayat/{riwayat_id}', [PasienPrbController::class, 'destroyRiwayat'])->name('admin.prb.riwayat.destroy');
-    });
-
-    Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])->name('admin.log.index');
 });
 
 // Portal Pasien Routes

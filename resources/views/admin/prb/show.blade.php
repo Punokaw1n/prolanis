@@ -222,9 +222,11 @@
                     <h2 class="text-lg font-bold text-gray-800">Riwayat Pengambilan Obat</h2>
                     <p class="text-xs text-gray-500 mt-0.5">Kelompokkan dan lacak riwayat kunjungan per diagnosa / program PRB</p>
                 </div>
+                @if(auth()->user()?->canCatatPengambilan())
                 <a href="{{ route('admin.prb.riwayat.create', $prb->id) }}" class="py-2 px-3 inline-flex items-center gap-x-2 text-xs font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700">
                     + Catat Pengambilan
                 </a>
+                @endif
             </div>
 
             <!-- Tab Filter Diagnosa -->
@@ -285,6 +287,15 @@
                                 @endif
                                 <span>{{ $r->diagnosa ?: ($prb->diagnosa ?: 'PRB') }}</span>
                             </span>
+                            @if($r->obatPrb->count() > 0)
+                                @php
+                                    $badgeFarmasi = $r->status_farmasi_badge;
+                                @endphp
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold" style="{{ $badgeFarmasi['style'] }}" title="Status Penyerahan Obat di Menu Farmasi">
+                                    <svg class="size-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                    Farmasi: {{ $badgeFarmasi['label'] }}
+                                </span>
+                            @endif
                         </div>
                         <div class="flex items-center gap-2 self-start sm:self-auto" x-data="{ modalOpen: false }">
                             @if($r->obatPrb->count() > 0)
@@ -321,6 +332,7 @@
                             </button>
                             @endif
 
+                            @if(auth()->user()?->canEditHapusRiwayat($r))
                             <a href="{{ route('admin.prb.riwayat.edit', $r->id) }}" class="p-1 text-gray-400 hover:text-blue-600 transition-colors" title="Edit">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                             </a>
@@ -361,7 +373,7 @@
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent transition-colors" style="background-color: #dc2626; color: #ffffff;">
-                                                            Ya, Hapus
+                                                             Ya, Hapus
                                                         </button>
                                                     </form>
                                                 </div>
@@ -370,6 +382,7 @@
                                     </div>
                                 </div>
                             </template>
+                            @endif
                         </div>
                     </div>
                     
