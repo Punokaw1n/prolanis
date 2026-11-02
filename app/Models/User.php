@@ -79,8 +79,17 @@ class User extends Authenticatable
     {
         $role = strtolower((string) $this->peran);
         $jabatan = strtolower((string) ($this->jabatan ?: $this->pegawai?->jabatan));
+        $nama = strtolower((string) $this->nama);
 
-        return str_contains($role, 'dokter') || str_contains($jabatan, 'dokter');
+        return str_contains($role, 'dokter')
+            || str_contains($jabatan, 'dokter')
+            || str_contains($jabatan, 'kepala puskesmas')
+            || str_starts_with($nama, 'dr.')
+            || str_starts_with($nama, 'dr ')
+            || str_starts_with($nama, 'drg.')
+            || str_starts_with($nama, 'drg ')
+            || str_contains($nama, 'dr.')
+            || str_contains($nama, 'dokter');
     }
 
     /**
@@ -106,10 +115,14 @@ class User extends Authenticatable
 
     /**
      * Cek apakah user berhak mengakses menu dan modul Farmasi PRB
-     * (Khusus Farmasi dan Admin)
+     * (Khusus Farmasi dan Admin non-dokter)
      */
     public function canAccessFarmasi(): bool
     {
+        if ($this->isDokter()) {
+            return false;
+        }
+
         return $this->isAdmin() || $this->isFarmasi();
     }
 
@@ -128,6 +141,19 @@ class User extends Authenticatable
         }
 
         return $this->isDokter();
+    }
+
+    /**
+     * Cek apakah user berhak mengelola data profil pasien dan status keaktifan pasien
+     * (Khusus Dokter dan Admin, bukan Farmasi/Apoteker)
+     */
+    public function canKelolaPasien(): bool
+    {
+        if ($this->isFarmasi()) {
+            return false;
+        }
+
+        return $this->isAdmin() || $this->isDokter();
     }
 
     /**
@@ -150,10 +176,19 @@ class User extends Authenticatable
     /**
      * Cek apakah user berhak mengedit atau menghapus riwayat pengambilan obat tertentu
      * - Hak dasar ada di role dokter dan admin
-     * - Hilang / hidden ketika status obat di menu farmasi = sudah (sudah dilayani farmasi)
+     * - Hanya untuk riwayat yang memiliki rincian resep obat (bukan jadwal kosong bulan berikutnya)
+     * - Hilang / hidden ketika status obat di menu farmasi = sudah / tidak lengkap (sudah dilayani farmasi)
      */
     public function canEditHapusRiwayat(RiwayatPengambilanObatPrb $riwayat): bool
     {
+        $jumlahObat = $riwayat->relationLoaded('obatPrb')
+            ? $riwayat->obatPrb->count()
+            : $riwayat->obatPrb()->count();
+
+        if ($jumlahObat === 0) {
+            return false;
+        }
+
         if ($riwayat->isFarmasiSudah()) {
             return false;
         }

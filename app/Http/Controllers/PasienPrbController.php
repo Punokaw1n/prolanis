@@ -304,6 +304,10 @@ class PasienPrbController extends Controller
 
     public function createRiwayat($id)
     {
+        if (! auth()->user()?->canCatatPengambilan()) {
+            abort(403, 'Akses pencatatan obat khusus untuk dokter.');
+        }
+
         $prb = PasienPrb::with('pasien')->findOrFail($id);
         $masterObatPrb = MasterObat::prb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
         $masterObatNonPrb = MasterObat::nonPrb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
@@ -329,6 +333,10 @@ class PasienPrbController extends Controller
 
     public function storeRiwayat(Request $request, $id)
     {
+        if (! auth()->user()?->canCatatPengambilan()) {
+            abort(403, 'Akses pencatatan obat khusus untuk dokter.');
+        }
+
         $prb = PasienPrb::findOrFail($id);
 
         $request->validate([
@@ -420,6 +428,10 @@ class PasienPrbController extends Controller
 
     public function editRiwayat($riwayat_id)
     {
+        if (! auth()->user()?->canCatatPengambilan()) {
+            abort(403, 'Akses riwayat obat khusus untuk dokter.');
+        }
+
         $riwayat = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien', 'obatPrb'])->findOrFail($riwayat_id);
 
         if ($riwayat->isFarmasiSudah()) {
@@ -453,6 +465,10 @@ class PasienPrbController extends Controller
 
     public function updateRiwayat(Request $request, $riwayat_id)
     {
+        if (! auth()->user()?->canCatatPengambilan()) {
+            abort(403, 'Akses riwayat obat khusus untuk dokter.');
+        }
+
         $riwayat = RiwayatPengambilanObatPrb::findOrFail($riwayat_id);
 
         if ($riwayat->isFarmasiSudah()) {
@@ -518,6 +534,10 @@ class PasienPrbController extends Controller
 
     public function destroyRiwayat($riwayat_id)
     {
+        if (! auth()->user()?->canCatatPengambilan()) {
+            abort(403, 'Akses riwayat obat khusus untuk dokter.');
+        }
+
         $riwayat = RiwayatPengambilanObatPrb::findOrFail($riwayat_id);
 
         if ($riwayat->isFarmasiSudah()) {
@@ -552,6 +572,10 @@ class PasienPrbController extends Controller
 
     public function toggleStatus($id)
     {
+        if (! auth()->user()?->canKelolaPasien()) {
+            abort(403, 'Anda tidak memiliki hak untuk mengubah status keaktifan pasien.');
+        }
+
         $prb = PasienPrb::findOrFail($id);
         $prb->status_keaktifan = $prb->status_keaktifan === 'aktif' ? 'tidak_aktif' : 'aktif';
         $prb->save();

@@ -36,6 +36,8 @@ class MasterObatImportTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.import.obat-prb'));
         $response->assertStatus(200);
         $response->assertSee('Import Master Obat PRB');
+        $response->assertSee(route('admin.import.obat-prb.template'));
+        $response->assertSee('Download Template Excel');
     }
 
     public function test_can_view_import_obat_umum_page(): void
@@ -109,5 +111,13 @@ class MasterObatImportTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertHeader('Content-Disposition', 'attachment; filename=obat-umum-simbok.xlsx');
+    }
+
+    public function test_can_download_template_obat_prb(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.import.obat-prb.template'));
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Disposition', 'attachment; filename=obat-PRB.xlsx');
     }
 }

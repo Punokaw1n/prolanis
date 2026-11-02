@@ -101,8 +101,10 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
         // Import PRB & Obat
         Route::get('/import/prb', [ImportController::class, 'showPrb'])->name('admin.import.prb');
+        Route::get('/import/prb/template', [ImportController::class, 'downloadTemplatePrb'])->name('admin.import.prb.template');
         Route::post('/import/prb', [ImportController::class, 'importPrb'])->name('admin.import.prb.process');
         Route::get('/import/obat-prb', [ImportController::class, 'showObatPrb'])->name('admin.import.obat-prb');
+        Route::get('/import/obat-prb/template', [ImportController::class, 'downloadTemplateObatPrb'])->name('admin.import.obat-prb.template');
         Route::post('/import/obat-prb', [ImportController::class, 'importObatPrb'])->name('admin.import.obat-prb.process');
         Route::get('/import/obat-umum', [ImportController::class, 'showObatUmum'])->name('admin.import.obat-umum');
         Route::get('/import/obat-umum/template', [ImportController::class, 'downloadTemplateObatUmum'])->name('admin.import.obat-umum.template');

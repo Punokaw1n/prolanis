@@ -94,11 +94,19 @@
 
     <!-- Upload Form Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-800">Upload File Excel PRB</h2>
-            <p class="mt-1 text-sm text-gray-500">
-                Format file yang diterima: <code class="text-xs bg-gray-100 rounded px-1.5 py-0.5 text-gray-800 font-mono">.xlsx</code> atau <code class="text-xs bg-gray-100 rounded px-1.5 py-0.5 text-gray-800 font-mono">.xls</code>, maksimal 10MB.
-            </p>
+        <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800">Upload File Excel PRB</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Format file yang diterima: <code class="text-xs bg-gray-100 rounded px-1.5 py-0.5 text-gray-800 font-mono">.xlsx</code> atau <code class="text-xs bg-gray-100 rounded px-1.5 py-0.5 text-gray-800 font-mono">.xls</code>, maksimal 10MB.
+                </p>
+            </div>
+            <a href="{{ route('admin.import.prb.template') }}" class="inline-flex items-center gap-x-2 py-2 px-3 text-xs font-semibold rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 transition-colors shadow-2xs shrink-0 self-start sm:self-auto" title="Download template format file Excel resmi">
+                <svg class="size-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Download Template Excel
+            </a>
         </div>
 
         <div class="p-6">
@@ -106,6 +114,16 @@
                 @csrf
 
                 <div class="space-y-5">
+                    <!-- Template Tip Box -->
+                    <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-3">
+                        <svg class="size-5 text-blue-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="text-xs text-gray-600 space-y-1">
+                            <p class="font-medium text-gray-800">Belum memiliki format Excel yang sesuai?</p>
+                            <p>Unduh template resmi dengan klik tombol <a href="{{ route('admin.import.prb.template') }}" class="font-semibold text-blue-700 underline hover:text-blue-900">Download Template Excel</a> di atas. Format file disesuaikan persis dengan kolom Register Pasien PRB (profil pasien dan matriks pengambilan obat bulanan).</p>
+                        </div>
+                    </div>
                     <div x-show="status === 'idle'">
                         <label for="file" class="block text-sm font-medium mb-2 text-gray-700">Pilih File Excel</label>
                         <input type="file" name="file" id="file" accept=".xlsx,.xls" required @change="handleFileChange"

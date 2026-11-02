@@ -63,6 +63,10 @@ class PasienController extends Controller
 
     public function toggleStatus(Request $request, $id)
     {
+        if (! auth()->user()?->canKelolaPasien()) {
+            abort(403, 'Anda tidak memiliki hak untuk mengubah status keaktifan pasien.');
+        }
+
         $pasien = Pasien::findOrFail($id);
 
         if ($pasien->status_keaktifan === 'aktif') {
@@ -101,6 +105,10 @@ class PasienController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (! auth()->user()?->canKelolaPasien()) {
+            abort(403, 'Anda tidak memiliki hak untuk mengedit data pasien.');
+        }
+
         $pasien = Pasien::findOrFail($id);
 
         $validated = $request->validate([
