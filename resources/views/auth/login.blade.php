@@ -56,17 +56,6 @@
                     <button type="submit" class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
                         Masuk
                     </button>
-
-                    <!-- Info Petunjuk Login Pegawai -->
-                    <div class="p-3 bg-blue-50/80 border border-blue-200/80 rounded-xl text-xs text-blue-900 flex items-start gap-2.5">
-                        <svg class="size-4 text-blue-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
-                        </svg>
-                        <div class="leading-relaxed">
-                            <strong class="font-semibold text-blue-950">Petunjuk Login Pegawai:</strong>
-                            <p class="text-[11px] text-blue-800 mt-0.5">Masuk menggunakan <strong>NIK 16 digit</strong> sebagai username dan <strong>Tanggal Lahir</strong> (format: <code>DDMMYYYY</code>, contoh: <code>25071993</code> atau <code>25-07-1993</code>) sebagai password.</p>
-                        </div>
-                    </div>
                 </div>
             </form>
         </div>

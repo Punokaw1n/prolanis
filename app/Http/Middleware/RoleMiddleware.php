@@ -28,6 +28,14 @@ class RoleMiddleware
         }
 
         if ($user->peran === 'admin' || in_array($user->peran, $roles, true)) {
+            // Dokter (termasuk dr. Ageng selaku Kepala Puskesmas) disamakan fiturnya dengan dokter:
+            // Tidak boleh mengakses modul farmasi maupun modul admin murni (petugas, prolanis jadwal, consent, log).
+            if ($user->isDokter()) {
+                if ($roles === ['farmasi'] || $roles === ['admin']) {
+                    abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+                }
+            }
+
             return $next($request);
         }
 

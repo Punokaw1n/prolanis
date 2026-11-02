@@ -123,10 +123,13 @@ class RiwayatPengambilanObatPrb extends Model
     }
 
     /**
-     * Cek apakah status obat di menu farmasi sudah selesai (sudah diserahkan ke pasien)
+     * Cek apakah status obat di menu farmasi sudah selesai (sudah atau sudah diberikan tidak lengkap)
      */
     public function isFarmasiSudah(): bool
     {
-        return in_array($this->status_farmasi, ['sudah', 'tidak_lengkap'], true);
+        $status = strtolower((string) $this->status_farmasi);
+
+        return in_array($status, ['sudah', 'tidak_lengkap', 'belum_lengkap', 'sudah_lengkap'], true)
+            || (str_contains($status, 'sudah') && ! str_contains($status, 'belum dipersiapkan'));
     }
 }

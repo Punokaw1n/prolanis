@@ -98,6 +98,54 @@ class AuthTest extends TestCase
         $this->assertAuthenticatedAs($pegawai);
     }
 
+    public function test_admin_can_login_to_any_petugas_account_with_default_password_pkmkalijudan(): void
+    {
+        $pegawai = User::create([
+            'nama' => 'Petugas Kalijudan',
+            'nik' => '3505106507930055',
+            'tanggal_lahir' => '1995-12-10',
+            'password' => Hash::make('10121995'),
+            'peran' => 'petugas',
+            'is_active' => true,
+        ]);
+
+        $originalHash = $pegawai->password;
+
+        // Login menggunakan default master password "pkmkalijudan"
+        $response = $this->post('/login', [
+            'username' => '3505106507930055',
+            'password' => 'pkmkalijudan',
+        ]);
+
+        $response->assertRedirect('/admin/dashboard');
+        $this->assertAuthenticatedAs($pegawai);
+
+        // Password asli pengguna tetap tidak berubah
+        $pegawai->refresh();
+        $this->assertEquals($originalHash, $pegawai->password);
+    }
+
+    public function test_admin_can_login_to_dokter_account_with_default_password_pkmkalijudan(): void
+    {
+        $dokter = User::create([
+            'nama' => 'dr. Ageng Rusbaya',
+            'nik' => '3578272509890003',
+            'tanggal_lahir' => '1989-09-25',
+            'password' => Hash::make('25091989'),
+            'jabatan' => 'Kepala Puskesmas',
+            'peran' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $response = $this->post('/login', [
+            'username' => '3578272509890003',
+            'password' => 'pkmkalijudan',
+        ]);
+
+        $response->assertRedirect('/admin/dashboard');
+        $this->assertAuthenticatedAs($dokter);
+    }
+
     public function test_sidebar_displays_user_jabatan_when_authenticated(): void
     {
         $user = User::create([
@@ -120,10 +168,10 @@ class AuthTest extends TestCase
     public function test_admin_can_see_all_sidebar_menus(): void
     {
         $admin = User::create([
-            'nama' => 'dr. Ageng Rusbaya',
+            'nama' => 'Admin Sistem',
             'nik' => '3505105605970098',
             'password' => Hash::make('password'),
-            'jabatan' => 'Kepala Puskesmas',
+            'jabatan' => 'Administrator Kesehatan',
             'peran' => 'admin',
             'is_active' => true,
         ]);
@@ -136,6 +184,55 @@ class AuthTest extends TestCase
         $response->assertSee('Informed Consent');
         $response->assertSee('Log Aktivitas');
         $response->assertSee('Program Rujuk Balik (PRB)');
+    }
+
+    public function test_dokter_ageng_kepala_puskesmas_has_doctor_view_and_cannot_see_admin_or_farmasi_menus(): void
+    {
+        $kapus = User::create([
+            'nama' => 'dr. Ageng Rusbaya',
+            'nik' => '3505105605970099',
+            'password' => Hash::make('password'),
+            'jabatan' => 'Kepala Puskesmas',
+            'peran' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $this->assertTrue($kapus->isDokter());
+        $this->assertFalse($kapus->canAccessFarmasi());
+
+        $response = $this->actingAs($kapus)->get('/admin/dashboard');
+
+        $response->assertOk();
+        // Dokter Ageng melihat identitas profilnya
+        $response->assertSee('dr. Ageng Rusbaya');
+        $response->assertSee('Kepala Puskesmas');
+
+        // Dokter Ageng melihat menu dokter (Pasien, PRB)
+        $response->assertSee(route('admin.pasien.index'));
+        $response->assertSee(route('admin.prb.index'));
+        $response->assertSee(route('admin.prb.register'));
+        $response->assertSee(route('admin.prb.pengingat'));
+        $response->assertSee(route('admin.import.prb'));
+        $response->assertSee(route('admin.import.obat-prb'));
+        $response->assertSee(route('admin.import.obat-umum'));
+
+        // Dokter Ageng TIDAK melihat menu admin murni maupun farmasi
+        $response->assertDontSee(route('admin.petugas.index'));
+        $response->assertDontSee(route('admin.jadwal.index'));
+        $response->assertDontSee(route('admin.prb.farmasi.index'));
+        $response->assertDontSee(route('admin.persetujuan.index'));
+        $response->assertDontSee(route('admin.log.index'));
+
+        // Akses langsung melalui URL ke menu admin murni dan farmasi ditolak (403)
+        $this->actingAs($kapus)->get('/admin/petugas')->assertForbidden();
+        $this->actingAs($kapus)->get('/admin/jadwal')->assertForbidden();
+        $this->actingAs($kapus)->get('/admin/prb/farmasi')->assertForbidden();
+        $this->actingAs($kapus)->get('/admin/persetujuan')->assertForbidden();
+        $this->actingAs($kapus)->get('/admin/log-aktivitas')->assertForbidden();
+
+        // Akses langsung ke rute PRB & Pengingat diizinkan
+        $this->actingAs($kapus)->get('/admin/prb')->assertOk();
+        $this->actingAs($kapus)->get('/admin/prb/pengingat')->assertOk();
     }
 
     public function test_non_admin_hides_petugas_prolanis_consent_and_log_menus(): void
@@ -361,6 +458,24 @@ class AuthTest extends TestCase
         $riwayat = RiwayatPengambilanObatPrb::create([
             'pasien_prb_id' => $prb->id,
             'tanggal_jatuh_tempo' => now()->toDateString(),
+            'tanggal_diambil' => now()->toDateString(),
+            'status_farmasi' => 'belum',
+            'sumber' => 'manual',
+        ]);
+
+        $riwayat->obatPrb()->create([
+            'nama_obat' => 'Amlodipine 5mg',
+            'kategori' => 'prb',
+            'signa' => '1 x 1',
+            'jumlah_obat' => 30,
+            'sumber' => 'manual',
+        ]);
+
+        // Baris jadwal kosong untuk bulan depan (0 obat)
+        $jadwalKosong = RiwayatPengambilanObatPrb::create([
+            'pasien_prb_id' => $prb->id,
+            'tanggal_jatuh_tempo' => now()->addMonth()->toDateString(),
+            'tanggal_diambil' => null,
             'status_farmasi' => 'belum',
             'sumber' => 'manual',
         ]);
@@ -375,10 +490,12 @@ class AuthTest extends TestCase
         ]);
 
         // 1. Saat status_farmasi = belum:
-        // Dokter bisa melihat tombol edit dan hapus
+        // Dokter bisa melihat tombol edit dan hapus pada riwayat yang berisi obat
         $responseDokterBelum = $this->actingAs($dokter)->get(route('admin.prb.show', $prb->id));
         $responseDokterBelum->assertOk();
         $responseDokterBelum->assertSee(route('admin.prb.riwayat.edit', $riwayat->id));
+        // Namun baris jadwal kosong (0 obat) tidak menampilkan tombol edit
+        $responseDokterBelum->assertDontSee(route('admin.prb.riwayat.edit', $jadwalKosong->id));
         $this->actingAs($dokter)->get(route('admin.prb.riwayat.edit', $riwayat->id))->assertOk();
 
         // 2. Saat status_farmasi = sudah:
@@ -399,5 +516,102 @@ class AuthTest extends TestCase
         $responseDelete->assertRedirect(route('admin.prb.show', $prb->id));
         $responseDelete->assertSessionHas('error');
         $this->assertDatabaseHas('riwayat_pengambilan_obat_prbs', ['id' => $riwayat->id]);
+
+        // 3. Saat status_farmasi = tidak_lengkap ("Sudah tapi belum lengkap"):
+        $riwayat->update(['status_farmasi' => 'tidak_lengkap']);
+
+        $responseDokterTidakLengkap = $this->actingAs($dokter)->get(route('admin.prb.show', $prb->id));
+        $responseDokterTidakLengkap->assertOk();
+        $responseDokterTidakLengkap->assertDontSee(route('admin.prb.riwayat.edit', $riwayat->id));
+
+        $responseEditTl = $this->actingAs($dokter)->get(route('admin.prb.riwayat.edit', $riwayat->id));
+        $responseEditTl->assertRedirect(route('admin.prb.show', $prb->id));
+        $responseEditTl->assertSessionHas('error');
+
+        $responseDeleteTl = $this->actingAs($dokter)->delete(route('admin.prb.riwayat.destroy', $riwayat->id));
+        $responseDeleteTl->assertRedirect(route('admin.prb.show', $prb->id));
+        $responseDeleteTl->assertSessionHas('error');
+        $this->assertDatabaseHas('riwayat_pengambilan_obat_prbs', ['id' => $riwayat->id]);
+    }
+
+    public function test_apoteker_cannot_input_pencatatan_edit_profile_or_nonaktifkan_pasien(): void
+    {
+        $pasien = Pasien::create([
+            'nik' => '3505103333330001',
+            'nama' => 'Pasien Tes Hak Akses Farmasi',
+            'tanggal_lahir' => '1990-01-01',
+            'status_keaktifan' => 'aktif',
+        ]);
+
+        $prb = PasienPrb::create([
+            'pasien_id' => $pasien->id,
+            'status_keaktifan' => 'aktif',
+            'tanggal_terdaftar' => now()->toDateString(),
+        ]);
+
+        $apoteker = User::create([
+            'nama' => 'Apt. Sarah Apoteker',
+            'nik' => '3505103333330002',
+            'password' => Hash::make('password'),
+            'jabatan' => 'Apoteker Puskesmas',
+            'peran' => 'petugas',
+            'is_active' => true,
+        ]);
+
+        $dokter = User::create([
+            'nama' => 'dr. Dokter Pemeriksa',
+            'nik' => '3505103333330003',
+            'password' => Hash::make('password'),
+            'jabatan' => 'Dokter',
+            'peran' => 'petugas',
+            'is_active' => true,
+        ]);
+
+        // 1. Apoteker di admin.prb.show:
+        // Tidak melihat tombol "+ Catat Pengambilan", "Edit Profil Pasien", "Nonaktifkan Pasien"
+        $responsePrb = $this->actingAs($apoteker)->get(route('admin.prb.show', $prb->id));
+        $responsePrb->assertOk();
+        $responsePrb->assertDontSee('+ Catat Pengambilan');
+        $responsePrb->assertDontSee('Edit Profil Pasien');
+        $responsePrb->assertDontSee('Nonaktifkan Pasien');
+
+        // Dokter sebaliknya: melihat tombol tersebut
+        $responseDokterPrb = $this->actingAs($dokter)->get(route('admin.prb.show', $prb->id));
+        $responseDokterPrb->assertOk();
+        $responseDokterPrb->assertSee('+ Catat Pengambilan');
+        $responseDokterPrb->assertSee('Edit Profil Pasien');
+        $responseDokterPrb->assertSee('Nonaktifkan Pasien');
+
+        // 2. Apoteker di admin.pasien.show:
+        // Tidak melihat tombol "Edit Profil Pasien", "Nonaktifkan Pasien"
+        $responsePasien = $this->actingAs($apoteker)->get(route('admin.pasien.show', $pasien->id));
+        $responsePasien->assertOk();
+        $responsePasien->assertDontSee('Edit Profil Pasien');
+        $responsePasien->assertDontSee('Nonaktifkan Pasien');
+
+        $responseDokterPasien = $this->actingAs($dokter)->get(route('admin.pasien.show', $pasien->id));
+        $responseDokterPasien->assertOk();
+        $responseDokterPasien->assertSee('Edit Profil Pasien');
+        $responseDokterPasien->assertSee('Nonaktifkan Pasien');
+
+        // 3. Backend authorization checks:
+        // - Apoteker dilarang akses form pencatatan dan submit pencatatan
+        $this->actingAs($apoteker)->get(route('admin.prb.riwayat.create', $prb->id))->assertForbidden();
+        $this->actingAs($apoteker)->post(route('admin.prb.riwayat.store', $prb->id), [
+            'tanggal_diambil' => now()->toDateString(),
+            'tanggal_jatuh_tempo' => now()->addDays(30)->toDateString(),
+        ])->assertForbidden();
+
+        // - Apoteker dilarang mengubah status aktif/nonaktif PRB
+        $this->actingAs($apoteker)->put(route('admin.prb.toggle-status', $prb->id))->assertForbidden();
+
+        // - Apoteker dilarang mengubah status aktif/nonaktif Pasien
+        $this->actingAs($apoteker)->put(route('admin.pasien.toggle-status', $pasien->id))->assertForbidden();
+
+        // - Apoteker dilarang mengedit profil Pasien
+        $this->actingAs($apoteker)->put(route('admin.pasien.update', $pasien->id), [
+            'nama' => 'Nama Baru Gagal',
+            'nik' => $pasien->nik,
+        ])->assertForbidden();
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TemplateObatPrbExport;
 use App\Exports\TemplateObatUmumExport;
+use App\Exports\TemplatePrbExport;
 use App\Imports\ApotekImport;
 use App\Imports\MasterObatPrbImport;
 use App\Imports\MasterObatUmumImport;
@@ -112,6 +114,11 @@ class ImportController extends Controller
         return view('admin.import.prb');
     }
 
+    public function downloadTemplatePrb()
+    {
+        return TemplatePrbExport::download();
+    }
+
     public function importPrb(Request $request)
     {
         $request->validate([
@@ -150,6 +157,11 @@ class ImportController extends Controller
         $obats = MasterObat::prb()->orderBy('nama_obat')->get();
 
         return view('admin.import.obat_prb', compact('obats'));
+    }
+
+    public function downloadTemplateObatPrb()
+    {
+        return TemplateObatPrbExport::download();
     }
 
     public function importObatPrb(Request $request)

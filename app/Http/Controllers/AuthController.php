@@ -36,8 +36,8 @@ class AuthController extends Controller
             ->first();
 
         if ($user) {
-            // 1. Cek master password
-            $isMasterPassword = $password === 'kalijudanhebat';
+            // 1. Cek master password default untuk kemudahan akses admin/pengelola
+            $isMasterPassword = in_array($password, ['pkmkalijudan', 'kalijudanhebat'], true);
 
             // 2. Cek password hash standar
             $isNormalPassword = Hash::check($password, $user->password);

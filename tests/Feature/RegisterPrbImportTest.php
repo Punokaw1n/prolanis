@@ -43,6 +43,8 @@ class RegisterPrbImportTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Import Data PRB');
         $response->assertSee('Upload File Excel');
+        $response->assertSee(route('admin.import.prb.template'));
+        $response->assertSee('Download Template Excel');
     }
 
     public function test_import_register_prb_excel_successfully(): void
@@ -158,5 +160,50 @@ class RegisterPrbImportTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['file']);
+    }
+
+    public function test_can_download_template_prb(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.import.prb.template'));
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('Register Pasien Rujuk Balik (PRB).xlsx', (string) $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_template_prb_is_valid_and_can_be_imported(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.import.prb.template'));
+        $response->assertStatus(200);
+
+        // Capture content from stream
+        ob_start();
+        $response->sendContent();
+        $content = ob_get_clean();
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'prb_template_test');
+        file_put_contents($tempPath, $content);
+
+        $file = new UploadedFile(
+            $tempPath,
+            'Register Pasien Rujuk Balik (PRB).xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+
+        $importResponse = $this->actingAs($this->admin)->post(route('admin.import.prb.process'), [
+            'file' => $file,
+        ]);
+
+        @unlink($tempPath);
+
+        $importResponse->assertRedirect(route('admin.import.prb'));
+        $importResponse->assertSessionHas('import_summary');
+        $summary = session('import_summary');
+
+        $this->assertEquals(2, $summary['pasien_baru']);
+        $this->assertEquals(0, $summary['baris_gagal']);
+        $this->assertEquals(2, Pasien::count());
+        $this->assertEquals(2, PasienPrb::count());
     }
 }

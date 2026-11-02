@@ -12,6 +12,7 @@
             <p class="mt-1 text-sm text-gray-600">Informasi profil dan riwayat pemeriksaan pasien.</p>
         </div>
     </div>
+    @if(auth()->user()?->canKelolaPasien())
     <div class="sm:ms-auto flex items-center gap-2" x-data="{ toggleStatusModalOpen: false, selectedAlasan: 'Meninggal Dunia', customAlasan: '', editPasienModalOpen: @json($errors->any()) }">
         <button type="button" @click="editPasienModalOpen = true" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-blue-200 bg-blue-50/70 text-blue-700 shadow-sm hover:bg-blue-100 hover:border-blue-300 transition-colors">
             <svg class="flex-shrink-0 size-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -107,6 +108,7 @@
             </div>
         </template>
     </div>
+    @endif
 </header>
 
 <div class="grid lg:grid-cols-3 gap-6">

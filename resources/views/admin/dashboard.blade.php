@@ -82,7 +82,7 @@
     <div class="flex flex-col bg-white border border-gray-200 shadow-sm rounded-xl lg:col-span-1">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl flex justify-between items-center">
             <h2 class="text-lg font-semibold text-gray-800">Jadwal Prolanis Terdekat</h2>
-            @if(auth()->user()?->peran === 'admin')
+            @if(auth()->user()?->peran === 'admin' && !auth()->user()?->isDokter())
             <a href="{{ route('admin.jadwal.index') }}" class="text-sm font-medium text-blue-600 hover:underline">Lihat Semua</a>
             @endif
         </div>
