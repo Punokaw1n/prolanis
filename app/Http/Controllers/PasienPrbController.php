@@ -354,76 +354,102 @@ class PasienPrbController extends Controller
             'obat.*.aturan_minum' => 'nullable|string|max:100',
         ]);
 
-        // 1. Cari riwayat yang belum diambil (pending)
-        $pendingRiwayat = $prb->riwayatPengambilan()
-            ->whereNull('tanggal_diambil')
-            ->orderBy('tanggal_jatuh_tempo', 'asc')
-            ->first();
+        return \DB::transaction(function () use ($prb, $request, $id) {
+            // Proteksi race condition / double-click:
+            // Cek apakah ada riwayat yang baru dibuat dalam 10 detik terakhir untuk pasien ini dengan tanggal_diambil yang sama
+            $recentDuplicate = $prb->riwayatPengambilan()
+                ->where('tanggal_diambil', $request->tanggal_diambil)
+                ->where('created_at', '>=', now()->subSeconds(10))
+                ->exists();
 
-        if ($pendingRiwayat) {
-            // Update riwayat yang sudah dijadwalkan sebelumnya
-            $pendingRiwayat->update([
-                'tanggal_diambil' => $request->tanggal_diambil,
-                'kode_diagnosa' => $request->kode_diagnosa,
-                'diagnosa' => $request->diagnosa ?: ($prb->diagnosa ?: null),
-                'catatan' => $request->catatan,
-                'sumber' => 'manual',
-                'dicatat_oleh' => auth()->id() ?? null,
-            ]);
-            $riwayatToAttach = $pendingRiwayat;
-        } else {
-            // Jika tidak ada jadwal sebelumnya (misal baru pertama kali),
-            // buat riwayat baru untuk pengambilan hari ini
-            $riwayatToAttach = $prb->riwayatPengambilan()->create([
-                'tanggal_jatuh_tempo' => $request->tanggal_diambil, // Anggap tepat waktu
-                'tanggal_diambil' => $request->tanggal_diambil,
-                'kode_diagnosa' => $request->kode_diagnosa,
-                'diagnosa' => $request->diagnosa ?: ($prb->diagnosa ?: null),
-                'catatan' => $request->catatan,
-                'sumber' => 'manual',
-                'dicatat_oleh' => auth()->id() ?? null,
-            ]);
-        }
+            if ($recentDuplicate) {
+                return redirect()->route('admin.prb.show', $id)
+                    ->with('success', 'Riwayat pengambilan obat berhasil dicatat.');
+            }
 
-        // 2. Simpan daftar obat ke riwayat yang baru saja diambil
-        if ($request->has('obat') && is_array($request->obat)) {
-            foreach ($request->obat as $obatData) {
-                $namaObatClean = trim($obatData['nama']);
-                $riwayatToAttach->obatPrb()->create([
-                    'nama_obat' => $namaObatClean,
-                    'kategori' => $obatData['kategori'],
-                    'signa' => $obatData['signa'] ?? '1 x 1',
-                    'jumlah_hari' => $obatData['jumlah_hari'] ?? 30,
-                    'jumlah_obat' => $obatData['jumlah_obat'] ?? 30,
-                    'aturan_minum' => $obatData['aturan_minum'] ?? null,
+            // 1. Cari riwayat yang belum diambil (pending) dengan diagnosa yang sesuai
+            $pendingQuery = $prb->riwayatPengambilan()
+                ->whereNull('tanggal_diambil');
+
+            if ($request->filled('kode_diagnosa')) {
+                $pendingQuery->where('kode_diagnosa', $request->kode_diagnosa);
+            }
+
+            $pendingRiwayat = $pendingQuery->orderBy('tanggal_jatuh_tempo', 'asc')->first();
+
+            // Jika tidak ditemukan dengan kode diagnosa yang sama dan request tidak menentukan kode diagnosa
+            if (! $pendingRiwayat && ! $request->filled('kode_diagnosa')) {
+                $pendingRiwayat = $prb->riwayatPengambilan()
+                    ->whereNull('tanggal_diambil')
+                    ->orderBy('tanggal_jatuh_tempo', 'asc')
+                    ->first();
+            }
+
+            if ($pendingRiwayat) {
+                // Update riwayat yang sudah dijadwalkan sebelumnya
+                $pendingRiwayat->update([
+                    'tanggal_diambil' => $request->tanggal_diambil,
+                    'kode_diagnosa' => $request->kode_diagnosa,
+                    'diagnosa' => $request->diagnosa ?: ($prb->diagnosa ?: null),
+                    'catatan' => $request->catatan,
                     'sumber' => 'manual',
+                    'dicatat_oleh' => auth()->id() ?? null,
                 ]);
+                $riwayatToAttach = $pendingRiwayat;
+            } else {
+                // Jika tidak ada jadwal sebelumnya (misal baru pertama kali),
+                // buat riwayat baru untuk pengambilan hari ini
+                $riwayatToAttach = $prb->riwayatPengambilan()->create([
+                    'tanggal_jatuh_tempo' => $request->tanggal_diambil, // Anggap tepat waktu
+                    'tanggal_diambil' => $request->tanggal_diambil,
+                    'kode_diagnosa' => $request->kode_diagnosa,
+                    'diagnosa' => $request->diagnosa ?: ($prb->diagnosa ?: null),
+                    'catatan' => $request->catatan,
+                    'sumber' => 'manual',
+                    'dicatat_oleh' => auth()->id() ?? null,
+                ]);
+            }
 
-                // Auto-register ke MasterObat jika belum ada
-                MasterObat::firstOrCreate(
-                    [
+            // 2. Simpan daftar obat ke riwayat yang baru saja diambil
+            if ($request->has('obat') && is_array($request->obat)) {
+                foreach ($request->obat as $obatData) {
+                    $namaObatClean = trim($obatData['nama']);
+                    $riwayatToAttach->obatPrb()->create([
                         'nama_obat' => $namaObatClean,
                         'kategori' => $obatData['kategori'],
-                    ],
-                    [
+                        'signa' => $obatData['signa'] ?? '1 x 1',
+                        'jumlah_hari' => $obatData['jumlah_hari'] ?? 30,
+                        'jumlah_obat' => $obatData['jumlah_obat'] ?? 30,
+                        'aturan_minum' => $obatData['aturan_minum'] ?? null,
                         'sumber' => 'manual',
-                        'is_active' => true,
-                    ]
-                );
+                    ]);
+
+                    // Auto-register ke MasterObat jika belum ada
+                    MasterObat::firstOrCreate(
+                        [
+                            'nama_obat' => $namaObatClean,
+                            'kategori' => $obatData['kategori'],
+                        ],
+                        [
+                            'sumber' => 'manual',
+                            'is_active' => true,
+                        ]
+                    );
+                }
             }
-        }
 
-        // 3. Buat jadwal riwayat BARU untuk jatuh tempo BERIKUTNYA
-        $prb->riwayatPengambilan()->create([
-            'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
-            'tanggal_diambil' => null, // Belum diambil
-            'kode_diagnosa' => $request->kode_diagnosa,
-            'diagnosa' => $request->diagnosa ?: ($prb->diagnosa ?: null),
-            'sumber' => 'manual',
-            'dicatat_oleh' => auth()->id() ?? null,
-        ]);
+            // 3. Buat jadwal riwayat BARU untuk jatuh tempo BERIKUTNYA
+            $prb->riwayatPengambilan()->create([
+                'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
+                'tanggal_diambil' => null, // Belum diambil
+                'kode_diagnosa' => $request->kode_diagnosa,
+                'diagnosa' => $request->diagnosa ?: ($prb->diagnosa ?: null),
+                'sumber' => 'manual',
+                'dicatat_oleh' => auth()->id() ?? null,
+            ]);
 
-        return redirect()->route('admin.prb.show', $id)->with('success', 'Riwayat pengambilan obat berhasil dicatat.');
+            return redirect()->route('admin.prb.show', $id)->with('success', 'Riwayat pengambilan obat berhasil dicatat.');
+        });
     }
 
     public function editRiwayat($riwayat_id)

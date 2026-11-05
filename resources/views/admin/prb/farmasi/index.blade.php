@@ -47,7 +47,7 @@
         <div class="flex items-center gap-3">
             <div class="px-4 py-2 bg-teal-50 border border-teal-200/80 rounded-xl text-center sm:text-right">
                 <span class="block text-[11px] font-medium text-teal-600 uppercase tracking-wider">Resep Hari Ini</span>
-                <span class="text-lg font-bold text-teal-900 font-mono">{{ $totalResepHariIni }} <span class="text-xs font-normal text-teal-700">Pasien</span></span>
+                <span class="text-lg font-bold text-teal-900 font-mono">{{ $totalResepHariIni }} <span class="text-xs font-normal text-teal-700">Resep</span></span>
             </div>
         </div>
     </div>

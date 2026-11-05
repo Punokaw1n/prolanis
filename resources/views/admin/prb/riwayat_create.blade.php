@@ -102,7 +102,7 @@
         </div>
     @endif
 
-    <form id="formResepPrb" action="{{ route('admin.prb.riwayat.store', $prb->id) }}" method="POST" class="no-print">
+    <form id="formResepPrb" action="{{ route('admin.prb.riwayat.store', $prb->id) }}" method="POST" class="no-print" @submit="if(isSubmitting) { $event.preventDefault(); return false; } isSubmitting = true">
         @csrf
 
         <!-- Layout 2 Kolom (Area Resep di Kiri & Panel Action di Kanan) -->
@@ -617,11 +617,13 @@
                         
                         <!-- 1. Tombol Simpan Resep (Primary Action) -->
                         <button type="submit" 
-                            class="group w-full py-2.5 px-4 inline-flex items-center justify-center gap-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all duration-200 cursor-pointer">
-                            <svg class="size-4 group-hover:scale-110 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            :disabled="isSubmitting"
+                            class="group w-full py-2.5 px-4 inline-flex items-center justify-center gap-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-xs hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all duration-200 cursor-pointer">
+                            <span x-show="isSubmitting" class="animate-spin inline-block size-4 border-2 border-white border-t-transparent rounded-full"></span>
+                            <svg x-show="!isSubmitting" class="size-4 group-hover:scale-110 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                             </svg>
-                            Simpan Catatan Resep
+                            <span x-text="isSubmitting ? 'Menyimpan Catatan Resep...' : 'Simpan Catatan Resep'">Simpan Catatan Resep</span>
                         </button>
 
                         <!-- 2. Tombol Tambah Data Obat Baru (Master) - Sesuai Permintaan User! -->
@@ -1258,6 +1260,7 @@
 <script>
 function riwayatForm() {
     return {
+        isSubmitting: false,
         tanggalDiambil: new Date().toISOString().split('T')[0],
         tanggalJatuhTempo: '',
         programPasien: @json($programPasien ?? []),

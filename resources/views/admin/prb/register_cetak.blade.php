@@ -7,9 +7,10 @@
     
     <style>
         /* Standar Halaman Cetak Landscape A4 / F4 */
+        /* Margin 0 menghilangkan header (tanggal/judul) & footer (URL/nomor halaman) bawaan browser */
         @page {
             size: A4 landscape;
-            margin: 8mm 10mm 10mm 10mm;
+            margin: 0;
         }
 
         * {
@@ -24,7 +25,7 @@
             color: #000;
             background: #fff;
             margin: 0;
-            padding: 10px;
+            padding: 15px;
             line-height: 1.25;
         }
 
@@ -280,7 +281,9 @@
                 display: none !important;
             }
             body {
-                padding: 0 !important;
+                margin: 0 !important;
+                padding: 8mm 10mm 10mm 10mm !important;
+                background: #fff !important;
             }
         }
     </style>
