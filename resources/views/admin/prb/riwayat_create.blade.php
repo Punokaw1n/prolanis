@@ -2,10 +2,7 @@
 
 @php
     $currentUser = auth()->user();
-    $rawNamaUser = trim($currentUser?->nama ?? '');
-    $defaultDokterNama = $rawNamaUser 
-        ? (!preg_match('/^(dr\.|drg\.|dokter)/i', $rawNamaUser) ? 'dr. ' . $rawNamaUser : $rawNamaUser)
-        : 'Dokter Pemeriksa';
+    $defaultDokterNama = $currentUser?->nama_gelar ?? 'Dokter Pemeriksa';
     $defaultDokterSip = $currentUser?->nip ? 'SIP. ' . $currentUser->nip : 'SIP. -';
 @endphp
 
@@ -79,7 +76,7 @@
                 </span>
                 <span class="inline-flex items-center gap-1 py-1 px-3 rounded-full text-xs font-semibold bg-rose-600 text-white shadow-2xs">
                     <svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    {{ auth()->user()->nama ?? 'Petugas / Dokter Pemeriksa' }}
+                    {{ auth()->user()->nama_gelar ?? 'Dokter Pemeriksa' }}
                 </span>
                 <span class="inline-flex items-center gap-1 py-1 px-2.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                     <span class="size-1.5 rounded-full bg-emerald-500"></span>

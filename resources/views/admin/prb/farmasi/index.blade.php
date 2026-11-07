@@ -249,10 +249,7 @@
                             }
 
                             // Dokter / Pencatat resep
-                            $rawDokter = $item->pencatat?->nama ?? 'Dokter Pemeriksa';
-                            $dokterFormatted = (!preg_match('/^(dr\.|drg\.|dokter)/i', $rawDokter) && !in_array($rawDokter, ['Admin', 'Admin Test', 'Dokter Pemeriksa']))
-                                ? 'dr. ' . $rawDokter 
-                                : $rawDokter;
+                            $dokterFormatted = $item->pencatat?->nama_gelar ?? 'Dokter Pemeriksa';
 
                             $jumlahObat = $item->obatPrb->count();
                             $diagnosaTeks = $item->pasienPrb?->keterangan_diagnosa 

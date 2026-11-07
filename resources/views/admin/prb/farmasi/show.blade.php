@@ -23,10 +23,7 @@
     }
 
     // Dokter / Pencatat resep
-    $rawDokter = $riwayat->pencatat?->nama ?? 'Dokter Pemeriksa';
-    $dokterFormatted = (!preg_match('/^(dr\.|drg\.|dokter)/i', $rawDokter) && !in_array($rawDokter, ['Admin', 'Admin Test', 'Dokter Pemeriksa']))
-        ? 'dr. ' . $rawDokter 
-        : $rawDokter;
+    $dokterFormatted = $riwayat->pencatat?->nama_gelar ?? 'Dokter Pemeriksa';
     $dokterSip = $riwayat->pencatat?->nip ? 'SIP. ' . $riwayat->pencatat->nip : 'SIP. -';
 
     $diagnosaTeks = $riwayat->diagnosa_lengkap 

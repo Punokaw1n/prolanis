@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LogAktivitas;
 use App\Models\RiwayatPengambilanObatPrb;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -162,6 +163,15 @@ class FarmasiPrbController extends Controller
             'petugas_farmasi_id' => auth()->id(),
             'waktu_diberikan' => now(),
         ]);
+
+        $namaPasien = $riwayat->pasienPrb?->pasien?->nama ?? 'Pasien';
+        $labelStatus = match ($statusFarmasi) {
+            'sudah' => 'Lengkap (Sudah Diberikan)',
+            'tidak_lengkap' => 'Tidak Lengkap (Ada Stok Kosong / Sebagian)',
+            default => 'Belum Dipersiapkan',
+        };
+
+        LogAktivitas::catat('VERIFIKASI_FARMASI', "Memverifikasi pemberian obat farmasi pasien {$namaPasien} dengan status: {$labelStatus}");
 
         return redirect()->route('admin.prb.farmasi.index', [
             'tanggal' => $riwayat->tanggal_diambil?->format('Y-m-d') ?? now()->format('Y-m-d'),

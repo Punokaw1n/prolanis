@@ -65,6 +65,29 @@ class User extends Authenticatable
     }
 
     /**
+     * Format nama dengan gelar dokter yang rapi tanpa duplikasi (misal: dr. Nama Dokter)
+     */
+    public function getNamaGelarAttribute(): string
+    {
+        $nama = trim((string) $this->nama);
+        if ($nama === '' || in_array(strtolower($nama), ['admin', 'admin test', 'petugas'])) {
+            return $this->isDokter() ? 'Dokter Pemeriksa' : ($this->nama ?: 'Petugas');
+        }
+
+        if (! $this->isDokter()) {
+            return $nama;
+        }
+
+        $nama = preg_replace('/^(dr\.?\s*)+/i', 'dr. ', $nama);
+        $nama = preg_replace('/^(drg\.?\s*)+/i', 'drg. ', $nama);
+        if (! preg_match('/^(dr\.|drg\.|dokter)/i', $nama)) {
+            $nama = 'dr. '.$nama;
+        }
+
+        return $nama;
+    }
+
+    /**
      * Cek apakah user memiliki peran admin
      */
     public function isAdmin(): bool

@@ -303,10 +303,7 @@
                             @if($r->obatPrb->count() > 0)
                             @php
                                 $rDoctor = $r->pencatat ?? auth()->user();
-                                $rDoctorNama = trim($rDoctor?->nama ?? '');
-                                $rDoctorNamaFormatted = $rDoctorNama 
-                                    ? (!preg_match('/^(dr\.|drg\.|dokter)/i', $rDoctorNama) ? 'dr. ' . $rDoctorNama : $rDoctorNama)
-                                    : 'Dokter Pemeriksa';
+                                $rDoctorNamaFormatted = $rDoctor?->nama_gelar ?? 'Dokter Pemeriksa';
                                 $rDoctorSip = $rDoctor?->nip ? 'SIP. ' . $rDoctor->nip : 'SIP. -';
                             @endphp
                             <button type="button" 
@@ -388,9 +385,77 @@
                         </div>
                     </div>
                     
-                    <time class="block mb-2 text-sm font-normal leading-none text-gray-400">
-                        Tgl Diambil: {{ $r->tanggal_diambil ? \Carbon\Carbon::parse($r->tanggal_diambil)->translatedFormat('d M Y') : '-' }}
-                    </time>
+                    <!-- Metadata Kunjungan, Dokter Pemeriksa & Penyerahan Farmasi -->
+                    <div class="my-3 py-2.5 px-3.5 bg-slate-50 border border-slate-200/90 rounded-xl text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <!-- 1. Tanggal Pelayanan / Kunjungan -->
+                            <div class="flex items-center gap-2.5">
+                                <div class="size-8 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0">
+                                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Tanggal Kunjungan / Diambil</div>
+                                    <div class="font-semibold text-gray-800 truncate">
+                                        @if($r->tanggal_diambil)
+                                            {{ \Carbon\Carbon::parse($r->tanggal_diambil)->translatedFormat('d M Y') }}
+                                        @else
+                                            <span class="text-gray-400 italic">Belum Diambil</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Dokter Pemeriksa / Pembuat Resep -->
+                            <div class="flex items-center gap-2.5">
+                                <div class="size-8 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0">
+                                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Dokter Pemeriksa</div>
+                                    <div class="font-bold text-gray-900 truncate">
+                                        @if($r->pencatat)
+                                            <span class="text-rose-700">{{ $r->pencatat->nama_gelar }}</span>
+                                            @if($r->pencatat->nip)
+                                                <span class="text-[10px] text-gray-400 font-normal">({{ $r->pencatat->nip }})</span>
+                                            @endif
+                                        @else
+                                            <span class="text-gray-400 italic">Belum tercatat</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Petugas Farmasi & Penyerahan Obat -->
+                            <div class="flex items-center gap-2.5">
+                                <div class="size-8 rounded-lg {{ $r->petugasFarmasi ? 'bg-teal-50 text-teal-600 border border-teal-200' : 'bg-gray-100 text-gray-400 border border-gray-200' }} flex items-center justify-center shrink-0">
+                                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Penyerahan Obat (Farmasi)</div>
+                                    <div class="font-semibold text-gray-800 truncate">
+                                        @if($r->petugasFarmasi)
+                                            <span class="text-teal-700 font-bold">{{ $r->petugasFarmasi->nama }}</span>
+                                            @if($r->waktu_diberikan)
+                                                <span class="text-[10px] text-gray-500 font-normal">• {{ \Carbon\Carbon::parse($r->waktu_diberikan)->translatedFormat('d M Y, H:i') }}</span>
+                                            @endif
+                                        @elseif($r->status_farmasi === 'sudah')
+                                            <span class="text-teal-700 font-semibold">Telah Diserahkan</span>
+                                        @elseif($r->obatPrb->count() > 0)
+                                            <span class="text-amber-600 font-medium italic">Menunggu Penyerahan di Farmasi</span>
+                                        @else
+                                            <span class="text-gray-400 italic">Belum Ada Resep</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="mt-3 bg-gray-50 border border-gray-200 rounded-xl p-3.5">
                         <div class="flex items-center justify-between mb-2.5">
