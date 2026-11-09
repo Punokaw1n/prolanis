@@ -76,6 +76,7 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
                 Route::post('/farmasi/{id}/beri-obat', [FarmasiPrbController::class, 'beriObat'])->name('admin.prb.farmasi.beri-obat');
             });
 
+            Route::post('/resep/download-pdf', [PasienPrbController::class, 'downloadResepPdf'])->name('admin.prb.resep.download-pdf');
             Route::get('/', [PasienPrbController::class, 'index'])->name('admin.prb.index');
             Route::get('/register', [PasienPrbController::class, 'register'])->name('admin.prb.register');
             Route::get('/register/cetak', [PasienPrbController::class, 'cetakRegister'])->name('admin.prb.register.cetak');

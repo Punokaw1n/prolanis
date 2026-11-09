@@ -17,6 +17,13 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        @media print {
+            .no-print, [role="alert"], #sidebar, header, nav, aside {
+                display: none !important;
+            }
+        }
+    </style>
     @stack('styles')
 </head>
 <body class="bg-gray-50 font-sans antialiased" x-data="{ sidebarOpen: false }">
@@ -283,7 +290,7 @@
             <!-- Page Content -->
             <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
                 @if(session('success'))
-                <div class="bg-teal-50 border-t-2 border-teal-500 rounded-lg p-4 mb-6" role="alert">
+                <div class="no-print bg-teal-50 border-t-2 border-teal-500 rounded-lg p-4 mb-6" role="alert">
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <span class="inline-flex justify-center items-center size-8 rounded-full border-4 border-teal-100 bg-teal-200 text-teal-800">
@@ -299,7 +306,7 @@
                 @endif
 
                 @if(session('info'))
-                <div class="bg-blue-50 border-t-2 border-blue-500 rounded-lg p-4 mb-6" role="alert">
+                <div class="no-print bg-blue-50 border-t-2 border-blue-500 rounded-lg p-4 mb-6" role="alert">
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <span class="inline-flex justify-center items-center size-8 rounded-full border-4 border-blue-100 bg-blue-200 text-blue-800">
@@ -315,16 +322,32 @@
                 @endif
 
                 @if(session('warning'))
-                <div class="bg-amber-50 border-t-2 border-amber-500 rounded-lg p-4 mb-6" role="alert">
+                <div class="no-print bg-amber-50 border-t-2 border-amber-500 rounded-lg p-4 mb-6" role="alert">
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <span class="inline-flex justify-center items-center size-8 rounded-full border-4 border-amber-100 bg-amber-200 text-amber-800">
-                                <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                             </span>
                         </div>
                         <div class="ms-3">
                             <h3 class="text-gray-800 font-semibold">Peringatan</h3>
                             <p class="text-sm text-gray-700">{{ session('warning') }}</p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                @if(session('error'))
+                <div class="no-print bg-red-50 border-t-2 border-red-500 rounded-lg p-4 mb-6" role="alert">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex justify-center items-center size-8 rounded-full border-4 border-red-100 bg-red-200 text-red-800">
+                                <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                            </span>
+                        </div>
+                        <div class="ms-3">
+                            <h3 class="text-gray-800 font-semibold">Gagal!</h3>
+                            <p class="text-sm text-gray-700">{{ session('error') }}</p>
                         </div>
                     </div>
                 </div>

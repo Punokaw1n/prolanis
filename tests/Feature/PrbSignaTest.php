@@ -166,4 +166,43 @@ class PrbSignaTest extends TestCase
             'aturan_minum' => 'Pagi Hari',
         ]);
     }
+
+    public function test_can_download_resep_pdf_successfully(): void
+    {
+        $response = $this->actingAs($this->admin)->post(
+            route('admin.prb.resep.download-pdf'),
+            [
+                'pasien_nama' => 'Bapak Hartono Signa',
+                'pasien_umur' => '59 Thn',
+                'pasien_no_rm' => '3507123456780001',
+                'pasien_alamat' => 'Surabaya Barat',
+                'dokter' => 'dr. Diah Miryati',
+                'sip' => 'SIP. 198508212011012009',
+                'kota' => 'Surabaya',
+                'tanggal' => '09/11/2026',
+                'catatan' => 'Minum obat secara teratur.',
+                'filter' => 'all',
+                'format_nomor' => 'romawi',
+                'obat_list' => [
+                    [
+                        'nama' => 'ACARBOS 50mg',
+                        'kategori' => 'prb',
+                        'signa' => '1 x 1 (Sesudah Makan)',
+                        'jumlah_obat' => 30,
+                    ],
+                    [
+                        'nama' => 'Trihexyphendyil 2 mg',
+                        'kategori' => 'prb',
+                        'signa' => '1 x 0.5',
+                        'jumlah_obat' => 15,
+                    ],
+                ],
+            ]
+        );
+
+        $response->assertOk();
+        $this->assertStringContainsString('application/pdf', $response->headers->get('content-type', ''));
+        $this->assertStringContainsString('attachment;', $response->headers->get('content-disposition', ''));
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+    }
 }

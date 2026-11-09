@@ -2,11 +2,17 @@
 
 @php
     $currentUser = auth()->user();
+    $isAdmin = $currentUser?->isAdmin() ?? false;
     $rawNamaUser = trim($currentUser?->nama ?? '');
-    $defaultDokterNama = $rawNamaUser 
-        ? (!preg_match('/^(dr\.|drg\.|dokter)/i', $rawNamaUser) ? 'dr. ' . $rawNamaUser : $rawNamaUser)
-        : 'Dokter Pemeriksa';
-    $defaultDokterSip = $currentUser?->nip ? 'SIP. ' . $currentUser->nip : 'SIP. -';
+
+    // Jika admin non-dokter login, defaultkan ke dokter pertama dari daftar jika ada
+    if ($isAdmin && !$currentUser?->isDokter() && !empty($daftarDokterPemeriksa)) {
+        $defaultDokterNama = $daftarDokterPemeriksa[0]['nama'];
+        $defaultDokterSip = $daftarDokterPemeriksa[0]['sip'];
+    } else {
+        $defaultDokterNama = $currentUser?->nama_gelar ?? 'Dokter Pemeriksa';
+        $defaultDokterSip = $currentUser?->nip ? 'SIP. ' . $currentUser->nip : 'SIP. -';
+    }
 @endphp
 
 @push('styles')
@@ -27,7 +33,7 @@
         margin-left: 0 !important;
     }
     /* Sembunyikan semua navigasi & elemen web */
-    #sidebar, header, nav, .no-print, aside, div[role="dialog"] {
+    #sidebar, header, nav, .no-print, aside, div[role="dialog"], [role="alert"] {
         display: none !important;
     }
     main {
@@ -316,7 +322,7 @@
                                         return [
                                             'nama' => $o->nama_obat,
                                             'kategori' => $o->kategori,
-                                            'signa' => $o->signa,
+                                            'signa' => $o->signa ?: '1 x 1',
                                             'jumlah_obat' => $o->jumlah_obat,
                                             'aturan_minum' => $o->aturan_minum,
                                         ];
@@ -610,35 +616,41 @@
 
                 <!-- 2. Data Dokter & SIP -->
                 <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-3">
-                    <label class="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-1">
-                        Informasi Dokter Pemeriksa
-                    </label>
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-gray-800 uppercase tracking-wider">
+                            Informasi Dokter Pemeriksa
+                        </label>
+                        @if($isAdmin)
+                            <span class="text-[10px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-md border border-blue-200">Mode Admin</span>
+                        @endif
+                    </div>
+
+                    @if($isAdmin)
+                    <!-- Khusus Admin: Dropdown Pilihan Dokter -->
+                    <div>
+                        <label class="block text-[11px] text-gray-600 mb-1 font-medium">Pilih Dokter Pemeriksa (Khusus Admin)</label>
+                        <select @change="pilihDokterPemeriksa($event.target.value)" class="py-1.5 px-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 focus:border-blue-500 shadow-2xs bg-white">
+                            <option value="">-- Pilih Dokter Terdaftar (Atau Ketik Manual) --</option>
+                            @foreach($daftarDokterPemeriksa ?? [] as $doc)
+                                <option value="{{ $doc['id'] }}" :selected="cetakDokter === @js($doc['nama'])">
+                                    {{ $doc['nama'] }} ({{ $doc['sip'] }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+
                     <div>
                         <label class="block text-[11px] text-gray-500 mb-1">Nama Dokter</label>
-                        <input type="text" x-model="cetakDokter" placeholder="Nama Dokter" class="py-1.5 px-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold focus:border-blue-500 shadow-2xs">
+                        <input type="text" x-model="cetakDokter" placeholder="Nama Dokter"
+                            @if(!$isAdmin) readonly @endif
+                            class="py-1.5 px-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold focus:border-blue-500 shadow-2xs @if(!$isAdmin) bg-gray-100 text-gray-700 cursor-not-allowed @endif">
                     </div>
                     <div>
                         <label class="block text-[11px] text-gray-500 mb-1">Nomor SIP (Opsional)</label>
-                        <input type="text" x-model="cetakSip" placeholder="Nomor SIP (Opsional)" class="py-1.5 px-3 block w-full border border-gray-300 rounded-lg text-xs focus:border-blue-500 shadow-2xs">
-                    </div>
-                </div>
-
-                <!-- 3. Format Angka Resep (Romawi vs Angka Biasa) -->
-                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-2">
-                    <label class="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-1">
-                        Format Jumlah Obat (No.)
-                    </label>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer"
-                            :class="cetakFormatNo === 'romawi' ? 'bg-blue-50 border-blue-400 font-semibold text-blue-900' : 'border-gray-200 text-gray-700'">
-                            <input type="radio" value="romawi" x-model="cetakFormatNo">
-                            <span>Romawi (No. XXX)</span>
-                        </label>
-                        <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer"
-                            :class="cetakFormatNo === 'angka' ? 'bg-blue-50 border-blue-400 font-semibold text-blue-900' : 'border-gray-200 text-gray-700'">
-                            <input type="radio" value="angka" x-model="cetakFormatNo">
-                            <span>Angka (No. 30)</span>
-                        </label>
+                        <input type="text" x-model="cetakSip" placeholder="Nomor SIP (Opsional)"
+                            @if(!$isAdmin) readonly @endif
+                            class="py-1.5 px-3 block w-full border border-gray-300 rounded-lg text-xs focus:border-blue-500 shadow-2xs @if(!$isAdmin) bg-gray-100 text-gray-600 cursor-not-allowed @endif">
                     </div>
                 </div>
 
@@ -657,14 +669,14 @@
                 <span class="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2">Live Preview Kertas Resep (Persis Format Cetak)</span>
                 
                 <!-- Kotak Resep Fisik Mirip Foto Asli -->
-                <div class="w-full max-w-[360px] bg-white border border-gray-300 rounded-lg shadow-md p-6 font-serif text-xs text-black leading-normal select-none">
+                <div id="kotak-resep-preview" class="w-full max-w-[360px] bg-white border border-gray-300 rounded-lg shadow-md p-6 font-serif text-xs text-black leading-normal select-none">
                     
                     <!-- KOP SURAT PUSKESMAS KALIJUDAN -->
                     <div class="border-b-2 border-black pb-2 mb-3">
                         <div class="flex items-center gap-2.5">
                             <!-- Logo Surabaya -->
                             <div class="shrink-0 flex items-center justify-center">
-                                <img src="{{ asset('surabaya-city.png') }}?v=2" alt="Logo Kota Surabaya" class="w-14 h-14 object-contain">
+                                <img src="{{ $logoSurabayaBase64 ?? asset('surabaya-city.png') }}" onerror="this.onerror=null; this.src='/surabaya-city.png'" alt="Logo Kota Surabaya" class="w-14 h-14 object-contain">
                             </div>
                             <!-- Teks KOP -->
                             <div class="text-center flex-1 font-serif">
@@ -705,11 +717,11 @@
                                     </div>
                                     <div class="text-right font-serif font-bold text-xs">
                                         <span>no. </span>
-                                        <span class="underline underline-offset-2" x-text="cetakFormatNo === 'romawi' ? toRoman(obat.jumlah_obat) : obat.jumlah_obat"></span>
+                                        <span class="underline underline-offset-2" x-text="toRoman(obat.jumlah_obat)"></span>
                                     </div>
                                 </div>
-                                <div class="ps-5 text-[11px] text-gray-800 mt-0.5 font-serif italic" x-show="formatSignaResep(obat.signa, obat.aturan_minum)">
-                                    <span x-text="formatSignaResep(obat.signa, obat.aturan_minum)"></span>
+                                <div class="ps-5 text-[11px] text-gray-800 mt-0.5 font-serif font-normal" x-show="formatSignaResep(obat)">
+                                    <span x-text="formatSignaResep(obat)"></span>
                                 </div>
                                 <!-- Garis Penutup Resep & Paraf ala Foto -->
                                 <div class="mt-1 flex items-center">
@@ -723,9 +735,9 @@
                             </div>
                         </template>
 
-                        <!-- Paraf Penutup Akhir Resep (Garis panjang menyudut tanda tangan dokter ala foto) -->
-                        <div class="pt-1 flex justify-end" x-show="filteredObatCetak.length > 0">
-                            <div class="w-24 text-center">
+                        <!-- Paraf Penutup Akhir Resep (Tanda obat terakhir dokter di bagian tengah) -->
+                        <div class="pt-1.5 pb-1 flex justify-center items-center" x-show="filteredObatCetak.length > 0">
+                            <div class="w-28 text-center mx-auto">
                                 <svg class="w-20 h-10 mx-auto text-black" viewBox="0 0 120 50" fill="none" stroke="currentColor">
                                     <path d="M10 10 Q40 50 60 25 T110 40" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
@@ -763,19 +775,38 @@
         </div>
 
         <!-- Footer Modal -->
-        <div class="px-5 py-3.5 bg-white border-t border-gray-200 flex items-center justify-end gap-2 shrink-0">
+        <div class="px-5 py-3.5 bg-white border-t border-gray-200 flex flex-wrap items-center justify-end gap-2.5 shrink-0">
             <button type="button" @click="showModalCetak = false"
                 class="py-2 px-4 text-xs font-semibold rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-2xs transition-colors">
                 Batal
             </button>
             <button type="button" 
+                @click="downloadResepPdf()"
+                :disabled="filteredObatCetak.length === 0 || isGeneratingPdf"
+                class="py-2 px-4 inline-flex items-center gap-2 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50 disabled:pointer-events-none shadow-xs transition-colors cursor-pointer"
+                title="Download lembar resep sebagai file PDF">
+                <template x-if="!isGeneratingPdf">
+                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                </template>
+                <template x-if="isGeneratingPdf">
+                    <svg class="animate-spin size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </template>
+                <span x-text="isGeneratingPdf ? 'Membuat PDF...' : 'Download PDF'"></span>
+            </button>
+            <button type="button" 
                 @click="eksekusiPrint()"
-                :disabled="filteredObatCetak.length === 0"
-                class="py-2 px-5 inline-flex items-center gap-2 text-xs font-bold rounded-lg bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50 disabled:pointer-events-none shadow-xs transition-colors cursor-pointer">
+                :disabled="filteredObatCetak.length === 0 || isGeneratingPdf"
+                class="py-2 px-5 inline-flex items-center gap-2 text-xs font-bold rounded-lg bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-50 disabled:pointer-events-none shadow-xs transition-colors cursor-pointer"
+                title="Cetak langsung ke printer fisik">
                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                Cetak Lembar Resep Sekarang
+                <span>Cetak Lembar Resep Sekarang</span>
             </button>
         </div>
     </div>
@@ -788,7 +819,7 @@
         <div style="display: flex; align-items: center; gap: 10px;">
             <!-- Logo Surabaya -->
             <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-                <img src="{{ asset('surabaya-city.png') }}?v=2" alt="Logo Kota Surabaya" style="width: 52px; height: 52px; object-fit: contain; display: block;">
+                <img src="{{ $logoSurabayaBase64 ?? asset('surabaya-city.png') }}" onerror="this.onerror=null; this.src='/surabaya-city.png'" alt="Logo Kota Surabaya" style="width: 52px; height: 52px; object-fit: contain; display: block;">
             </div>
             <!-- Teks KOP -->
             <div style="text-align: center; flex: 1; font-family: 'Times New Roman', Times, serif;">
@@ -823,11 +854,11 @@
                     </div>
                     <div style="text-align: right; font-weight: bold; font-size: 11.5px;">
                         <span>no. </span>
-                        <span style="text-decoration: underline;" x-text="cetakFormatNo === 'romawi' ? toRoman(obat.jumlah_obat) : obat.jumlah_obat"></span>
+                        <span style="text-decoration: underline;" x-text="toRoman(obat.jumlah_obat)"></span>
                     </div>
                 </div>
-                <div style="padding-left: 22px; font-size: 11px; font-style: italic; margin-top: 1px;" x-show="formatSignaResep(obat.signa, obat.aturan_minum)">
-                    <span x-text="formatSignaResep(obat.signa, obat.aturan_minum)"></span>
+                <div style="padding-left: 22px; font-size: 11px; margin-top: 1px;" x-show="formatSignaResep(obat)">
+                    <span x-text="formatSignaResep(obat)"></span>
                 </div>
                 <!-- Garis Penutup Resep & Paraf -->
                 <div style="display: flex; align-items: center; margin-top: 3px;">
@@ -841,10 +872,10 @@
             </div>
         </template>
 
-        <!-- Paraf Penutup Akhir Resep -->
-        <div style="display: flex; justify-content: flex-end; padding-top: 2px;" x-show="filteredObatCetak.length > 0">
-            <div style="width: 90px; text-align: center;">
-                <svg style="width: 70px; height: 30px;" viewBox="0 0 120 50" fill="none" stroke="#000">
+        <!-- Paraf Penutup Akhir Resep (Tanda obat terakhir dokter di bagian tengah) -->
+        <div style="display: flex; justify-content: center; align-items: center; padding-top: 4px; padding-bottom: 4px; text-align: center; margin: 0 auto;" x-show="filteredObatCetak.length > 0">
+            <div style="width: 100px; text-align: center; margin: 0 auto;">
+                <svg style="width: 75px; height: 32px; display: inline-block; margin: 0 auto;" viewBox="0 0 120 50" fill="none" stroke="#000">
                     <path d="M10 10 Q40 50 60 25 T110 40" stroke-width="2" stroke-linecap="round"/>
                 </svg>
             </div>
@@ -899,6 +930,7 @@ function showPrbPage() {
         cetakTanggal: '',
         cetakFormatNo: 'romawi', // 'romawi' atau 'angka'
         catatanKhusus: '',
+        isGeneratingPdf: false,
         obatList: [],
 
         get filteredObatCetak() {
@@ -909,6 +941,16 @@ function showPrbPage() {
                 return this.obatList.filter(o => o.kategori === 'non_prb');
             }
             return this.obatList;
+        },
+
+        pilihDokterPemeriksa(docId) {
+            if (!docId) return;
+            const doctors = @json($daftarDokterPemeriksa ?? []);
+            const doc = doctors.find(d => String(d.id) === String(docId));
+            if (doc) {
+                this.cetakDokter = doc.nama;
+                this.cetakSip = doc.sip;
+            }
         },
 
         bukaModalCetakRiwayat(payload) {
@@ -939,23 +981,71 @@ function showPrbPage() {
             return roman;
         },
 
-        formatSignaResep(signa, aturan) {
-            const s = (signa || '').trim();
-            let a = (aturan || '').trim();
-            if (a === '-' || a.toLowerCase() === 'pilih') a = '';
-
-            if (!s && !a) return '';
+        formatSignaResep(signaOrObat) {
+            let s = '';
+            if (typeof signaOrObat === 'object' && signaOrObat !== null) {
+                s = (signaOrObat.signa || '').trim();
+                if (!s && signaOrObat.signa1) {
+                    s = `${signaOrObat.signa1} x ${signaOrObat.signa2 || 1}`;
+                }
+            } else {
+                s = (signaOrObat || '').trim();
+            }
+            if (!s) s = '1 x 1';
 
             let cleanSigna = s.replace(/^s\.?\s*/i, '').trim();
-
-            if (cleanSigna && a) {
-                return `S. ${cleanSigna} (${a})`;
-            } else if (cleanSigna) {
+            if (cleanSigna) {
                 return `S. ${cleanSigna}`;
-            } else if (a) {
-                return `S. (${a})`;
             }
-            return '';
+            return 'S. 1 x 1';
+        },
+
+        downloadResepPdf() {
+            if (this.filteredObatCetak.length === 0 || this.isGeneratingPdf) return;
+            this.isGeneratingPdf = true;
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("admin.prb.resep.download-pdf") }}';
+            form.style.display = 'none';
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+
+            const fields = {
+                pasien_nama: @json($prb->pasien->nama ?? 'Pasien'),
+                pasien_umur: @json($prb->pasien->tanggal_lahir ? \Carbon\Carbon::parse($prb->pasien->tanggal_lahir)->age . ' Thn' : '-'),
+                pasien_no_rm: @json($prb->pasien->no_rm ?? ($prb->pasien->nik ?? '-')),
+                pasien_alamat: @json($prb->pasien->alamat ?? '-'),
+                dokter: this.cetakDokter || '',
+                sip: this.cetakSip || '',
+                kota: this.cetakKota || 'Surabaya',
+                tanggal: this.cetakTanggal || '',
+                catatan: this.catatanKhusus || '',
+                filter: this.cetakFilter || 'all',
+                format_nomor: this.cetakFormatNomor || 'romawi',
+                obat_list: JSON.stringify(this.obatList || [])
+            };
+
+            for (const key in fields) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = fields[key] || '';
+                form.appendChild(input);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+            setTimeout(() => {
+                if (form.parentNode) {
+                    form.parentNode.removeChild(form);
+                }
+                this.isGeneratingPdf = false;
+            }, 2000);
         },
 
         eksekusiPrint() {
