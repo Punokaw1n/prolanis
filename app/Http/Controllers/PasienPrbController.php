@@ -8,6 +8,7 @@ use App\Models\Pasien;
 use App\Models\PasienPrb;
 use App\Models\RiwayatPengambilanObatPrb;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -379,7 +380,7 @@ class PasienPrbController extends Controller
                     ->with('success', 'Riwayat pengambilan obat berhasil dicatat.');
             }
 
-            $dokterId = auth()->id() ?? null;
+            $dokterId = (auth()->user()?->isAdmin() && $request->filled('dokter_id')) ? $request->dokter_id : (auth()->id() ?? null);
 
             // 1. Cari riwayat yang belum diambil (pending) dengan diagnosa yang sesuai
             $pendingQuery = $prb->riwayatPengambilan()
@@ -467,7 +468,9 @@ class PasienPrbController extends Controller
             $jumlahObat = is_array($request->obat) ? count($request->obat) : 0;
             $tglKunjungan = Carbon::parse($request->tanggal_diambil)->translatedFormat('d M Y');
 
-            $namaDokter = auth()->user()?->nama_gelar ?? 'Dokter Pemeriksa';
+            $namaDokter = (auth()->user()?->isAdmin() && $request->filled('dokter_id'))
+                ? (User::find($request->dokter_id)?->nama_gelar ?? auth()->user()?->nama_gelar ?? 'Dokter Pemeriksa')
+                : (auth()->user()?->nama_gelar ?? 'Dokter Pemeriksa');
 
             LogAktivitas::catat('CATAT_RESEP_PRB', "Mencatat resep obat ({$diagInfo}) untuk pasien {$namaPasien} oleh {$namaDokter} ({$jumlahObat} jenis obat) pada kunjungan {$tglKunjungan}");
 
@@ -548,8 +551,10 @@ class PasienPrbController extends Controller
             'catatan' => $request->catatan,
         ];
 
-        // Jika dicatat_oleh belum ada, isi dengan user yang sedang login
-        if (! $riwayat->dicatat_oleh && auth()->id()) {
+        // Jika admin memilih dokter, atau jika dicatat_oleh belum ada
+        if (auth()->user()?->isAdmin() && $request->filled('dokter_id')) {
+            $updateData['dicatat_oleh'] = $request->dokter_id;
+        } elseif (! $riwayat->dicatat_oleh && auth()->id()) {
             $updateData['dicatat_oleh'] = auth()->id();
         }
 
@@ -723,5 +728,149 @@ class PasienPrbController extends Controller
         }
 
         return $programPasien;
+    }
+
+    public function downloadResepPdf(Request $request)
+    {
+        $pasienNama = $request->input('pasien_nama', 'Pasien');
+        $pasienUmur = $request->input('pasien_umur', '-');
+        $pasienNoRm = $request->input('pasien_no_rm', '-');
+        $pasienAlamat = $request->input('pasien_alamat', '-');
+        $dokter = $request->input('dokter') ?: (auth()->user()->name ?? 'dr. Dokter Pemeriksa');
+        $sip = $request->input('sip') ?: (auth()->user()->sip ?? 'SIP. -');
+        $kota = $request->input('kota', 'Surabaya');
+        $tanggal = $request->input('tanggal', now()->format('d/m/Y'));
+        $catatan = $request->input('catatan', '');
+        $filter = $request->input('filter', 'all');
+        $formatNomor = $request->input('format_nomor', 'romawi');
+
+        $rawObat = $request->input('obat_list');
+        if (is_string($rawObat)) {
+            $rawObat = json_decode($rawObat, true) ?: [];
+        } elseif (! is_array($rawObat)) {
+            $rawObat = [];
+        }
+
+        // Filter daftar obat sesuai pilihan
+        $filteredObat = array_values(array_filter($rawObat, function ($item) use ($filter) {
+            $kategori = strtolower($item['kategori'] ?? 'prb');
+            if ($filter === 'prb') {
+                return $kategori === 'prb';
+            }
+            if ($filter === 'simbok') {
+                return $kategori !== 'prb';
+            }
+
+            return true;
+        }));
+
+        $obatList = array_map(function ($item) use ($formatNomor) {
+            $jumlah = (int) ($item['jumlah_obat'] ?? $item['jumlah'] ?? 30);
+            $signa = $item['signa'] ?? '1 x 1';
+
+            // Bersihkan keterangan dalam kurung seperti (Sesudah Makan) dari signa
+            $cleanSigna = trim(preg_replace('/\s*\(.*?\)\s*/', '', $signa));
+            if ($cleanSigna !== '') {
+                $signaFormatted = preg_match('/^s[\.\s]/i', $cleanSigna) ? $cleanSigna : 'S. '.$cleanSigna;
+            } else {
+                $signaFormatted = 'S. 1 x 1';
+            }
+
+            $jumlahFormatted = ($formatNomor === 'angka') ? (string) $jumlah : $this->toRomanNumeral($jumlah);
+
+            return [
+                'nama' => $item['nama'] ?? ($item['nama_obat'] ?? '-'),
+                'kategori' => $item['kategori'] ?? 'PRB',
+                'signa_bersih' => $signaFormatted,
+                'jumlah_angka' => $jumlah,
+                'jumlah_romawi' => $jumlahFormatted,
+            ];
+        }, $filteredObat);
+
+        // Logo Surabaya Base64
+        $logoBase64 = '';
+        $logoPath = public_path('images/surabaya-city.png');
+        if (! file_exists($logoPath)) {
+            $logoPath = public_path('surabaya-city.png');
+        }
+        if (file_exists($logoPath)) {
+            $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+            $data = file_get_contents($logoPath);
+            $logoBase64 = 'data:image/'.$type.';base64,'.base64_encode($data);
+        }
+
+        // Paraf Base64 (Penutup Akhir & Pembatas Obat)
+        $parafAkhirBase64 = '';
+        $parafAkhirPath = public_path('images/paraf_akhir.png');
+        if (file_exists($parafAkhirPath)) {
+            $parafAkhirBase64 = 'data:image/png;base64,'.base64_encode(file_get_contents($parafAkhirPath));
+        }
+
+        $parafKecilBase64 = '';
+        $parafKecilPath = public_path('images/paraf_kecil.png');
+        if (file_exists($parafKecilPath)) {
+            $parafKecilBase64 = 'data:image/png;base64,'.base64_encode(file_get_contents($parafKecilPath));
+        }
+
+        $cleanPasien = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $pasienNama);
+        $filename = 'Resep_'.$cleanPasien.'_'.date('Ymd_His').'.pdf';
+
+        $pdf = Pdf::loadView('admin.prb.resep_pdf', [
+            'dokter' => $dokter,
+            'sip' => $sip,
+            'kota' => $kota,
+            'tanggal' => $tanggal,
+            'obatList' => $obatList,
+            'catatan' => $catatan,
+            'pasien' => [
+                'nama' => $pasienNama,
+                'umur' => $pasienUmur,
+                'no_rm' => $pasienNoRm,
+                'alamat' => $pasienAlamat,
+            ],
+            'pasien_nama' => $pasienNama,
+            'pasien_umur' => $pasienUmur,
+            'pasien_no_rm' => $pasienNoRm,
+            'pasien_alamat' => $pasienAlamat,
+            'logoBase64' => $logoBase64,
+            'parafAkhirBase64' => $parafAkhirBase64,
+            'parafKecilBase64' => $parafKecilBase64,
+            'filename' => $filename,
+        ])->setPaper('a5', 'portrait');
+
+        return $pdf->download($filename);
+    }
+
+    private function toRomanNumeral(int $num): string
+    {
+        if ($num <= 0) {
+            return (string) $num;
+        }
+
+        $map = [
+            'M' => 1000,
+            'CM' => 900,
+            'D' => 500,
+            'CD' => 400,
+            'C' => 100,
+            'XC' => 90,
+            'L' => 50,
+            'XL' => 40,
+            'X' => 10,
+            'IX' => 9,
+            'V' => 5,
+            'IV' => 4,
+            'I' => 1,
+        ];
+
+        $roman = '';
+        foreach ($map as $r => $val) {
+            while ($num >= $val) {
+                $roman .= $r;
+                $num -= $val;
+            }
+        }
+
+        return $roman;
     }
 }

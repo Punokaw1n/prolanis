@@ -305,7 +305,7 @@
     <div class="sheet-container">
         <!-- KOP SURAT RESMI PUSKESMAS -->
         <div class="kop-wrapper">
-            <img src="{{ asset('surabaya-city.png') }}?v=2" alt="Logo Pemkot Surabaya" class="kop-logo">
+            <img src="{{ $logoSurabayaBase64 ?? asset('surabaya-city.png') }}" onerror="this.onerror=null; this.src='/surabaya-city.png'" alt="Logo Pemkot Surabaya" class="kop-logo">
             <div class="kop-text">
                 <div class="kop-instansi">PEMERINTAH KOTA SURABAYA</div>
                 <div class="kop-dinas">DINAS KESEHATAN KOTA SURABAYA</div>
