@@ -211,6 +211,10 @@ class PasienPrbController extends Controller
 
     public function create()
     {
+        if (! auth()->user()?->canTambahPasienPrb()) {
+            abort(403, 'Anda tidak memiliki hak untuk menambah pasien PRB.');
+        }
+
         return view('admin.prb.create');
     }
 
@@ -240,6 +244,10 @@ class PasienPrbController extends Controller
 
     public function store(Request $request)
     {
+        if (! auth()->user()?->canTambahPasienPrb()) {
+            abort(403, 'Anda tidak memiliki hak untuk menambah pasien PRB.');
+        }
+
         $request->validate([
             'nik' => 'required|string|max:16',
             'nama' => 'required_without:pasien_id|string|max:255',

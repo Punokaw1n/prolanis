@@ -4,10 +4,8 @@
 <div class="bg-white border border-gray-200 rounded-xl shadow-sm">
     <div class="p-4 sm:p-7">
         <div class="text-center">
-            <h1 class="block text-2xl font-bold text-gray-800">Login Admin/Petugas</h1>
-            <p class="mt-2 text-sm text-gray-600">
-                Sistem Informasi Pasien Prolanis
-            </p>
+            <h1 class="block text-2xl font-bold text-gray-800">Login Petugas</h1>
+           
         </div>
 
         <div class="mt-5">

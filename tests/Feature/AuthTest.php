@@ -614,4 +614,108 @@ class AuthTest extends TestCase
             'nik' => $pasien->nik,
         ])->assertForbidden();
     }
+
+    public function test_perawat_can_see_prb_and_add_patient_but_cannot_input_examination_and_cannot_see_farmasi_menu(): void
+    {
+        $perawat = User::create([
+            'nama' => 'Waji, S.Kep.,Ns',
+            'nik' => '3578265208750002',
+            'password' => Hash::make('password'),
+            'jabatan' => 'Perawat',
+            'peran' => 'petugas',
+            'is_active' => true,
+        ]);
+
+        $this->assertTrue($perawat->isPerawat());
+        $this->assertTrue($perawat->canAccessPrb());
+        $this->assertTrue($perawat->canTambahPasienPrb());
+        $this->assertFalse($perawat->canAccessFarmasi());
+        $this->assertFalse($perawat->canCatatPengambilan());
+        $this->assertFalse($perawat->canAccessPengingat());
+
+        // 1. Dashboard & Sidebar
+        $response = $this->actingAs($perawat)->get('/admin/dashboard');
+        $response->assertOk();
+        $response->assertSee('Waji, S.Kep.,Ns');
+        $response->assertSee('Perawat');
+
+        // Perawat melihat menu PRB & Register
+        $response->assertSee(route('admin.prb.index'));
+        $response->assertSee(route('admin.prb.register'));
+
+        // Perawat TIDAK melihat menu Farmasi PRB (menu apoteker) maupun Pengingat WA
+        $response->assertDontSee(route('admin.prb.farmasi.index'));
+        $response->assertDontSee(route('admin.prb.pengingat'));
+
+        // Akses langsung ke Farmasi PRB & Pengingat ditolak (403)
+        $this->actingAs($perawat)->get('/admin/prb/farmasi')->assertForbidden();
+        $this->actingAs($perawat)->get('/admin/prb/pengingat')->assertForbidden();
+
+        // 2. Akses Data Pasien PRB & Tambah Pasien PRB
+        $responsePrb = $this->actingAs($perawat)->get(route('admin.prb.index'));
+        $responsePrb->assertOk();
+        $responsePrb->assertSee('Tambah Pasien PRB');
+        $responsePrb->assertSee(route('admin.prb.create'));
+
+        // Perawat dapat mengakses halaman Tambah Pasien PRB
+        $this->actingAs($perawat)->get(route('admin.prb.create'))->assertOk();
+
+        // Perawat dapat mendaftarkan Pasien PRB Baru
+        $postResponse = $this->actingAs($perawat)->post(route('admin.prb.store'), [
+            'nik' => '3578010101900001',
+            'nama' => 'Pasien PRB Baru Perawat',
+            'tanggal_lahir' => '1990-01-01',
+            'jenis_kelamin' => 'L',
+            'no_hp' => '081234567890',
+            'alamat' => 'Jl. Kalijudan No. 1',
+        ]);
+        $postResponse->assertRedirect(route('admin.prb.index'));
+        $this->assertDatabaseHas('pasien', ['nik' => '3578010101900001']);
+        $pasienBaru = Pasien::where('nik', '3578010101900001')->first();
+        $this->assertDatabaseHas('pasien_prbs', ['pasien_id' => $pasienBaru->id]);
+
+        $prb = PasienPrb::where('pasien_id', $pasienBaru->id)->first();
+
+        // 3. Detail Pasien PRB: Perawat TIDAK BISA melakukan input data pemeriksaan
+        $responseDetail = $this->actingAs($perawat)->get(route('admin.prb.show', $prb->id));
+        $responseDetail->assertOk();
+        $responseDetail->assertDontSee('+ Catat Pengambilan');
+        $responseDetail->assertDontSee(route('admin.prb.riwayat.create', $prb->id));
+
+        // Akses langsung input pemeriksaan ditolak (403)
+        $this->actingAs($perawat)->get(route('admin.prb.riwayat.create', $prb->id))->assertForbidden();
+        $this->actingAs($perawat)->post(route('admin.prb.riwayat.store', $prb->id), [
+            'tanggal_diambil' => now()->toDateString(),
+            'tanggal_jatuh_tempo' => now()->addDays(30)->toDateString(),
+        ])->assertForbidden();
+    }
+
+    public function test_apoteker_cannot_see_or_access_tambah_pasien_prb(): void
+    {
+        $apoteker = User::create([
+            'nama' => 'Apt. Widyariningsih, S.Farm',
+            'nik' => '3505105605970095',
+            'password' => Hash::make('password'),
+            'jabatan' => 'Apoteker',
+            'peran' => 'petugas',
+            'is_active' => true,
+        ]);
+
+        $this->assertFalse($apoteker->canTambahPasienPrb());
+
+        // Apoteker di halaman daftar PRB TIDAK melihat tombol Tambah Pasien PRB
+        $response = $this->actingAs($apoteker)->get(route('admin.prb.index'));
+        $response->assertOk();
+        $response->assertDontSee('Tambah Pasien PRB');
+        $response->assertDontSee(route('admin.prb.create'));
+
+        // Akses langsung ke halaman create dan store PRB ditolak (403)
+        $this->actingAs($apoteker)->get(route('admin.prb.create'))->assertForbidden();
+        $this->actingAs($apoteker)->post(route('admin.prb.store'), [
+            'nik' => '3578010101900099',
+            'nama' => 'Pasien Gagal Apoteker',
+            'tanggal_lahir' => '1990-01-01',
+            'jenis_kelamin' => 'L',
+        ])->assertForbidden();
+    }
 }

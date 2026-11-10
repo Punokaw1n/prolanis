@@ -128,21 +128,32 @@ class User extends Authenticatable
     }
 
     /**
-     * Cek apakah user berhak mengakses menu dan modul PRB
-     * (Admin, Dokter, dan Farmasi)
+     * Cek apakah user memiliki profesi/jabatan/peran perawat
      */
-    public function canAccessPrb(): bool
+    public function isPerawat(): bool
     {
-        return $this->isAdmin() || $this->isDokter() || $this->isFarmasi();
+        $role = strtolower((string) $this->peran);
+        $jabatan = strtolower((string) ($this->jabatan ?: $this->pegawai?->jabatan));
+
+        return str_contains($role, 'perawat') || str_contains($jabatan, 'perawat');
     }
 
     /**
-     * Cek apakah user berhak mengakses menu dan modul Farmasi PRB
-     * (Khusus Farmasi dan Admin non-dokter)
+     * Cek apakah user berhak mengakses menu dan modul PRB
+     * (Admin, Dokter, Farmasi, dan Perawat)
+     */
+    public function canAccessPrb(): bool
+    {
+        return $this->isAdmin() || $this->isDokter() || $this->isFarmasi() || $this->isPerawat();
+    }
+
+    /**
+     * Cek apakah user berhak mengakses menu dan modul Farmasi PRB (menu apoteker)
+     * (Khusus Farmasi dan Admin non-dokter, non-perawat)
      */
     public function canAccessFarmasi(): bool
     {
-        if ($this->isDokter()) {
+        if ($this->isDokter() || $this->isPerawat()) {
             return false;
         }
 
@@ -150,8 +161,21 @@ class User extends Authenticatable
     }
 
     /**
+     * Cek apakah user berhak menambah pasien baru PRB
+     * (Admin, Dokter, dan Perawat. Bukan Apoteker/Farmasi)
+     */
+    public function canTambahPasienPrb(): bool
+    {
+        if ($this->isFarmasi()) {
+            return false;
+        }
+
+        return $this->isAdmin() || $this->isDokter() || $this->isPerawat();
+    }
+
+    /**
      * Cek apakah user berhak mengakses modul Pengingat WA PRB
-     * (Admin dan Dokter, tidak untuk Farmasi/Apoteker/Asisten Apoteker)
+     * (Admin dan Dokter, tidak untuk Farmasi/Apoteker maupun Perawat)
      */
     public function canAccessPengingat(): bool
     {
@@ -159,7 +183,7 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->isFarmasi()) {
+        if ($this->isFarmasi() || $this->isPerawat()) {
             return false;
         }
 
@@ -168,7 +192,7 @@ class User extends Authenticatable
 
     /**
      * Cek apakah user berhak mengelola data profil pasien dan status keaktifan pasien
-     * (Khusus Dokter dan Admin, bukan Farmasi/Apoteker)
+     * (Dokter, Perawat, dan Admin, bukan Farmasi/Apoteker)
      */
     public function canKelolaPasien(): bool
     {
@@ -176,12 +200,12 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->isAdmin() || $this->isDokter();
+        return $this->isAdmin() || $this->isDokter() || $this->isPerawat();
     }
 
     /**
-     * Cek apakah user berhak mencatat/menambah riwayat pengambilan obat PRB
-     * (Khusus Dokter dan Admin, bukan Farmasi atau staf umum)
+     * Cek apakah user berhak mencatat/menambah riwayat pengambilan obat / pemeriksaan PRB
+     * (Khusus Dokter dan Admin, bukan Perawat atau Farmasi/Apoteker)
      */
     public function canCatatPengambilan(): bool
     {
@@ -189,7 +213,7 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->isFarmasi()) {
+        if ($this->isFarmasi() || $this->isPerawat()) {
             return false;
         }
 
