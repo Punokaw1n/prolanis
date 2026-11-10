@@ -561,7 +561,6 @@
                                             <th class="py-2.5 px-3 text-center">Signa (Aturan)</th>
                                             <th class="py-2.5 px-3 text-center">Hari</th>
                                             <th class="py-2.5 px-3 text-center">Qty (Butir)</th>
-                                            <th class="py-2.5 px-3 text-start">Aturan Minum</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-200 bg-white">
@@ -577,11 +576,10 @@
                                                 <td class="py-2 px-3 text-center font-mono font-semibold text-gray-700" x-text="o.signa"></td>
                                                 <td class="py-2 px-3 text-center font-mono text-gray-600" x-text="o.jumlah_hari !== '-' ? o.jumlah_hari + ' hr' : '-'"></td>
                                                 <td class="py-2 px-3 text-center font-mono font-bold text-teal-800" x-text="o.jumlah_obat !== '-' ? o.jumlah_obat + ' butir' : '-'"></td>
-                                                <td class="py-2 px-3 text-gray-600" x-text="o.aturan_minum"></td>
                                             </tr>
                                         </template>
                                         <tr x-show="!selectedResep.obat || selectedResep.obat.length === 0">
-                                            <td colspan="7" class="py-4 text-center text-gray-400 italic">
+                                            <td colspan="6" class="py-4 text-center text-gray-400 italic">
                                                 Belum ada rincian obat yang dicatat.
                                             </td>
                                         </tr>

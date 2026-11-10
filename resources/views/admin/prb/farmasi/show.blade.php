@@ -330,13 +330,6 @@
                                             {{ $obat->jumlah_hari }} Hari
                                         </span>
                                         @endif
-
-                                        <!-- Aturan Minum -->
-                                        @if($obat->aturan_minum)
-                                        <span class="inline-block px-2 py-0.5 rounded font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                                            {{ $obat->aturan_minum }}
-                                        </span>
-                                        @endif
                                     </div>
                                 </div>
 

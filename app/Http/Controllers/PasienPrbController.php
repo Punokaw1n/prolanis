@@ -844,7 +844,7 @@ class PasienPrbController extends Controller
             'parafAkhirBase64' => $parafAkhirBase64,
             'parafKecilBase64' => $parafKecilBase64,
             'filename' => $filename,
-        ])->setPaper('a5', 'portrait');
+        ])->setPaper([0, 0, 311.81, 453.54], 'portrait');
 
         return $pdf->download($filename);
     }

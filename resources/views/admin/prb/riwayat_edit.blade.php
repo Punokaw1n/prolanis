@@ -47,8 +47,9 @@
     .print-only {
         display: block !important;
         position: relative !important;
-        width: 135mm !important;
-        padding: 6mm 8mm !important;
+        width: 100mm !important;
+        max-width: 100mm !important;
+        padding: 4mm 6mm !important;
         margin: 0 auto !important;
         background: #ffffff !important;
         color: #000000 !important;
@@ -57,8 +58,8 @@
         font-family: 'Times New Roman', Times, serif !important;
     }
     @page {
-        size: auto;
-        margin: 5mm;
+        size: 110mm 160mm;
+        margin: 5mm 6mm;
     }
 }
 .print-only {
