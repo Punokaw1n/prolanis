@@ -35,7 +35,7 @@ if exist "C:\laragon\bin\php" (
 )
 
 cd /d "%~dp0"
-"%PHP_BIN%" artisan tinker --execute "App\Models\RiwayatPengambilanObatPrb::truncate(); App\Models\ObatPrb::truncate(); App\Models\PasienPrb::truncate(); App\Models\Pemeriksaan::truncate(); App\Models\PemberianObat::truncate(); App\Models\Pasien::truncate();"
+"%PHP_BIN%" artisan tinker --execute "\Illuminate\Support\Facades\Schema::disableForeignKeyConstraints(); \App\Models\ObatPrb::truncate(); \App\Models\RiwayatPengambilanObatPrb::truncate(); \App\Models\PasienPrb::truncate(); \App\Models\PemberianObat::truncate(); \App\Models\Pemeriksaan::truncate(); \Illuminate\Support\Facades\DB::table('jadwal_layanan_pasien')->truncate(); \Illuminate\Support\Facades\DB::table('persetujuan')->truncate(); \App\Models\Pasien::truncate(); \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints(); echo 'BERSIH_SUKSES';"
 
 echo.
 echo ===============================================================================
@@ -44,4 +44,3 @@ echo   Sistem siap digunakan untuk melayani pasien asli Puskesmas!
 echo ===============================================================================
 echo.
 pause
-
