@@ -32,7 +32,9 @@ use App\Http\Controllers\TemplatePersetujuanController;
 use App\Models\JadwalLayanan;
 use App\Models\LogAktivitas;
 use App\Models\Pasien;
+use App\Models\PasienPrb;
 use App\Models\Persetujuan;
+use App\Models\RiwayatPengambilanObatPrb;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -40,9 +42,9 @@ use Carbon\Carbon;
 Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {
         $totalPasien = Pasien::count();
+        $totalPasienPrb = PasienPrb::count();
+        $resepPrbBelum = RiwayatPengambilanObatPrb::where('status_farmasi', 'belum')->count();
         $totalJadwal = JadwalLayanan::count();
-        $totalPetugas = User::where('is_active', true)->count();
-        $pendingConsent = Persetujuan::where('status', 'menunggu')->count();
 
         $upcomingJadwal = JadwalLayanan::where('tanggal', '>=', Carbon::today())
             ->orderBy('tanggal', 'asc')
@@ -55,7 +57,7 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
             ->get();
 
         return view('admin.dashboard', compact(
-            'totalPasien', 'totalJadwal', 'totalPetugas', 'pendingConsent',
+            'totalPasien', 'totalPasienPrb', 'resepPrbBelum', 'totalJadwal',
             'upcomingJadwal', 'recentLogs'
         ));
     })->name('admin.dashboard');

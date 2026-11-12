@@ -979,28 +979,28 @@
     <!-- ================= DOKUMEN CETAK RESMI (HANYA MUNCUL SAAT CETAK KE PRINTER) ================= -->
     <div id="lembar-resep-asli" class="print-only">
         <!-- KOP SURAT PUSKESMAS KALIJUDAN -->
-        <div style="border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
                 <!-- Logo Surabaya -->
                 <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-                    <img src="{{ $logoSurabayaBase64 ?? asset('surabaya-city.png') }}" onerror="this.onerror=null; this.src='/surabaya-city.png'" alt="Logo Kota Surabaya" style="width: 52px; height: 52px; object-fit: contain; display: block;">
+                    <img src="{{ $logoSurabayaBase64 ?? asset('surabaya-city.png') }}" onerror="this.onerror=null; this.src='/surabaya-city.png'" alt="Logo Kota Surabaya" style="width: 48px; height: 48px; object-fit: contain; display: block;">
                 </div>
                 <!-- Teks KOP -->
                 <div style="text-align: center; flex: 1; font-family: 'Times New Roman', Times, serif;">
-                    <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">PEMERINTAH KOTA SURABAYA</div>
-                    <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">DINAS KESEHATAN KOTA SURABAYA</div>
-                    <div style="font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.8px; line-height: 1.2; margin-top: 1px;">PUSKESMAS KALIJUDAN</div>
-                    <div style="font-size: 9px; font-family: Arial, sans-serif; line-height: 1.2; margin-top: 1px;">Jl. Kalijudan No. 123 Surabaya 60114</div>
-                    <div style="font-size: 9px; font-family: Arial, sans-serif; line-height: 1.2;">Telp. (031) 3824566</div>
+                    <div style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">PEMERINTAH KOTA SURABAYA</div>
+                    <div style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">DINAS KESEHATAN KOTA SURABAYA</div>
+                    <div style="font-size: 14.5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.8px; line-height: 1.2; margin-top: 1px;">PUSKESMAS KALIJUDAN</div>
+                    <div style="font-size: 9.5px; font-family: Arial, sans-serif; line-height: 1.2; margin-top: 1px;">Jl. Kalijudan No. 123 Surabaya 60114</div>
+                    <div style="font-size: 9.5px; font-family: Arial, sans-serif; line-height: 1.2;">Telp. (031) 3824566</div>
                 </div>
             </div>
         </div>
 
         <!-- Tanggal & Dokter -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 11.5px; font-family: 'Times New Roman', Times, serif; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 12.5px; font-family: 'Times New Roman', Times, serif; margin-bottom: 10px;">
             <div>
-                <p style="font-weight: bold; font-size: 12.5px; margin: 0;" x-text="cetakDokter || 'Dokter Pemeriksa'"></p>
-                <p style="font-size: 10.5px; margin: 2px 0 0 0;" x-text="cetakSip || 'SIP.'"></p>
+                <p style="font-weight: bold; font-size: 14px; margin: 0;" x-text="cetakDokter || 'Dokter Pemeriksa'"></p>
+                <p style="font-size: 11.5px; margin: 2px 0 0 0;" x-text="cetakSip || 'SIP.'"></p>
             </div>
             <div style="text-align: right;">
                 <p style="margin: 0;"><span x-text="cetakKota || 'Surabaya'"></span>, <span x-text="cetakTanggal"></span></p>
@@ -1008,20 +1008,20 @@
         </div>
 
         <!-- Daftar R/ Obat -->
-        <div style="font-family: 'Times New Roman', Times, serif; font-size: 11.5px; margin: 10px 0;">
+        <div style="font-family: 'Times New Roman', Times, serif; font-size: 12.5px; margin: 8px 0;">
             <template x-for="(obat, idx) in filteredObatCetak" :key="idx">
-                <div style="margin-bottom: 12px;">
+                <div style="margin-bottom: 10px;">
                     <div style="display: flex; align-items: baseline; justify-content: space-between;">
                         <div style="display: flex; align-items: baseline; gap: 8px;">
-                            <span style="font-size: 17px; font-weight: bold; font-style: italic; line-height: 1;">R/</span>
-                            <span style="font-weight: bold; font-size: 12.5px;" x-text="obat.nama"></span>
+                            <span style="font-size: 19px; font-weight: bold; font-style: italic; line-height: 1;">R/</span>
+                            <span style="font-weight: bold; font-size: 13.5px;" x-text="obat.nama"></span>
                         </div>
-                        <div style="text-align: right; font-weight: bold; font-size: 11.5px;">
+                        <div style="text-align: right; font-weight: bold; font-size: 12.5px;">
                             <span>no. </span>
                             <span style="text-decoration: underline;" x-text="toRoman(obat.jumlah_obat)"></span>
                         </div>
                     </div>
-                    <div style="padding-left: 22px; font-size: 11px; margin-top: 1px;" x-show="formatSignaResep(obat)">
+                    <div style="padding-left: 24px; font-size: 12px; margin-top: 1px;" x-show="formatSignaResep(obat)">
                         <span x-text="formatSignaResep(obat)"></span>
                     </div>
                     <!-- Garis Penutup Resep & Paraf -->
@@ -1039,7 +1039,7 @@
             <!-- Paraf Penutup Akhir Resep (Tanda obat terakhir dokter di bagian tengah) -->
             <div style="display: flex; justify-content: center; align-items: center; padding-top: 4px; padding-bottom: 4px; text-align: center; margin: 0 auto;" x-show="filteredObatCetak.length > 0">
                 <div style="width: 100px; text-align: center; margin: 0 auto;">
-                    <svg style="width: 75px; height: 32px; display: inline-block; margin: 0 auto;" viewBox="0 0 120 50" fill="none" stroke="#000">
+                    <svg style="width: 70px; height: 30px; display: inline-block; margin: 0 auto;" viewBox="0 0 120 50" fill="none" stroke="#000">
                         <path d="M10 10 Q40 50 60 25 T110 40" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </div>
@@ -1047,17 +1047,17 @@
         </div>
 
         <!-- Catatan Khusus / Anjuran Dokter -->
-        <div style="border-top: 1px dashed #333; padding-top: 5px; margin-top: 8px; font-family: 'Times New Roman', Times, serif; font-size: 11px; line-height: 1.4;" x-show="catatanKhusus && catatanKhusus.trim()">
+        <div style="border-top: 1px dashed #333; padding-top: 5px; margin-top: 7px; font-family: 'Times New Roman', Times, serif; font-size: 12px; line-height: 1.4;" x-show="catatanKhusus && catatanKhusus.trim()">
             <div style="font-weight: bold; font-style: italic;">Catatan / Anjuran Dokter:</div>
             <div style="white-space: pre-line; margin-top: 2px; padding-left: 4px;" x-text="catatanKhusus"></div>
         </div>
 
         <!-- Footer Pro Pasien -->
-        <div style="border-top: 1.5px solid #000; padding-top: 8px; margin-top: 12px; font-family: 'Times New Roman', Times, serif; font-size: 11px; line-height: 1.5;">
+        <div style="border-top: 1.5px solid #000; padding-top: 7px; margin-top: 10px; font-family: 'Times New Roman', Times, serif; font-size: 12px; line-height: 1.45;">
             <table style="width: 100%; border-collapse: collapse; border: none;">
                 <tr style="border: none;">
                     <td style="width: 55px; font-weight: bold; border: none; padding: 1px 0;">Pro</td>
-                    <td style="border: none; padding: 1px 0;">: <strong style="text-transform: uppercase; font-size: 11.5px;">{{ $prb->pasien->nama }}</strong></td>
+                    <td style="border: none; padding: 1px 0;">: <strong style="text-transform: uppercase; font-size: 13.5px;">{{ $prb->pasien->nama }}</strong></td>
                 </tr>
                 <tr style="border: none;">
                     <td style="font-weight: bold; border: none; padding: 1px 0;">Umur</td>

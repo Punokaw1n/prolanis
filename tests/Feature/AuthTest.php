@@ -39,6 +39,27 @@ class AuthTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_user_can_login_with_remember_me()
+    {
+        $user = User::create([
+            'nama' => 'Admin Test',
+            'email' => 'admin_remember@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $response = $this->post('/login', [
+            'username' => 'admin_remember@test.com',
+            'password' => 'password',
+            'remember' => '1',
+        ]);
+
+        $response->assertRedirect('/admin/dashboard');
+        $this->assertAuthenticatedAs($user);
+        $response->assertCookie(Auth::guard()->getRecallerName());
+    }
+
     public function test_user_can_logout()
     {
         $user = User::create([

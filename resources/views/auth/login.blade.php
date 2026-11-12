@@ -23,7 +23,7 @@
                     <div>
                         <label for="username" class="block text-sm mb-2 font-medium text-gray-700">NIK / NIP / Email</label>
                         <div class="relative">
-                            <input type="text" id="username" name="username" value="{{ old('username') }}" class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none border" required aria-describedby="username-error" placeholder="Masukkan NIK atau NIP Anda">
+                            <input type="text" id="username" name="username" value="{{ old('username') }}" class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none border" required aria-describedby="username-error" placeholder="Masukkan NIK atau NIP Anda" autocomplete="username">
                         </div>
                     </div>
                     <!-- End Form Group -->
@@ -34,7 +34,7 @@
                             <label for="password" class="block text-sm mb-2">Password</label>
                         </div>
                         <div class="relative" x-data="{ show: false }">
-                            <input :type="show ? 'text' : 'password'" id="password" name="password" class="py-3 ps-4 pe-10 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none" required>
+                            <input :type="show ? 'text' : 'password'" id="password" name="password" class="py-3 ps-4 pe-10 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none" required autocomplete="current-password">
                             <button type="button" @click="show = !show" style="right: 0;" class="absolute inset-y-0 right-0 flex items-center z-20 px-3 cursor-pointer text-gray-400 rounded-e-md focus:outline-none focus:text-blue-600 hover:text-gray-600">
                               <svg class="shrink-0 size-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <!-- Eye close icon (show = false) -->
@@ -50,6 +50,17 @@
                         </div>
                     </div>
                     <!-- End Form Group -->
+
+                    <!-- Checkbox Remember Me -->
+                    <div class="flex items-center">
+                        <div class="flex">
+                            <input id="remember" name="remember" type="checkbox" value="1" {{ old('remember') ? 'checked' : '' }} class="shrink-0 mt-0.5 border-gray-300 rounded text-blue-600 focus:ring-blue-500">
+                        </div>
+                        <div class="ms-3">
+                            <label for="remember" class="text-sm text-gray-600 select-none cursor-pointer">Ingat saya di perangkat ini</label>
+                        </div>
+                    </div>
+                    <!-- End Checkbox -->
 
                     <button type="submit" class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
                         Masuk

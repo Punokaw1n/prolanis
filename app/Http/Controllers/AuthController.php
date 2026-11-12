@@ -72,7 +72,8 @@ class AuthController extends Controller
                     return back()->withErrors(['username' => 'Akun Anda telah dinonaktifkan. Silakan hubungi administrator.'])->withInput();
                 }
 
-                Auth::login($user);
+                $remember = $request->boolean('remember');
+                Auth::login($user, $remember);
                 $request->session()->regenerate();
 
                 return redirect()->intended('/admin/dashboard');

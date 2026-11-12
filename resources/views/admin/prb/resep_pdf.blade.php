@@ -6,7 +6,7 @@
     <style>
         @page {
             size: 110mm 160mm;
-            margin: 5mm 7mm 5mm 7mm;
+            margin: 4mm 6mm 4mm 6mm;
         }
         * {
             box-sizing: border-box;
@@ -15,9 +15,9 @@
         }
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 9.5pt;
+            font-size: 10.5pt;
             color: #000000;
-            line-height: 1.2;
+            line-height: 1.25;
             background: #ffffff;
         }
         .resep-card {
@@ -36,12 +36,12 @@
             vertical-align: middle;
         }
         .kop-logo {
-            width: 42px;
+            width: 44px;
             text-align: left;
         }
         .kop-logo img {
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             display: block;
         }
         .kop-text {
@@ -49,24 +49,24 @@
             font-family: 'Times New Roman', Times, serif;
         }
         .kop-instansi {
-            font-size: 7.5pt;
+            font-size: 8.5pt;
             font-weight: bold;
-            letter-spacing: 0.3px;
-            line-height: 1.15;
+            letter-spacing: 0.4px;
+            line-height: 1.2;
             text-transform: uppercase;
         }
         .kop-puskesmas {
-            font-size: 10.5pt;
+            font-size: 11.5pt;
             font-weight: bold;
-            letter-spacing: 0.5px;
-            line-height: 1.15;
+            letter-spacing: 0.6px;
+            line-height: 1.2;
             margin: 1px 0;
             text-transform: uppercase;
         }
         .kop-alamat {
-            font-size: 6.8pt;
+            font-size: 7.5pt;
             font-family: Arial, Helvetica, sans-serif;
-            line-height: 1.15;
+            line-height: 1.2;
             color: #111111;
         }
 
@@ -82,16 +82,16 @@
         }
         .dokter-nama {
             font-weight: bold;
-            font-size: 10pt;
+            font-size: 11pt;
         }
         .dokter-sip {
-            font-size: 8pt;
+            font-size: 9pt;
             color: #222222;
             margin-top: 1px;
         }
         .meta-kanan {
             text-align: right;
-            font-size: 8.5pt;
+            font-size: 9.5pt;
         }
 
         /* DAFTAR OBAT */
@@ -99,7 +99,7 @@
             width: 100%;
         }
         .resep-item {
-            margin-bottom: 7px;
+            margin-bottom: 8px;
         }
         .resep-baris {
             width: 100%;
@@ -109,29 +109,29 @@
             vertical-align: baseline;
         }
         .r-simbol {
-            font-size: 14pt;
+            font-size: 15pt;
             font-weight: bold;
             font-style: italic;
-            width: 22px;
+            width: 24px;
             line-height: 1;
         }
         .obat-nama {
             font-weight: bold;
-            font-size: 9.5pt;
+            font-size: 10.5pt;
             text-align: left;
         }
         .obat-nomor {
             text-align: right;
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 10pt;
             white-space: nowrap;
         }
         .obat-nomor span {
             text-decoration: underline;
         }
         .signa-teks {
-            padding-left: 22px;
-            font-size: 8.5pt;
+            padding-left: 24px;
+            font-size: 9.5pt;
             margin-top: 1px;
             font-weight: normal;
             color: #111111;
@@ -176,7 +176,7 @@
             padding-top: 4px;
             margin-top: 5px;
             margin-bottom: 5px;
-            font-size: 8.5pt;
+            font-size: 9.5pt;
             font-family: 'Times New Roman', Times, serif;
         }
         .catatan-judul {
@@ -189,10 +189,10 @@
         .pro-table {
             width: 100%;
             border-top: 1.5px solid #000000;
-            padding-top: 5px;
-            margin-top: 6px;
-            font-size: 8.5pt;
-            line-height: 1.35;
+            padding-top: 6px;
+            margin-top: 7px;
+            font-size: 9.5pt;
+            line-height: 1.4;
             border-collapse: collapse;
             font-family: 'Times New Roman', Times, serif;
         }
@@ -201,7 +201,7 @@
             padding: 1px 0;
         }
         .pro-label {
-            width: 48px;
+            width: 52px;
             font-weight: bold;
         }
         .pro-titik {
@@ -210,7 +210,7 @@
         }
         .pro-nama {
             font-weight: bold;
-            font-size: 9.5pt;
+            font-size: 10.5pt;
             text-transform: uppercase;
         }
     </style>

@@ -36,11 +36,9 @@
         <!-- ========== SIDEBAR ========== -->
         <aside id="sidebar" :class="sidebarOpen ? 'flex' : 'hidden'" class="lg:flex flex-col fixed inset-y-0 start-0 z-50 w-56 bg-white border-e border-gray-200 h-full">
             <!-- Logo -->
-            <div class="flex items-center gap-x-3 px-6 h-16 border-b border-gray-200">
-                <div class="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
-                    <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                </div>
-                <span class="text-lg font-bold text-gray-800">Prolanis</span>
+            <div class="flex items-center gap-x-3 px-5 h-16 border-b border-gray-200">
+                <img src="{{ asset('icon.ico') }}" onerror="this.onerror=null; this.src='{{ asset('icon.png') }}'" alt="Logo PKM Kalijudan" class="w-8 h-8 rounded-lg object-contain shrink-0 shadow-2xs">
+                <span class="text-base font-bold text-gray-800 tracking-tight leading-tight">PKM Kalijudan</span>
             </div>
 
             <!-- Navigation -->
@@ -247,8 +245,8 @@
                 @endif
             </nav>
 
-            <!-- User Info at Bottom -->
-            <div class="border-t border-gray-200 px-4 py-4">
+            <!-- User Info at Bottom (Mobile drawer only) -->
+            <div class="lg:hidden border-t border-gray-200 px-4 py-4">
                 <div class="flex items-center gap-x-3">
                     <div class="flex-shrink-0 flex items-center justify-center w-9 h-9 bg-blue-600 text-white font-bold rounded-full text-sm">
                         {{ strtoupper(substr(auth()->user()->nama ?? 'A', 0, 1)) }}
@@ -259,7 +257,7 @@
                     </div>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
-                        <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-gray-100" title="keluar">
+                        <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-gray-100" title="Keluar">
                             <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
                         </button>
                     </form>
@@ -271,19 +269,56 @@
         <!-- ========== MAIN AREA ========== -->
         <div class="h-full flex flex-col lg:ms-56">
             
-            <!-- Top Bar (mobile brand + hamburger, desktop: just a subtle bar) -->
+            <!-- Top Bar (mobile brand + hamburger, desktop: user info & logout) -->
             <header class="sticky top-0 z-40 flex items-center h-16 bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8">
                 <!-- Mobile toggle -->
                 <button type="button" class="lg:hidden p-2 -ms-2 rounded-lg text-gray-700 hover:bg-gray-100" @click="sidebarOpen = true">
                     <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
                 </button>
-                <span class="lg:hidden ms-3 text-lg font-bold text-gray-800">Prolanis</span>
+                <div class="lg:hidden flex items-center gap-x-2 ms-2.5">
+                    <img src="{{ asset('icon.ico') }}" onerror="this.onerror=null; this.src='{{ asset('icon.png') }}'" alt="Logo PKM Kalijudan" class="w-7 h-7 rounded-md object-contain shrink-0 shadow-2xs">
+                    <span class="text-base font-bold text-gray-800 tracking-tight">PKM Kalijudan</span>
+                </div>
 
                 <div class="flex-1"></div>
 
-                <!-- Right side: compact user info on desktop -->
-                <div class="hidden lg:flex items-center gap-x-3 text-sm text-gray-600">
-                    <span>{{ now()->translatedFormat('l, d F Y') }}</span>
+                <!-- Right side: date + user info + logout -->
+                <div class="flex items-center gap-x-4 sm:gap-x-6">
+                    <!-- Date badge (visible on desktop) -->
+                    <div class="hidden lg:flex items-center gap-x-2 text-xs font-medium text-gray-500 bg-gray-50 py-1.5 px-3 rounded-lg border border-gray-100">
+                        <svg class="size-3.5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                        <span>{{ now()->translatedFormat('l, d F Y') }}</span>
+                    </div>
+
+                    <div class="hidden lg:block h-6 w-px bg-gray-200"></div>
+
+                    <!-- User Profile Info -->
+                    <div class="flex items-center gap-x-3.5">
+                        <div class="flex-shrink-0 flex items-center justify-center size-10 bg-blue-600 text-white font-bold rounded-full text-sm ring-2 ring-blue-50 shadow-2xs">
+                            {{ strtoupper(substr(auth()->user()->nama ?? 'A', 0, 1)) }}
+                        </div>
+                        <div class="hidden sm:block text-left">
+                            <p class="text-sm font-semibold text-gray-800 leading-tight max-w-xs md:max-w-md lg:max-w-xl truncate" title="{{ auth()->user()->nama ?? 'Pengguna' }}">
+                                {{ auth()->user()->nama ?? 'Pengguna' }}
+                            </p>
+                            <p class="text-xs text-gray-500 leading-tight mt-1">
+                                {{ auth()->user()->role_or_jabatan ?? 'Petugas' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Logout Button -->
+                    <form action="{{ route('logout') }}" method="POST" class="inline-block ms-1">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-x-1.5 py-1.5 px-3.5 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-100 transition-colors shadow-2xs cursor-pointer" title="Keluar dari sistem">
+                            <svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" x2="9" y1="12" y2="12"/>
+                            </svg>
+                            <span class="hidden sm:inline">Keluar</span>
+                        </button>
+                    </form>
                 </div>
             </header>
 
