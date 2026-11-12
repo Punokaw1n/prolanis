@@ -15,7 +15,29 @@
 @endphp
 
 @push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
+/* Styling Flatpickr Input agar rapi dan teks tidak menimpa icon kalender */
+.fp-custom-alt-input,
+.flatpickr-input,
+.form-control.input,
+input[id*="fp_"] ~ input,
+input.form-control {
+    padding-left: 2.75rem !important; /* 44px agar teks tanggal tidak menimpa icon kalender */
+    background-color: #ffffff !important;
+    cursor: pointer;
+}
+.flatpickr-day.selected, .flatpickr-day.selected:hover {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+.flatpickr-day.today {
+    border-color: #3b82f6 !important;
+}
+.flatpickr-calendar {
+    z-index: 99999 !important;
+}
+
 @media print {
     body, html {
         margin: 0 !important;
@@ -300,7 +322,22 @@
                                         <span>Tanggal Pelayanan / Diambil</span>
                                         <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="date" name="tanggal_diambil" x-model="tanggalDiambil" @change="updateAllHari()" class="py-2.5 px-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs" required>
+                                    <div class="relative">
+                                        <input type="text" id="fp_tanggal_diambil"
+                                            style="padding-left: 2.75rem !important;"
+                                            class="fp-custom-alt-input py-2.5 pe-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs cursor-pointer"
+                                            placeholder="Pilih tanggal pelayanan..."
+                                            readonly required>
+                                        <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10; display: flex; align-items: center;">
+                                            <svg class="size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                                                <line x1="16" x2="16" y1="2" y2="6"/>
+                                                <line x1="8" x2="8" y1="2" y2="6"/>
+                                                <line x1="3" x2="21" y1="10" y2="10"/>
+                                            </svg>
+                                        </div>
+                                        <input type="hidden" name="tanggal_diambil" x-model="tanggalDiambil" @change="updateAllHari()">
+                                    </div>
                                     <p class="text-[11px] text-gray-500 mt-1.5">Tanggal pasien datang menerima obat di Puskesmas.</p>
                                 </div>
 
@@ -310,7 +347,22 @@
                                         <span class="text-red-500">*</span>
                                     </label>
                                     <div class="flex items-center gap-2">
-                                        <input type="date" name="tanggal_jatuh_tempo" x-model="tanggalJatuhTempo" @change="updateAllHari()" class="py-2.5 px-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs" required>
+                                        <div class="relative flex-1">
+                                            <input type="text" id="fp_tanggal_jatuh_tempo"
+                                                style="padding-left: 2.75rem !important;"
+                                                class="fp-custom-alt-input py-2.5 pe-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs cursor-pointer"
+                                                placeholder="Pilih tanggal jatuh tempo..."
+                                                readonly required>
+                                            <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10; display: flex; align-items: center;">
+                                                <svg class="size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                                                    <line x1="16" x2="16" y1="2" y2="6"/>
+                                                    <line x1="8" x2="8" y1="2" y2="6"/>
+                                                    <line x1="3" x2="21" y1="10" y2="10"/>
+                                                </svg>
+                                            </div>
+                                            <input type="hidden" name="tanggal_jatuh_tempo" x-model="tanggalJatuhTempo" @change="updateAllHari()">
+                                        </div>
                                         <button type="button" @click="setSaranJatuhTempo" class="py-2.5 px-3.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shrink-0 transition-colors shadow-2xs whitespace-nowrap" title="Set otomatis ke +30 hari dari tanggal diambil">
                                             <svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                                             <span>+30 Hari</span>
@@ -1830,6 +1882,85 @@ function riwayatForm() {
         }
     }
 }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Ambil Alpine x-model awal
+    const getAlpineData = () => document.querySelector('[x-data]')?._x_dataStack?.[0] ?? null;
+
+    const flatpickrInputClass = 'fp-custom-alt-input py-2.5 pe-3 block w-full border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs cursor-pointer';
+
+    // --- Flatpickr: Tanggal Pelayanan ---
+    const fpDiambil = flatpickr('#fp_tanggal_diambil', {
+        locale: 'id',
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd F Y',
+        altInputClass: flatpickrInputClass,
+        defaultDate: new Date(),
+        appendTo: document.body,
+        onReady: function (selectedDates, dateStr, instance) {
+            if (instance.altInput) {
+                instance.altInput.style.paddingLeft = '2.75rem';
+            }
+        },
+        onChange: function (selectedDates, dateStr) {
+            // Sync ke hidden input (x-model) via Alpine
+            const hiddenDiambil = document.querySelector('input[name="tanggal_diambil"]');
+            if (hiddenDiambil) {
+                hiddenDiambil.value = dateStr;
+                hiddenDiambil.dispatchEvent(new Event('input'));
+                hiddenDiambil.dispatchEvent(new Event('change'));
+            }
+        },
+    });
+
+    // --- Flatpickr: Tanggal Jatuh Tempo ---
+    const fpJatuhTempo = flatpickr('#fp_tanggal_jatuh_tempo', {
+        locale: 'id',
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd F Y',
+        altInputClass: flatpickrInputClass,
+        appendTo: document.body,
+        onReady: function (selectedDates, dateStr, instance) {
+            if (instance.altInput) {
+                instance.altInput.style.paddingLeft = '2.75rem';
+            }
+        },
+        onChange: function (selectedDates, dateStr) {
+            const hiddenJatuhTempo = document.querySelector('input[name="tanggal_jatuh_tempo"]');
+            if (hiddenJatuhTempo) {
+                hiddenJatuhTempo.value = dateStr;
+                hiddenJatuhTempo.dispatchEvent(new Event('input'));
+                hiddenJatuhTempo.dispatchEvent(new Event('change'));
+            }
+        },
+    });
+
+    // --- Tombol +30 Hari: sync ke flatpickr UI juga ---
+    // Pantau perubahan pada hidden input tanggal_jatuh_tempo (dari setSaranJatuhTempo Alpine)
+    const hiddenJatuhTempo = document.querySelector('input[name="tanggal_jatuh_tempo"]');
+    if (hiddenJatuhTempo) {
+        const observer = new MutationObserver(() => {
+            if (hiddenJatuhTempo.value) {
+                fpJatuhTempo.setDate(hiddenJatuhTempo.value, false);
+            }
+        });
+        observer.observe(hiddenJatuhTempo, { attributes: true, attributeFilter: ['value'] });
+
+        // Juga watch via interval singkat sebagai fallback Alpine reactivity
+        let lastVal = hiddenJatuhTempo.value;
+        setInterval(() => {
+            if (hiddenJatuhTempo.value !== lastVal) {
+                lastVal = hiddenJatuhTempo.value;
+                if (lastVal) fpJatuhTempo.setDate(lastVal, false);
+            }
+        }, 300);
+    }
+});
 </script>
 @endpush
 @endsection
