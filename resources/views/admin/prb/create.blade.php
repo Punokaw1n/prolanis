@@ -20,15 +20,29 @@
         </div>
     @endif
 
-    <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6" x-data="prbRegistration()">
+    @if($errors->any())
+        <div class="bg-red-50 border border-red-200 text-sm text-red-800 rounded-lg p-4 mb-6" role="alert">
+            <p class="font-semibold mb-1">Gagal mendaftarkan pasien:</p>
+            <ul class="list-disc list-inside space-y-1">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6" x-data="prbRegistration()" x-init="init()">
         <form action="{{ route('admin.prb.store') }}" method="POST">
             @csrf
             
+            {{-- ID Pasien jika sudah terdaftar di sistem --}}
+            <input type="hidden" name="pasien_id" :value="status === 'found' ? (patientData.id || '') : ''">
+
             <!-- Step 1: Input NIK -->
             <div class="mb-6">
                 <label for="nik" class="block text-sm font-medium mb-2">Nomor Induk Kependudukan (NIK) <span class="text-red-500">*</span></label>
                 <div class="flex gap-3">
-                    <input type="number" id="nik" name="nik" x-model="nik" @input="resetState" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Masukkan 16 digit NIK..." required maxlength="16" pattern="\d{16}">
+                    <input type="text" inputmode="numeric" id="nik" name="nik" x-model="nik" @input="resetState" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Masukkan 16 digit NIK..." required maxlength="16" pattern="\d{16}">
                     <button type="button" @click="checkNik" :disabled="nik.length !== 16 || isChecking" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50 min-w-[120px] justify-center">
                         <span x-show="!isChecking">Cari Pasien</span>
                         <span x-show="isChecking" class="animate-spin inline-block size-4 border-[3px] border-current border-t-transparent text-white rounded-full" role="status" aria-label="loading"></span>
@@ -136,10 +150,16 @@
 <script>
 function prbRegistration() {
     return {
-        nik: '',
+        nik: '{{ old('nik', '') }}',
         status: 'idle', // idle, found, not_found, already_prb
         isChecking: false,
         patientData: {},
+
+        init() {
+            if (this.nik && this.nik.length === 16) {
+                this.checkNik();
+            }
+        },
         
         resetState() {
             this.status = 'idle';

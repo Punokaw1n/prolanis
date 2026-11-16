@@ -250,6 +250,7 @@ class PasienPrbController extends Controller
 
         $request->validate([
             'nik' => 'required|string|max:16',
+            'pasien_id' => 'nullable|exists:pasien,id',
             'nama' => 'required_without:pasien_id|string|max:255',
             'no_rm' => 'nullable|string|max:255',
             'no_bpjs' => 'nullable|string|max:255',
@@ -260,7 +261,14 @@ class PasienPrbController extends Controller
         ]);
 
         // Find or create Pasien
-        $pasien = Pasien::where('nik', $request->nik)->first();
+        $pasien = null;
+        if ($request->filled('pasien_id')) {
+            $pasien = Pasien::find($request->pasien_id);
+        }
+
+        if (! $pasien) {
+            $pasien = Pasien::where('nik', $request->nik)->first();
+        }
 
         if (! $pasien) {
             $pasien = Pasien::create([
