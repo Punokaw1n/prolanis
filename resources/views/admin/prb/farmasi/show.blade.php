@@ -26,13 +26,9 @@
     $isAdmin = $currentUser?->isAdmin() ?? false;
 
     // Dokter / Pencatat resep
-    if ($isAdmin && !$currentUser?->isDokter() && $riwayat->pencatat === null && !empty($daftarDokterPemeriksa)) {
-        $dokterFormatted = $daftarDokterPemeriksa[0]['nama'];
-        $dokterSip = $daftarDokterPemeriksa[0]['sip'];
-    } else {
-        $dokterFormatted = $riwayat->pencatat?->nama_gelar ?? 'Dokter Pemeriksa';
-        $dokterSip = $riwayat->pencatat?->nip ? 'SIP. ' . $riwayat->pencatat->nip : 'SIP. -';
-    }
+    $pencatat = $riwayat->pencatat ?? $currentUser;
+    $dokterFormatted = $pencatat?->nama_gelar ?? $pencatat?->name ?? 'Dokter Pemeriksa';
+    $dokterSip = $pencatat?->no_sip ?: ($pencatat?->nip ? 'SIP. ' . $pencatat->nip : 'SIP. -');
 
     $diagnosaTeks = $riwayat->diagnosa_lengkap 
         ?: ($riwayat->pasienPrb?->keterangan_diagnosa 

@@ -4,15 +4,9 @@
     $currentUser = auth()->user();
     $isAdmin = $currentUser?->isAdmin() ?? false;
     $doctorUser = $riwayat->pencatat ?? $currentUser;
-    if ($isAdmin && !$currentUser?->isDokter() && $riwayat->pencatat === null && !empty($daftarDokterPemeriksa)) {
-        $defaultDokterNama = $daftarDokterPemeriksa[0]['nama'];
-        $defaultDokterSip = $daftarDokterPemeriksa[0]['sip'];
-        $defaultDokterId = $daftarDokterPemeriksa[0]['id'];
-    } else {
-        $defaultDokterNama = $doctorUser?->nama_gelar ?? 'Dokter Pemeriksa';
-        $defaultDokterSip = $doctorUser?->nip ? 'SIP. ' . $doctorUser->nip : 'SIP. -';
-        $defaultDokterId = $doctorUser?->id ?? null;
-    }
+    $defaultDokterNama = $doctorUser?->nama_gelar ?? $doctorUser?->name ?? 'Dokter Pemeriksa';
+    $defaultDokterSip = $doctorUser?->no_sip ?: ($doctorUser?->nip ? 'SIP. ' . $doctorUser->nip : 'SIP. -');
+    $defaultDokterId = $doctorUser?->id ?? null;
 @endphp
 
 @push('styles')

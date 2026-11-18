@@ -3,15 +3,9 @@
 @php
     $currentUser = auth()->user();
     $isAdmin = $currentUser?->isAdmin() ?? false;
-    if ($isAdmin && !$currentUser?->isDokter() && !empty($daftarDokterPemeriksa)) {
-        $defaultDokterNama = $daftarDokterPemeriksa[0]['nama'];
-        $defaultDokterSip = $daftarDokterPemeriksa[0]['sip'];
-        $defaultDokterId = $daftarDokterPemeriksa[0]['id'];
-    } else {
-        $defaultDokterNama = $currentUser?->nama_gelar ?? 'Dokter Pemeriksa';
-        $defaultDokterSip = $currentUser?->nip ? 'SIP. ' . $currentUser->nip : 'SIP. -';
-        $defaultDokterId = $currentUser?->id ?? null;
-    }
+    $defaultDokterNama = $currentUser?->nama_gelar ?? $currentUser?->name ?? 'Dokter Pemeriksa';
+    $defaultDokterSip = $currentUser?->no_sip ?: ($currentUser?->nip ? 'SIP. ' . $currentUser->nip : 'SIP. -');
+    $defaultDokterId = $currentUser?->id ?? null;
 @endphp
 
 @push('styles')

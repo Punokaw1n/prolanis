@@ -5,14 +5,8 @@
     $isAdmin = $currentUser?->isAdmin() ?? false;
     $rawNamaUser = trim($currentUser?->nama ?? '');
 
-    // Jika admin non-dokter login, defaultkan ke dokter pertama dari daftar jika ada
-    if ($isAdmin && !$currentUser?->isDokter() && !empty($daftarDokterPemeriksa)) {
-        $defaultDokterNama = $daftarDokterPemeriksa[0]['nama'];
-        $defaultDokterSip = $daftarDokterPemeriksa[0]['sip'];
-    } else {
-        $defaultDokterNama = $currentUser?->nama_gelar ?? 'Dokter Pemeriksa';
-        $defaultDokterSip = $currentUser?->nip ? 'SIP. ' . $currentUser->nip : 'SIP. -';
-    }
+    $defaultDokterNama = $currentUser?->nama_gelar ?? $currentUser?->name ?? 'Dokter Pemeriksa';
+    $defaultDokterSip = $currentUser?->no_sip ?: ($currentUser?->nip ? 'SIP. ' . $currentUser->nip : 'SIP. -');
 @endphp
 
 @push('styles')
