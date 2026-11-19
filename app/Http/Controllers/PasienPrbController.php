@@ -30,7 +30,8 @@ class PasienPrbController extends Controller
         if ($search) {
             $query->whereHas('pasien', function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
-                    ->orWhere('nik', 'like', "%{$search}%");
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhere('no_bpjs', 'like', "%{$search}%");
             });
         }
 
@@ -182,7 +183,8 @@ class PasienPrbController extends Controller
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('pasienPrb.pasien', function ($q) use ($search) {
                     $q->where('nama', 'like', "%{$search}%")
-                        ->orWhere('nik', 'like', "%{$search}%");
+                        ->orWhere('nik', 'like', "%{$search}%")
+                        ->orWhere('no_bpjs', 'like', "%{$search}%");
                 });
             })
             // Sort by earliest tanggal_jatuh_tempo (most overdue)

@@ -53,7 +53,7 @@
                 <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none z-20 ps-3.5">
                     <svg class="flex-shrink-0 size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 </div>
-                <input type="text" name="search" value="{{ request('search') }}" class="py-2.5 ps-10 pe-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm" placeholder="Cari Nama / NIK Pasien...">
+                <input type="text" name="search" value="{{ request('search') }}" class="py-2.5 ps-10 pe-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm" placeholder="Cari Nama / NIK / No. BPJS Pasien...">
             </div>
 
             <!-- Clickable Filter Status Pills -->
@@ -108,7 +108,13 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-gray-800">{{ $prb->pasien->nama }}</div>
-                            <div class="text-xs text-gray-500">NIK: {{ $prb->pasien->nik }}</div>
+                            <div class="text-xs text-gray-500 flex items-center gap-1.5 flex-wrap">
+                                <span>NIK: {{ $prb->pasien->nik ?? '-' }}</span>
+                                @if(!empty($prb->pasien->no_bpjs))
+                                    <span class="text-gray-300">&bull;</span>
+                                    <span class="text-blue-600 font-medium">BPJS: {{ $prb->pasien->no_bpjs }}</span>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($prb->diagnosa)
