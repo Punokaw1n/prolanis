@@ -686,6 +686,7 @@ class PasienPrbController extends Controller
     {
         return [
             ['kode' => 'E11', 'nama' => 'Diabetes Melitus'],
+            ['kode' => 'E11.7', 'nama' => 'Diabetes Melitus dengan Komplikasi'],
             ['kode' => 'I10', 'nama' => 'Hipertensi'],
             ['kode' => 'I25', 'nama' => 'Penyakit Jantung'],
             ['kode' => 'J45', 'nama' => 'Asma Bronkial'],

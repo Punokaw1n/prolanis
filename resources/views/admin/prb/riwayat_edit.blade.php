@@ -266,7 +266,7 @@
                                             <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
                                                 Kode ICD-10 <span class="text-red-500">*</span>
                                             </label>
-                                            <input type="text" x-model="kodeDiagnosa" placeholder="Misal: I10, J45, E11" class="py-2 px-3 block w-full border border-gray-300 rounded-lg text-xs font-mono font-bold uppercase text-gray-800 bg-white focus:border-teal-500 focus:ring-teal-500 shadow-2xs">
+                                            <input type="text" x-model="kodeDiagnosa" placeholder="Misal: I10, J45, E11, E11.7" class="py-2 px-3 block w-full border border-gray-300 rounded-lg text-xs font-mono font-bold uppercase text-gray-800 bg-white focus:border-teal-500 focus:ring-teal-500 shadow-2xs">
                                         </div>
                                         <div class="sm:col-span-8">
                                             <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
