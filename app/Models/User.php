@@ -222,18 +222,14 @@ class User extends Authenticatable
 
     /**
      * Cek apakah user berhak mengedit atau menghapus riwayat pengambilan obat tertentu
-     * - Hak dasar ada di role dokter dan admin
-     * - Hanya untuk riwayat yang memiliki rincian resep obat (bukan jadwal kosong bulan berikutnya)
-     * - Hilang / hidden ketika status obat di menu farmasi = sudah / tidak lengkap (sudah dilayani farmasi)
+     * - Khusus role admin: selalu diizinkan meskipun obat sudah diserahkan di farmasi
+     * - Role selain admin (dokter): dibatasi jika obat sudah diserahkan di farmasi
      */
     public function canEditHapusRiwayat(RiwayatPengambilanObatPrb $riwayat): bool
     {
-        $jumlahObat = $riwayat->relationLoaded('obatPrb')
-            ? $riwayat->obatPrb->count()
-            : $riwayat->obatPrb()->count();
-
-        if ($jumlahObat === 0) {
-            return false;
+        // Khusus admin selalu memiliki hak akses penuh untuk edit dan hapus
+        if ($this->isAdmin()) {
+            return true;
         }
 
         if ($riwayat->isFarmasiSudah()) {

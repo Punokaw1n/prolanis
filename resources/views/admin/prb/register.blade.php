@@ -92,8 +92,14 @@
                     </label>
                     <div class="inline-flex items-center gap-1.5">
                         <input type="date" name="tanggal" value="{{ $tanggal }}" class="py-2.5 px-3 block w-44 sm:w-48 border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-2xs">
-                        <button type="button" onclick="document.querySelector('input[name=tanggal]').value = '{{ now()->toDateString() }}'; this.form.submit();" class="py-2.5 px-3 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg border border-gray-200 whitespace-nowrap transition-colors cursor-pointer" title="Set ke Hari Ini">
-                            Hari Ini
+                        <button type="button" 
+                                onclick="document.querySelector('input[name=tanggal]').value = '{{ now()->toDateString() }}'; this.form.submit();" 
+                                class="py-2.5 px-3.5 text-xs font-bold rounded-lg border whitespace-nowrap transition-all active:scale-95 cursor-pointer inline-flex items-center gap-1.5 {{ $tanggal === now()->toDateString() ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 shadow-2xs' : 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100 hover:border-blue-400 shadow-2xs' }}" 
+                                title="Set filter ke tanggal Hari Ini ({{ now()->isoFormat('D MMMM Y') }})">
+                            <svg class="size-3.5 shrink-0 {{ $tanggal === now()->toDateString() ? 'text-white' : 'text-blue-600' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                            </svg>
+                            <span>Hari Ini</span>
                         </button>
                     </div>
                 </div>

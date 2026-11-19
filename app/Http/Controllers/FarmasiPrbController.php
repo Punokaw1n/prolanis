@@ -23,10 +23,15 @@ class FarmasiPrbController extends Controller
         $latestDateAvailable = $latestRiwayat?->tanggal_diambil?->format('Y-m-d')
             ?? RiwayatPengambilanObatPrb::has('obatPrb')->latest('created_at')->first()?->created_at?->format('Y-m-d');
 
-        // Tanggal filter yang dipilih (default: tanggal yang diminta, atau hari ini)
+        // Tanggal filter yang dipilih (default: 'semua' agar tidak auto-terkunci di hari ini saat buka atau search)
         $tanggal = $request->get('tanggal');
-        if (! $request->has('tanggal')) {
-            $tanggal = Carbon::today()->format('Y-m-d');
+        if ($request->filled('q')) {
+            // Saat mencari nama/obat, cari di semua waktu kecuali jika user secara spesifik memilih tanggal bukan hari ini
+            if (! $request->has('tanggal') || $request->get('tanggal') === Carbon::today()->format('Y-m-d')) {
+                $tanggal = 'semua';
+            }
+        } elseif (! $request->has('tanggal')) {
+            $tanggal = 'semua';
         }
 
         $query = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien', 'obatPrb', 'pencatat', 'petugasFarmasi'])
@@ -43,7 +48,7 @@ class FarmasiPrbController extends Controller
             });
         }
 
-        // Pencarian (Nama, No RM, NIK, Alamat, Pencatat/Dokter, Diagnosa, Nama Obat)
+        // Pencarian (Nama, No RM, NIK, Alamat, Pencatat/Dokter, Diagnosa, Kode Diagnosa, Nama Obat)
         if ($request->filled('q')) {
             $search = trim($request->get('q'));
             $query->where(function ($q) use ($search) {
@@ -54,10 +59,11 @@ class FarmasiPrbController extends Controller
                         ->orWhere('alamat', 'like', "%{$search}%");
                 })->orWhereHas('pencatat', function ($qn) use ($search) {
                     $qn->where('nama', 'like', "%{$search}%");
+                })->orWhere(function ($qr) use ($search) {
+                    $qr->where('diagnosa', 'like', "%{$search}%")
+                        ->orWhere('kode_diagnosa', 'like', "%{$search}%");
                 })->orWhereHas('pasienPrb', function ($qprb) use ($search) {
-                    $qprb->where('diagnosa', 'like', "%{$search}%")
-                        ->orWhere('keterangan_diagnosa', 'like', "%{$search}%")
-                        ->orWhere('kode_diagnosa_prb', 'like', "%{$search}%");
+                    $qprb->where('diagnosa', 'like', "%{$search}%");
                 })->orWhereHas('obatPrb', function ($qo) use ($search) {
                     $qo->where('nama_obat', 'like', "%{$search}%");
                 });

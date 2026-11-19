@@ -358,10 +358,10 @@
                                                     </svg>
                                                 </span>
                                                 <h3 class="mb-2 text-xl font-bold" id="modal-title" style="color: #1f2937;">
-                                                    Hapus Riwayat Pengambilan?
+                                                    Hapus Riwayat / Jadwal Pengambilan?
                                                 </h3>
                                                 <p class="text-sm whitespace-normal" style="color: #6b7280;">
-                                                    Tindakan ini tidak dapat dibatalkan. Menghapus riwayat juga akan menghapus daftar rincian obat yang tersimpan di dalamnya.
+                                                    Tindakan ini tidak dapat dibatalkan. Riwayat atau jadwal pengambilan obat ini akan dihapus dari sistem.
                                                 </p>
                                                 
                                                 <div class="mt-6 flex justify-center gap-x-4">
