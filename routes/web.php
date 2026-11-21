@@ -33,9 +33,7 @@ use App\Models\JadwalLayanan;
 use App\Models\LogAktivitas;
 use App\Models\Pasien;
 use App\Models\PasienPrb;
-use App\Models\Persetujuan;
 use App\Models\RiwayatPengambilanObatPrb;
-use App\Models\User;
 use Carbon\Carbon;
 
 // Admin & Petugas Routes
@@ -92,6 +90,8 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
             Route::post('/', [PasienPrbController::class, 'store'])->name('admin.prb.store');
             Route::get('/{id}', [PasienPrbController::class, 'show'])->name('admin.prb.show');
             Route::put('/{id}/toggle-status', [PasienPrbController::class, 'toggleStatus'])->name('admin.prb.toggle-status');
+            // Hapus Pasien PRB - Khusus Admin
+            Route::middleware('role:admin')->delete('/{id}', [PasienPrbController::class, 'destroy'])->name('admin.prb.destroy');
             // Riwayat Pengambilan Obat (Catat, Edit, Hapus) - Khusus Dokter & Admin
             Route::middleware('role:dokter')->group(function () {
                 Route::get('/{id}/riwayat/create', [PasienPrbController::class, 'createRiwayat'])->name('admin.prb.riwayat.create');

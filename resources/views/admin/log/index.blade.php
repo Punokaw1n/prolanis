@@ -31,7 +31,7 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">
                     {{ $log->user ? $log->user->nama : 'Sistem/Guest' }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-800">
+                <td class="px-6 py-4 text-sm text-gray-800 whitespace-pre-line leading-relaxed">
                     {{ $log->deskripsi }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono text-xs">

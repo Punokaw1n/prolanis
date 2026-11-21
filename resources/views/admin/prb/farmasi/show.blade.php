@@ -63,6 +63,10 @@
             ];
         })->values()->toArray(),
     ];
+
+    $initialFingerprint = md5($obatPrbs->map(function ($o) {
+        return "{$o->id}:{$o->nama_obat}:{$o->signa}:{$o->jumlah_obat}";
+    })->implode('|') . '-' . ($riwayat->updated_at ? $riwayat->updated_at->timestamp : 0));
 @endphp
 
 @push('styles')
@@ -118,7 +122,7 @@
 @endpush
 
 @section('content')
-<div class="max-w-[1400px] mx-auto px-3 sm:px-6 py-4 space-y-4" x-data="kunjunganObatApp({{ json_encode($initialObatStatus) }}, {{ json_encode($printPayload) }})">
+<div class="max-w-[1400px] mx-auto px-3 sm:px-6 py-4 space-y-4" x-data="kunjunganObatApp({{ json_encode($initialObatStatus) }}, {{ json_encode($printPayload) }}, {{ $riwayat->updated_at ? $riwayat->updated_at->timestamp : 0 }}, '{{ $initialFingerprint }}')">
 
     <!-- Top Breadcrumb / Title Bar Puskesmas Kalijudan -->
     <div class="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
@@ -233,8 +237,68 @@
         </div>
     </div>
 
+    @if(session('resep_diperbarui'))
+    <!-- Banner Preline UI: Alert dari Redirect Session Backend -->
+    <div class="bg-amber-50 border-s-4 border-amber-500 p-4 rounded-xl shadow-md border border-amber-200 mb-2" role="alert">
+        <div class="flex items-start">
+            <div class="shrink-0 text-amber-500 mt-0.5">
+                <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                    <path d="M12 9v4"/>
+                    <path d="M12 17h.01"/>
+                </svg>
+            </div>
+            <div class="ms-3 flex-1">
+                <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">
+                    <span>Perhatian: Resep Obat Pasien Ini Telah Diperbarui Oleh Dokter!</span>
+                    <span class="inline-flex items-center py-0.5 px-2 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900 uppercase tracking-wide">Pemberitahuan</span>
+                </h3>
+                <p class="text-xs text-amber-800 mt-1.5 leading-relaxed">
+                    {{ session('resep_diperbarui') }}
+                </p>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Banner Preline UI: Peringatan Resep Telah Diperbarui Oleh Dokter (Live Detection) -->
+    <div x-show="adaPerubahanDokter" x-cloak
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="bg-amber-50 border-s-4 border-amber-500 p-4 rounded-xl shadow-md border border-amber-200" role="alert">
+        <div class="flex items-start">
+            <div class="shrink-0 text-amber-500 mt-0.5">
+                <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                    <path d="M12 9v4"/>
+                    <path d="M12 17h.01"/>
+                </svg>
+            </div>
+            <div class="ms-3 flex-1">
+                <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">
+                    <span>Perhatian: Resep Obat Pasien Ini Baru Saja Diperbarui Oleh Dokter!</span>
+                    <span class="inline-flex items-center py-0.5 px-2 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900 uppercase tracking-wide">Update Terbaru</span>
+                </h3>
+                <p class="text-xs text-amber-800 mt-1.5 leading-relaxed">
+                    Dokter pemeriksa (<strong x-text="dokterPengubah"></strong>) baru saja melakukan perubahan pada data resep obat untuk pasien ini saat halaman sedang dibuka. Tombol penyerahan obat dinonaktifkan sementara agar obat yang disiapkan tidak salah.
+                </p>
+                <div class="mt-3 flex items-center gap-2">
+                    <button type="button" @click="window.location.reload()"
+                            class="py-2 px-3.5 inline-flex items-center gap-x-2 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-all cursor-pointer">
+                        <svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                        <span>Muat Ulang Resep Sekarang</span>
+                    </button>
+                    <span class="text-[11px] text-amber-700">Daftar obat terbaru akan otomatis tampil setelah halaman dimuat ulang.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Form Submit Pemberian Obat -->
-    <form action="{{ route('admin.prb.farmasi.beri-obat', $riwayat->id) }}" method="POST" id="formBeriObat">
+    <form action="{{ route('admin.prb.farmasi.beri-obat', $riwayat->id) }}" method="POST" id="formBeriObat" @submit.prevent="submitBeriObat($event)">
         @csrf
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
@@ -390,13 +454,22 @@
                     <div x-show="actionOpen" x-transition.duration.200ms class="p-4 space-y-2.5">
                         <!-- Tombol Utama: OBAT / BERI OBAT (Merah/Coral SIMPUS) -->
                         <button type="submit" 
-                                class="w-full py-3 px-4 rounded-lg text-sm font-bold text-white shadow-md hover:shadow-lg hover:opacity-90 active:opacity-100 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                                style="background-color: #e05344; color: #ffffff;">
+                                :disabled="adaPerubahanDokter || isCheckingBeforeSubmit"
+                                :class="adaPerubahanDokter ? 'opacity-50 cursor-not-allowed pointer-events-none' : (isCheckingBeforeSubmit ? 'opacity-70 cursor-wait' : 'hover:shadow-lg hover:opacity-90 active:opacity-100 cursor-pointer')"
+                                class="w-full py-3 px-4 rounded-lg text-sm font-bold text-white shadow-md transition-all flex items-center justify-center gap-2"
+                                style="background-color: #e05344; color: #ffffff;"
+                                :title="adaPerubahanDokter ? 'Resep telah diubah oleh dokter. Silakan muat ulang resep terlebih dahulu.' : 'Simpan dan berikan obat ke pasien'">
                             <svg class="size-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                             </svg>
-                            <span>Beri Obat</span>
+                            <span x-text="adaPerubahanDokter ? 'Resep Telah Diubah Dokter' : (isCheckingBeforeSubmit ? 'Memeriksa Resep...' : 'Beri Obat')">Beri Obat</span>
                         </button>
+
+                        <template x-if="adaPerubahanDokter">
+                            <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2.5 font-medium text-center leading-relaxed">
+                                ⚠️ Dokter baru saja mengubah resep. Silakan klik tombol <strong>Muat Ulang Resep</strong> pada banner peringatan.
+                            </p>
+                        </template>
 
                         <!-- Tombol Nota Resep / Cetak (Cyan SIMPUS) - Langsung Cetak Resep Dokter -->
                         <button type="button" 
@@ -829,10 +902,83 @@
 </div>
 
 <script>
-    function kunjunganObatApp(initialData, printPayload) {
+    function kunjunganObatApp(initialData, printPayload, initialTimestamp, initialFingerprint) {
         return {
             actionOpen: true,
             obatStatus: initialData,
+
+            // State Deteksi Pembaruan Resep Dokter Secara Live
+            lastKnownUpdatedAt: parseInt(initialTimestamp, 10) || 0,
+            lastKnownFingerprint: initialFingerprint || '',
+            adaPerubahanDokter: false,
+            dokterPengubah: printPayload?.dokter || 'Dokter Pemeriksa',
+            isCheckingBeforeSubmit: false,
+            pollTimer: null,
+
+            init() {
+                // Polling cek perubahan resep setiap 3 detik saat tab browser sedang aktif
+                this.pollTimer = setInterval(() => {
+                    if (!document.hidden && !this.adaPerubahanDokter) {
+                        this.cekPerubahanDokter();
+                    }
+                }, 3000);
+
+                // Langsung periksa saat petugas kembali membuka tab farmasi ini
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && !this.adaPerubahanDokter) {
+                        this.cekPerubahanDokter();
+                    }
+                });
+            },
+
+            async cekPerubahanDokter() {
+                if (this.adaPerubahanDokter) return true;
+                try {
+                    const res = await fetch('{{ route("admin.prb.farmasi.show", $riwayat->id) }}', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        const serverFingerprint = json.data?.fingerprint;
+                        const serverTs = json.data?.timestamp || Math.floor(new Date(json.data?.updated_at || 0).getTime() / 1000);
+
+                        const isFingerprintChanged = this.lastKnownFingerprint && serverFingerprint && serverFingerprint !== this.lastKnownFingerprint;
+                        const isTimeChanged = this.lastKnownUpdatedAt > 0 && serverTs > this.lastKnownUpdatedAt;
+
+                        if (isFingerprintChanged || isTimeChanged) {
+                            this.adaPerubahanDokter = true;
+                            this.dokterPengubah = json.data?.pencatat?.nama_gelar || json.data?.pencatat?.nama || this.dokterPengubah;
+                            if (this.pollTimer) clearInterval(this.pollTimer);
+                            return true;
+                        }
+                    }
+                } catch (e) {
+                    // Abaikan kesalahan koneksi sementara
+                }
+                return false;
+            },
+
+            async submitBeriObat(e) {
+                if (this.adaPerubahanDokter) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+
+                this.isCheckingBeforeSubmit = true;
+                const adaUpdate = await this.cekPerubahanDokter();
+                this.isCheckingBeforeSubmit = false;
+
+                if (adaUpdate) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+
+                // Aman, submit form secara normal
+                document.getElementById('formBeriObat').submit();
+            },
 
             // State & Logika Cetak Lembar Resep Dokter Resmi
             showModalCetak: false,

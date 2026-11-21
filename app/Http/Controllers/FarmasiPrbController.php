@@ -99,9 +99,22 @@ class FarmasiPrbController extends Controller
         $riwayat = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien', 'obatPrb', 'pencatat', 'petugasFarmasi'])->findOrFail($id);
 
         if (request()->wantsJson() || request()->ajax()) {
+            $obatFingerprint = $riwayat->obatPrb->map(function ($o) {
+                return "{$o->id}:{$o->nama_obat}:{$o->signa}:{$o->jumlah_obat}";
+            })->implode('|');
+
             return response()->json([
                 'status' => 'success',
-                'data' => $riwayat,
+                'data' => [
+                    'id' => $riwayat->id,
+                    'updated_at' => $riwayat->updated_at?->toISOString(),
+                    'timestamp' => $riwayat->updated_at?->timestamp ?? 0,
+                    'fingerprint' => md5($obatFingerprint.'-'.($riwayat->updated_at?->timestamp ?? 0)),
+                    'pencatat' => [
+                        'nama' => $riwayat->pencatat?->nama ?? 'Dokter Pemeriksa',
+                        'nama_gelar' => $riwayat->pencatat?->nama_gelar ?? 'Dokter Pemeriksa',
+                    ],
+                ],
             ]);
         }
 
@@ -118,6 +131,18 @@ class FarmasiPrbController extends Controller
     public function beriObat(Request $request, $id)
     {
         $riwayat = RiwayatPengambilanObatPrb::with('obatPrb')->findOrFail($id);
+
+        // Cek kesesuaian obat yang dikirim farmasi dengan data di database saat ini
+        $submittedObatIds = collect($request->obat ?? [])->pluck('id')->filter()->map(fn ($oid) => (int) $oid)->toArray();
+        $existingObatIds = $riwayat->obatPrb->pluck('id')->toArray();
+
+        $isObatOutdated = count(array_diff($submittedObatIds, $existingObatIds)) > 0
+            || count(array_diff($existingObatIds, $submittedObatIds)) > 0;
+
+        if ($isObatOutdated) {
+            return redirect()->route('admin.prb.farmasi.show', $riwayat->id)
+                ->with('resep_diperbarui', 'Pemberian obat dibatalkan karena Dokter baru saja memperbarui resep pasien ini. Silakan periksa kembali daftar obat terbaru sebelum menyerahkan ke pasien.');
+        }
 
         $request->validate([
             'obat' => 'required|array',

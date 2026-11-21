@@ -6,6 +6,7 @@ use App\Models\LogAktivitas;
 use App\Models\MasterObat;
 use App\Models\Pasien;
 use App\Models\PasienPrb;
+use App\Models\Persetujuan;
 use App\Models\RiwayatPengambilanObatPrb;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -490,7 +491,21 @@ class PasienPrbController extends Controller
                 ? (User::find($request->dokter_id)?->nama_gelar ?? auth()->user()?->nama_gelar ?? 'Dokter Pemeriksa')
                 : (auth()->user()?->nama_gelar ?? 'Dokter Pemeriksa');
 
-            LogAktivitas::catat('CATAT_RESEP_PRB', "Mencatat resep obat ({$diagInfo}) untuk pasien {$namaPasien} oleh {$namaDokter} ({$jumlahObat} jenis obat) pada kunjungan {$tglKunjungan}");
+            $daftarObat = collect($request->obat ?? [])
+                ->filter(fn ($o) => ! empty(trim($o['nama'] ?? '')))
+                ->map(function ($o) {
+                    $nama = trim($o['nama']);
+                    $signa = ! empty($o['signa']) ? " ({$o['signa']})" : '';
+                    $qty = ! empty($o['jumlah_obat']) ? " [{$o['jumlah_obat']} butir]" : '';
+
+                    return "{$nama}{$signa}{$qty}";
+                })
+                ->values()
+                ->implode(', ');
+
+            $obatText = $daftarObat ?: '(Tidak ada obat)';
+
+            LogAktivitas::catat('CATAT_RESEP_PRB', "Mencatat resep obat ({$diagInfo}) untuk pasien {$namaPasien} oleh {$namaDokter} pada kunjungan {$tglKunjungan} ({$jumlahObat} jenis obat):\n• Rincian Obat: {$obatText}");
 
             return redirect()->route('admin.prb.show', $id)->with('success', 'Riwayat pengambilan obat berhasil dicatat.');
         });
@@ -545,6 +560,23 @@ class PasienPrbController extends Controller
             return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
                 ->with('error', 'Data riwayat obat tidak dapat diubah karena status obat di menu farmasi sudah selesai.');
         }
+
+        $riwayat->load(['obatPrb', 'pasienPrb.pasien', 'pencatat']);
+
+        // Simpan data lama untuk audit trail di log aktivitas
+        $oldObatList = $riwayat->obatPrb->map(function ($o) {
+            $detail = $o->nama_obat;
+            if ($o->signa) {
+                $detail .= " ({$o->signa})";
+            }
+            if ($o->jumlah_obat) {
+                $detail .= " [{$o->jumlah_obat} butir]";
+            }
+
+            return $detail;
+        })->values()->toArray();
+
+        $oldDiagnosa = $riwayat->diagnosa ?: ($riwayat->kode_diagnosa ?: null);
 
         $request->validate([
             'tanggal_jatuh_tempo' => 'required|date',
@@ -608,13 +640,46 @@ class PasienPrbController extends Controller
             }
         }
 
+        // Pastikan timestamp riwayat selalu terbarui agar meja farmasi langsung mendeteksi revisi resep dokter
+        $riwayat->touch();
+
         $namaPasien = $riwayat->pasienPrb?->pasien?->nama ?? 'Pasien';
         $diagInfo = $request->diagnosa ?: ($request->kode_diagnosa ?: ($riwayat->kode_diagnosa ?: 'PRB'));
-        $jumlahObat = is_array($request->obat) ? count($request->obat) : 0;
+        $newDiagnosa = $request->diagnosa ?: ($request->kode_diagnosa ?: null);
 
-        $namaDokter = $riwayat->pencatat?->nama_gelar ?? auth()->user()?->nama_gelar ?? 'Dokter Pemeriksa';
+        // Refresh pencatat jika dicatat_oleh diperbarui
+        if (! empty($updateData['dicatat_oleh'])) {
+            $namaDokter = User::find($updateData['dicatat_oleh'])?->nama_gelar ?? auth()->user()?->nama_gelar ?? 'Dokter Pemeriksa';
+        } else {
+            $namaDokter = $riwayat->pencatat?->nama_gelar ?? auth()->user()?->nama_gelar ?? 'Dokter Pemeriksa';
+        }
 
-        LogAktivitas::catat('UPDATE_RESEP_PRB', "Memperbarui riwayat resep obat ({$diagInfo}) pasien {$namaPasien} oleh {$namaDokter} ({$jumlahObat} jenis obat)");
+        $newObatList = collect($request->obat ?? [])
+            ->filter(fn ($o) => ! empty(trim($o['nama'] ?? '')))
+            ->map(function ($o) {
+                $nama = trim($o['nama']);
+                $signa = ! empty($o['signa']) ? " ({$o['signa']})" : '';
+                $qty = ! empty($o['jumlah_obat']) ? " [{$o['jumlah_obat']} butir]" : '';
+
+                return "{$nama}{$signa}{$qty}";
+            })
+            ->values()
+            ->toArray();
+
+        $oldStr = ! empty($oldObatList) ? implode(', ', $oldObatList) : '(Tidak ada obat)';
+        $newStr = ! empty($newObatList) ? implode(', ', $newObatList) : '(Tidak ada obat)';
+
+        $logLines = [
+            "Memperbarui riwayat resep obat ({$diagInfo}) pasien {$namaPasien} oleh {$namaDokter}:",
+            "• Resep Sebelumnya: {$oldStr}",
+            "• Diubah Menjadi: {$newStr}",
+        ];
+
+        if ($oldDiagnosa && $newDiagnosa && $oldDiagnosa !== $newDiagnosa) {
+            $logLines[] = "• Perubahan Diagnosa: {$oldDiagnosa} → {$newDiagnosa}";
+        }
+
+        LogAktivitas::catat('UPDATE_RESEP_PRB', implode("\n", $logLines));
 
         return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)->with('success', 'Data riwayat pengambilan obat berhasil diperbarui.');
     }
@@ -637,10 +702,27 @@ class PasienPrbController extends Controller
         $tglInfo = $riwayat->tanggal_diambil ? $riwayat->tanggal_diambil->translatedFormat('d M Y') : ($riwayat->tanggal_jatuh_tempo ? $riwayat->tanggal_jatuh_tempo->translatedFormat('d M Y') : '-');
         $diagInfo = $riwayat->diagnosa_lengkap ?? 'PRB';
 
+        $obatHapus = $riwayat->obatPrb->map(function ($o) {
+            $detail = $o->nama_obat;
+            if ($o->signa) {
+                $detail .= " ({$o->signa})";
+            }
+            if ($o->jumlah_obat) {
+                $detail .= " [{$o->jumlah_obat} butir]";
+            }
+
+            return $detail;
+        })->implode(', ');
+
         $riwayat->obatPrb()->delete();
         $riwayat->delete();
 
-        LogAktivitas::catat('HAPUS_RESEP_PRB', "Menghapus riwayat resep obat ({$diagInfo}) pasien {$namaPasien} tanggal {$tglInfo}");
+        $logHapus = "Menghapus riwayat resep obat ({$diagInfo}) pasien {$namaPasien} tanggal {$tglInfo}";
+        if ($obatHapus) {
+            $logHapus .= ":\n• Rincian Obat: {$obatHapus}";
+        }
+
+        LogAktivitas::catat('HAPUS_RESEP_PRB', $logHapus);
 
         return redirect()->route('admin.prb.show', $pasien_prb_id)->with('success', 'Riwayat pengambilan obat berhasil dihapus.');
     }
@@ -677,6 +759,47 @@ class PasienPrbController extends Controller
         LogAktivitas::catat('UBAH_STATUS_PRB', "Mengubah status keaktifan PRB pasien {$namaPasien} menjadi {$statusBaru}");
 
         return redirect()->back()->with('success', 'Status keaktifan pasien berhasil diubah menjadi: '.($prb->status_keaktifan == 'aktif' ? 'Aktif' : 'Tidak Aktif'));
+    }
+
+    /**
+     * Hapus data pasien PRB (Khusus Administrator)
+     */
+    public function destroy($id)
+    {
+        if (! auth()->user()?->isAdmin()) {
+            abort(403, 'Akses ditolak. Hanya Administrator yang berhak menghapus data pasien PRB.');
+        }
+
+        $prb = PasienPrb::with(['pasien', 'riwayatPengambilan.obatPrb'])->findOrFail($id);
+
+        $namaPasien = $prb->pasien?->nama ?? 'Pasien';
+        $nikPasien = $prb->pasien?->nik ?? '-';
+        $pasien = $prb->pasien;
+
+        // Hapus seluruh riwayat pengambilan obat dan rincian obat PRB
+        foreach ($prb->riwayatPengambilan as $riwayat) {
+            $riwayat->obatPrb()->delete();
+            $riwayat->delete();
+        }
+
+        // Hapus data keikutsertaan PRB pasien
+        $prb->delete();
+
+        // Jika data pasien tidak memiliki data riwayat medis/layanan lain (misal pasien dummy/baru di PRB)
+        // maka hapus master data pasien agar bersih
+        if ($pasien) {
+            $hasOtherRecords = $pasien->pemeriksaans()->exists()
+                || $pasien->jadwalLayanan()->exists()
+                || Persetujuan::where('pasien_id', $pasien->id)->exists();
+
+            if (! $hasOtherRecords) {
+                $pasien->delete();
+            }
+        }
+
+        LogAktivitas::catat('HAPUS_PASIEN_PRB', "Menghapus data pasien PRB {$namaPasien} (NIK: {$nikPasien})");
+
+        return redirect()->route('admin.prb.index')->with('success', "Data pasien PRB {$namaPasien} berhasil dihapus.");
     }
 
     /**

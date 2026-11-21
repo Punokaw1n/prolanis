@@ -75,7 +75,7 @@
         </div>
     </div>
     @if(auth()->user()?->canKelolaPasien())
-    <div class="sm:ms-auto flex items-center gap-2" x-data="{ toggleStatusModalOpen: false, editPasienModalOpen: @json($errors->any()) }">
+    <div class="sm:ms-auto flex items-center gap-2" x-data="{ toggleStatusModalOpen: false, editPasienModalOpen: @json($errors->any()), deletePasienModalOpen: false }">
         <button type="button" @click="editPasienModalOpen = true" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-blue-200 bg-blue-50/70 text-blue-700 shadow-sm hover:bg-blue-100 hover:border-blue-300 transition-colors">
             <svg class="flex-shrink-0 size-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
@@ -87,6 +87,13 @@
             <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-1 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
             {{ $prb->status_keaktifan == 'aktif' ? 'Nonaktifkan Pasien' : 'Aktifkan Pasien' }}
         </button>
+
+        @if(auth()->user()?->isAdmin())
+        <button type="button" @click="deletePasienModalOpen = true" class="py-2.5 px-3.5 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-red-200 bg-red-50 text-red-700 shadow-sm hover:bg-red-100 hover:border-red-300 transition-colors cursor-pointer" title="Hapus Data Pasien PRB">
+            <svg class="flex-shrink-0 size-4 text-red-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            Hapus Pasien
+        </button>
+        @endif
 
         @include('admin.pasien._modal_edit', ['pasien' => $prb->pasien])
 
@@ -114,13 +121,13 @@
                             </p>
                             
                             <div class="mt-6 flex justify-center gap-x-4">
-                                <button type="button" @click="toggleStatusModalOpen = false" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border shadow-sm transition-colors" style="background-color: #ffffff; border-color: #e5e7eb; color: #1f2937;">
+                                <button type="button" @click="toggleStatusModalOpen = false" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border shadow-sm transition-colors cursor-pointer" style="background-color: #ffffff; border-color: #e5e7eb; color: #1f2937;">
                                     Batal
                                 </button>
                                 <form action="{{ route('admin.prb.toggle-status', $prb->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('PUT')
-                                    <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent transition-colors" style="background-color: #d97706; color: #ffffff;">
+                                    <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent transition-colors cursor-pointer" style="background-color: #d97706; color: #ffffff;">
                                         Ya, {{ $prb->status_keaktifan == 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}
                                     </button>
                                 </form>
@@ -130,6 +137,48 @@
                 </div>
             </div>
         </template>
+
+        @if(auth()->user()?->isAdmin())
+        <!-- Delete Pasien Modal (Alpine.js) -->
+        <template x-teleport="body">
+            <div x-show="deletePasienModalOpen" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title-del" role="dialog" aria-modal="true" style="display: none; z-index: 9999;">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true" style="background-color: rgba(0,0,0,0.5);" @click="deletePasienModalOpen = false"></div>
+                <div class="fixed" style="top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 32rem; padding: 1rem; z-index: 10000;">
+                    <div x-show="deletePasienModalOpen" 
+                         x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                         class="w-full text-left overflow-hidden shadow-xl transform transition-all" style="background-color: #ffffff; border-radius: 0.75rem;">
+                        
+                        <div class="p-6 sm:p-10 text-center">
+                            <span class="mb-4 inline-flex justify-center items-center size-[62px] rounded-full border-4" style="border-color: #fef2f2; background-color: #fee2e2; color: #ef4444;">
+                                <svg class="size-6" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                </svg>
+                            </span>
+                            <h3 class="mb-2 text-xl font-bold" id="modal-title-del" style="color: #1f2937;">
+                                Hapus Data Pasien PRB?
+                            </h3>
+                            <p class="text-sm whitespace-normal" style="color: #6b7280;">
+                                Anda akan menghapus data pasien PRB <strong>{{ $prb->pasien->nama }}</strong> (NIK: {{ $prb->pasien->nik ?? '-' }}). Seluruh riwayat pengambilan obat PRB pasien ini juga akan terhapus. Tindakan ini tidak dapat dibatalkan.
+                            </p>
+                            
+                            <div class="mt-6 flex justify-center gap-x-4">
+                                <button type="button" @click="deletePasienModalOpen = false" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border shadow-sm transition-colors cursor-pointer" style="background-color: #ffffff; border-color: #e5e7eb; color: #1f2937;">
+                                    Batal
+                                </button>
+                                <form action="{{ route('admin.prb.destroy', $prb->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent transition-colors cursor-pointer" style="background-color: #dc2626; color: #ffffff;">
+                                        Ya, Hapus Pasien
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+        @endif
     </div>
     @endif
 </header>

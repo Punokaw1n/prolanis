@@ -1360,12 +1360,6 @@ function riwayatForm() {
                 this.diagnosa = @json($prb->diagnosa ?? '');
             }
 
-            if (!this.tanggalJatuhTempo && this.tanggalDiambil) {
-                let d = new Date(this.tanggalDiambil);
-                d.setDate(d.getDate() + 30);
-                this.tanggalJatuhTempo = d.toISOString().split('T')[0];
-            }
-
             // Parse signa string dari lastResep server menjadi signa1 & signa2 dan simpan signa string
             this.lastResep = this.lastResep.map(item => {
                 const parts = this.parseSignaToParts(item.signa || '1 x 1');
@@ -1806,10 +1800,45 @@ function riwayatForm() {
         },
 
         setSaranJatuhTempo() {
-            if (!this.tanggalDiambil) return;
-            let date = new Date(this.tanggalDiambil);
-            date.setDate(date.getDate() + 30);
-            this.tanggalJatuhTempo = date.toISOString().split('T')[0];
+            // Ambil tanggal pelayanan/diambil sebagai dasar (prioritaskan dari Flatpickr UI atau Alpine state)
+            let tgl = this.tanggalDiambil;
+            const fpDiambilInstance = window.fpDiambil || document.querySelector('#fp_tanggal_diambil')?._flatpickr;
+            if (fpDiambilInstance && fpDiambilInstance.selectedDates.length > 0) {
+                tgl = fpDiambilInstance.formatDate(fpDiambilInstance.selectedDates[0], 'Y-m-d');
+            }
+
+            if (!tgl) {
+                const today = new Date();
+                tgl = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            }
+            this.tanggalDiambil = tgl;
+
+            // Hitung +30 hari menggunakan komponen tanggal lokal (bebas bug offset timezone UTC)
+            const parts = tgl.split('-');
+            const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            d.setDate(d.getDate() + 30);
+
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hasil = `${y}-${m}-${day}`;
+
+            this.tanggalJatuhTempo = hasil;
+
+            // Update input hidden
+            const hiddenJatuhTempo = document.querySelector('input[name="tanggal_jatuh_tempo"]');
+            if (hiddenJatuhTempo) {
+                hiddenJatuhTempo.value = hasil;
+                hiddenJatuhTempo.dispatchEvent(new Event('input'));
+                hiddenJatuhTempo.dispatchEvent(new Event('change'));
+            }
+
+            // Langsung perbarui tampilan Flatpickr Jatuh Tempo
+            const fpJatuhTempoInstance = window.fpJatuhTempo || document.querySelector('#fp_tanggal_jatuh_tempo')?._flatpickr;
+            if (fpJatuhTempoInstance) {
+                fpJatuhTempoInstance.setDate(hasil, false);
+            }
+
             this.updateAllHari();
         },
 
@@ -1908,8 +1937,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 hiddenDiambil.dispatchEvent(new Event('input'));
                 hiddenDiambil.dispatchEvent(new Event('change'));
             }
+            const alpine = getAlpineData();
+            if (alpine) {
+                alpine.tanggalDiambil = dateStr;
+                if (typeof alpine.updateAllHari === 'function') {
+                    alpine.updateAllHari();
+                }
+            }
         },
     });
+    window.fpDiambil = fpDiambil;
 
     // --- Flatpickr: Tanggal Jatuh Tempo ---
     const fpJatuhTempo = flatpickr('#fp_tanggal_jatuh_tempo', {
@@ -1931,15 +1968,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 hiddenJatuhTempo.dispatchEvent(new Event('input'));
                 hiddenJatuhTempo.dispatchEvent(new Event('change'));
             }
+            const alpine = getAlpineData();
+            if (alpine) {
+                alpine.tanggalJatuhTempo = dateStr;
+                if (typeof alpine.updateAllHari === 'function') {
+                    alpine.updateAllHari();
+                }
+            }
         },
     });
+    window.fpJatuhTempo = fpJatuhTempo;
 
     // --- Tombol +30 Hari: sync ke flatpickr UI juga ---
     // Pantau perubahan pada hidden input tanggal_jatuh_tempo (dari setSaranJatuhTempo Alpine)
     const hiddenJatuhTempo = document.querySelector('input[name="tanggal_jatuh_tempo"]');
     if (hiddenJatuhTempo) {
         const observer = new MutationObserver(() => {
-            if (hiddenJatuhTempo.value) {
+            if (hiddenJatuhTempo.value && fpJatuhTempo) {
                 fpJatuhTempo.setDate(hiddenJatuhTempo.value, false);
             }
         });
@@ -1950,7 +1995,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setInterval(() => {
             if (hiddenJatuhTempo.value !== lastVal) {
                 lastVal = hiddenJatuhTempo.value;
-                if (lastVal) fpJatuhTempo.setDate(lastVal, false);
+                if (lastVal && fpJatuhTempo) fpJatuhTempo.setDate(lastVal, false);
             }
         }, 300);
     }

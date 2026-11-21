@@ -45,54 +45,71 @@
     </div>
 </header>
 
-<div class="flex flex-col gap-6">
+<div x-data="prbSearch()" class="flex flex-col gap-6">
     <!-- Search & Filter Box -->
     <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-        <form action="{{ route('admin.prb.index') }}" method="GET" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <form @submit.prevent="performSearch" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div class="relative w-full max-w-md">
                 <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none z-20 ps-3.5">
                     <svg class="flex-shrink-0 size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 </div>
-                <input type="text" name="search" value="{{ request('search') }}" class="py-2.5 ps-10 pe-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm" placeholder="Cari Nama / NIK / No. BPJS Pasien...">
+                <input type="text" x-model="query" @input.debounce.500ms="performSearch" class="py-2.5 ps-10 pe-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm" placeholder="Cari Nama / NIK / No. BPJS Pasien...">
             </div>
 
             <!-- Clickable Filter Status Pills -->
             <div class="flex items-center gap-1.5 p-1 bg-gray-100 rounded-lg border border-gray-200 self-start sm:self-auto">
-                <a href="{{ route('admin.prb.index', array_filter(['search' => request('search'), 'status' => 'semua'])) }}" 
-                   class="py-1.5 px-3 rounded-md text-xs transition-all {{ ($status ?? 'semua') === 'semua' ? 'bg-white text-blue-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium' }}">
+                <button type="button" 
+                        @click="setStatus('semua')" 
+                        :class="status === 'semua' ? 'bg-white text-blue-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                        class="py-1.5 px-3 rounded-md text-xs transition-all cursor-pointer">
                     Semua Status
-                </a>
-                <a href="{{ route('admin.prb.index', array_filter(['search' => request('search'), 'status' => 'aktif'])) }}" 
-                   class="py-1.5 px-3 rounded-md text-xs transition-all flex items-center gap-1.5 {{ ($status ?? 'semua') === 'aktif' ? 'bg-white text-emerald-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium' }}">
+                </button>
+                <button type="button" 
+                        @click="setStatus('aktif')" 
+                        :class="status === 'aktif' ? 'bg-white text-emerald-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                        class="py-1.5 px-3 rounded-md text-xs transition-all flex items-center gap-1.5 cursor-pointer">
                     <span class="size-1.5 rounded-full bg-emerald-500"></span>
                     Aktif
-                </a>
-                <a href="{{ route('admin.prb.index', array_filter(['search' => request('search'), 'status' => 'tidak_aktif'])) }}" 
-                   class="py-1.5 px-3 rounded-md text-xs transition-all flex items-center gap-1.5 {{ ($status ?? 'semua') === 'tidak_aktif' ? 'bg-white text-red-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium' }}">
+                </button>
+                <button type="button" 
+                        @click="setStatus('tidak_aktif')" 
+                        :class="status === 'tidak_aktif' ? 'bg-white text-red-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                        class="py-1.5 px-3 rounded-md text-xs transition-all flex items-center gap-1.5 cursor-pointer">
                     <span class="size-1.5 rounded-full bg-red-500"></span>
                     Tidak Aktif
-                </a>
+                </button>
             </div>
 
-            <input type="hidden" name="status" value="{{ $status ?? 'semua' }}">
-
             <div class="flex items-center gap-2">
-                <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
+                <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 shadow-sm cursor-pointer">
                     Cari
                 </button>
-                @if(request('search') || (request('status') && request('status') !== 'semua'))
-                    <a href="{{ route('admin.prb.index') }}" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50">
-                        Reset
-                    </a>
-                @endif
+                <button type="button" @click="resetSearch" x-show="query !== '' || (status !== 'semua' && status !== null)" style="display: none;" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 cursor-pointer">
+                    Reset
+                </button>
             </div>
         </form>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <div class="overflow-x-auto pb-2 custom-scrollbar-x">
-            <table class="min-w-full divide-y divide-gray-200">
+    <!-- Table Section -->
+    <div class="flex flex-col relative" id="prb-table-container">
+        <!-- Loading Overlay di Tengah Table -->
+        <div x-show="isLoading" style="display: none;" class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
+            <div class="inline-flex flex-col items-center gap-3 bg-white p-4 rounded-xl shadow-lg border border-gray-100">
+                <div class="inline-flex" role="status" aria-label="loading">
+                  <span class="flex h-6 items-center justify-center gap-1" aria-hidden="true">
+                    <span class="h-4 w-1.5 rounded-sm bg-gray-300 origin-bottom" style="animation: spinner-bars 1s ease-in-out infinite 0s;"></span>
+                    <span class="h-4 w-1.5 rounded-sm bg-gray-400 origin-bottom" style="animation: spinner-bars 1s ease-in-out infinite 0.12s;"></span>
+                    <span class="h-4 w-1.5 rounded-sm bg-gray-500 origin-bottom" style="animation: spinner-bars 1s ease-in-out infinite 0.24s;"></span>
+                  </span>
+                </div>
+                <span class="text-xs font-semibold text-gray-700" x-text="loadingText">Mencari data...</span>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto pb-2 custom-scrollbar-x">
+                <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Pasien</th>
@@ -152,9 +169,58 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
-                            <a href="{{ route('admin.prb.show', $prb->id) }}" class="inline-flex items-center gap-x-1.5 text-sm text-blue-600 decoration-2 hover:underline font-medium">
-                                Detail Riwayat
-                            </a>
+                            <div class="flex items-center justify-end gap-3" x-data="{ modalDeleteOpen: false }">
+                                <a href="{{ route('admin.prb.show', $prb->id) }}" class="inline-flex items-center gap-x-1.5 text-sm text-blue-600 decoration-2 hover:underline font-medium">
+                                    Detail Riwayat
+                                </a>
+
+                                @if(auth()->user()?->isAdmin())
+                                    <button type="button" @click="modalDeleteOpen = true" class="p-1 text-gray-400 hover:text-red-600 transition-colors cursor-pointer" title="Hapus Pasien PRB">
+                                        <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                    </button>
+
+                                    <!-- Delete Modal (Alpine.js) -->
+                                    <template x-teleport="body">
+                                        <div x-show="modalDeleteOpen" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title-{{ $prb->id }}" role="dialog" aria-modal="true" style="display: none; z-index: 9999;">
+                                            <div class="fixed inset-0 transition-opacity" aria-hidden="true" style="background-color: rgba(0,0,0,0.5);" @click="modalDeleteOpen = false"></div>
+                                            
+                                            <div class="fixed" style="top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 32rem; padding: 1rem; z-index: 10000;">
+                                                <div x-show="modalDeleteOpen" 
+                                                     x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                                                     class="w-full text-left overflow-hidden shadow-xl transform transition-all" style="background-color: #ffffff; border-radius: 0.75rem;">
+                                                    
+                                                    <div class="p-6 sm:p-10 text-center">
+                                                        <span class="mb-4 inline-flex justify-center items-center size-[62px] rounded-full border-4" style="border-color: #fef2f2; background-color: #fee2e2; color: #ef4444;">
+                                                            <svg class="size-6" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                                            </svg>
+                                                        </span>
+                                                        <h3 class="mb-2 text-xl font-bold" id="modal-title-{{ $prb->id }}" style="color: #1f2937;">
+                                                            Hapus Data Pasien PRB?
+                                                        </h3>
+                                                        <p class="text-sm whitespace-normal" style="color: #6b7280;">
+                                                            Anda akan menghapus data pasien PRB <strong>{{ $prb->pasien?->nama }}</strong> (NIK: {{ $prb->pasien?->nik ?? '-' }}). Seluruh riwayat pengambilan obat PRB terkait juga akan terhapus. Tindakan ini tidak dapat dibatalkan.
+                                                        </p>
+                                                        
+                                                        <div class="mt-6 flex justify-center gap-x-4">
+                                                            <button type="button" @click="modalDeleteOpen = false" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border shadow-sm transition-colors cursor-pointer" style="background-color: #ffffff; border-color: #e5e7eb; color: #1f2937;">
+                                                                Batal
+                                                            </button>
+                                                            <form action="{{ route('admin.prb.destroy', $prb->id) }}" method="POST" class="inline">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent transition-colors cursor-pointer" style="background-color: #dc2626; color: #ffffff;">
+                                                                    Ya, Hapus Pasien
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @empty
@@ -176,5 +242,70 @@
         </div>
         @endif
     </div>
+    </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('prbSearch', () => ({
+        query: '{{ $search ?? '' }}',
+        status: {!! json_encode($status ?? 'semua') !!},
+        isLoading: false,
+        loadingText: 'Mencari data...',
+
+        init() {
+        },
+
+        setStatus(newStatus) {
+            this.status = newStatus;
+            this.performSearch();
+        },
+
+        async performSearch(isReset = false) {
+            this.loadingText = isReset === true ? 'Mereset data...' : 'Memuat data...';
+            this.isLoading = true;
+
+            try {
+                const params = new URLSearchParams();
+                if (this.query) params.append('search', this.query);
+                if (this.status && this.status !== 'semua') params.append('status', this.status);
+
+                const url = `{{ route('admin.prb.index') }}${params.toString() ? '?' + params.toString() : ''}`;
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const html = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                const newTable = doc.querySelector('#prb-table-container').innerHTML;
+                const container = document.querySelector('#prb-table-container');
+                container.innerHTML = newTable;
+
+                if (window.Alpine) {
+                    window.Alpine.initTree(container);
+                }
+
+                window.history.pushState({}, '', url);
+            } catch (error) {
+                console.error('Gagal mencari data:', error);
+            } finally {
+                setTimeout(() => {
+                    this.isLoading = false;
+                }, 300);
+            }
+        },
+
+        resetSearch() {
+            this.query = '';
+            this.status = 'semua';
+            this.performSearch(true);
+        }
+    }))
+})
+</script>
+@endpush
