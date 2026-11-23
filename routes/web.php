@@ -161,6 +161,8 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
         // Log Aktivitas
         Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])->name('admin.log.index');
+        Route::get('/log-aktivitas/export', [LogAktivitasController::class, 'export'])->name('admin.log.export');
+        Route::post('/log-aktivitas/prune', [LogAktivitasController::class, 'prune'])->name('admin.log.prune');
     });
 });
 
