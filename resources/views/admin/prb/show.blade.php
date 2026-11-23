@@ -6,7 +6,7 @@
     $rawNamaUser = trim($currentUser?->nama ?? '');
 
     $defaultDokterNama = $currentUser?->nama_gelar ?? $currentUser?->name ?? 'Dokter Pemeriksa';
-    $defaultDokterSip = $currentUser?->no_sip ?: ($currentUser?->nip ? 'SIP. ' . $currentUser->nip : 'SIP. -');
+    $defaultDokterSip = $currentUser?->sip ?? 'SIP. -';
 @endphp
 
 @push('styles')
@@ -311,6 +311,9 @@
 
             <div class="border-l border-gray-200 ml-3">
                 @forelse($riwayat as $r)
+                @php
+                    $hasContent = $r->obatPrb->count() > 0 || !empty($r->tanggal_diambil);
+                @endphp
                 <!-- Item -->
                 <div class="mb-8 pl-6 relative transition-all" 
                      x-show="activeDiagnosa === 'semua' || activeDiagnosa === '{{ $r->diagnosa_group_key }}'"
@@ -326,7 +329,11 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
                         <div class="flex flex-wrap items-center gap-2">
                             <h3 class="flex items-center text-base font-semibold text-gray-900">
-                                Jatuh Tempo: {{ \Carbon\Carbon::parse($r->tanggal_jatuh_tempo)->translatedFormat('d M Y') }}
+                                @if(! $hasContent)
+                                    Jatuh Tempo Selanjutnya: {{ \Carbon\Carbon::parse($r->tanggal_jatuh_tempo)->translatedFormat('d M Y') }}
+                                @else
+                                    Jatuh Tempo: {{ \Carbon\Carbon::parse($r->tanggal_jatuh_tempo)->translatedFormat('d M Y') }}
+                                @endif
                             </h3>
                             @if($r->status)
                                 <span class="{{ $r->status['color'] }} text-xs font-medium px-2.5 py-0.5 rounded">{{ $r->status['label'] }}</span>
@@ -353,7 +360,7 @@
                             @php
                                 $rDoctor = $r->pencatat ?? auth()->user();
                                 $rDoctorNamaFormatted = $rDoctor?->nama_gelar ?? 'Dokter Pemeriksa';
-                                $rDoctorSip = $rDoctor?->nip ? 'SIP. ' . $rDoctor->nip : 'SIP. -';
+                                $rDoctorSip = $rDoctor?->sip ?? 'SIP. -';
                             @endphp
                             <button type="button" 
                                 @click="bukaModalCetakRiwayat({{ json_encode([
@@ -381,12 +388,16 @@
                             @endif
 
                             @if(auth()->user()?->canEditHapusRiwayat($r))
-                            <a href="{{ route('admin.prb.riwayat.edit', $r->id) }}" class="p-1 text-gray-400 hover:text-blue-600 transition-colors" title="Edit">
-                                <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                            </a>
-                            <button type="button" @click="modalOpen = true" class="p-1 text-gray-400 hover:text-red-600 transition-colors" title="Hapus">
-                                <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                            </button>
+                                @if($hasContent || auth()->user()?->isAdmin())
+                                <a href="{{ route('admin.prb.riwayat.edit', $r->id) }}" class="p-1 text-gray-400 hover:text-blue-600 transition-colors" title="Edit">
+                                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                </a>
+                                @endif
+                                @if($hasContent || auth()->user()?->isAdmin())
+                                <button type="button" @click="modalOpen = true" class="p-1 text-gray-400 hover:text-red-600 transition-colors" title="Hapus">
+                                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                </button>
+                                @endif
 
                             <!-- Delete Modal (Alpine.js) -->
                             <template x-teleport="body">
@@ -434,6 +445,7 @@
                         </div>
                     </div>
                     
+                    @if($hasContent)
                     <!-- Metadata Kunjungan, Dokter Pemeriksa & Penyerahan Farmasi -->
                     <div class="my-3 py-2.5 px-3.5 bg-slate-50 border border-slate-200/90 rounded-xl text-xs">
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -568,6 +580,7 @@
                             <p class="text-xs text-gray-500 italic">Belum ada rincian obat yang dicatat.</p>
                         @endif
                     </div>
+                    @endif
                 </div>
                 @empty
                 <div class="ms-6 mb-4">

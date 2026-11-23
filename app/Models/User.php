@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'nik', 'nip', 'tanggal_lahir', 'alamat', 'no_hp', 'jabatan', 'peran', 'nama', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'nik', 'nip', 'no_sip', 'tanggal_lahir', 'alamat', 'no_hp', 'jabatan', 'peran', 'nama', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -85,6 +85,30 @@ class User extends Authenticatable
         }
 
         return $nama;
+    }
+
+    /**
+     * Format nomor SIP dokter untuk keperluan e-resep dan dokumen medis
+     */
+    public function getSipFormattedAttribute(): string
+    {
+        if (! empty($this->no_sip)) {
+            return str_starts_with(strtoupper($this->no_sip), 'SIP') ? $this->no_sip : 'SIP. '.$this->no_sip;
+        }
+
+        if (! empty($this->nip)) {
+            return 'SIP. '.$this->nip;
+        }
+
+        return 'SIP. -';
+    }
+
+    /**
+     * Alias atribut sip
+     */
+    public function getSipAttribute(): string
+    {
+        return $this->getSipFormattedAttribute();
     }
 
     /**

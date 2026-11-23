@@ -28,7 +28,7 @@
     // Dokter / Pencatat resep
     $pencatat = $riwayat->pencatat ?? $currentUser;
     $dokterFormatted = $pencatat?->nama_gelar ?? $pencatat?->name ?? 'Dokter Pemeriksa';
-    $dokterSip = $pencatat?->no_sip ?: ($pencatat?->nip ? 'SIP. ' . $pencatat->nip : 'SIP. -');
+    $dokterSip = $pencatat?->sip ?? 'SIP. -';
 
     $diagnosaTeks = $riwayat->diagnosa_lengkap 
         ?: ($riwayat->pasienPrb?->keterangan_diagnosa 

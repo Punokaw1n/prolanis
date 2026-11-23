@@ -56,7 +56,8 @@ class AppServiceProvider extends ServiceProvider
                             'id' => $d->id,
                             'nama' => $d->nama_gelar,
                             'nip' => $d->nip,
-                            'sip' => $d->no_sip ?: ($d->nip ? 'SIP. '.$d->nip : 'SIP. -'),
+                            'no_sip' => $d->no_sip,
+                            'sip' => $d->sip,
                         ];
                     })
                     ->values()

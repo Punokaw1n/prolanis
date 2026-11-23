@@ -24,6 +24,7 @@ class PetugasController extends Controller
                 $q->where('nama', 'like', "%{$search}%")
                     ->orWhere('nik', 'like', "%{$search}%")
                     ->orWhere('nip', 'like', "%{$search}%")
+                    ->orWhere('no_sip', 'like', "%{$search}%")
                     ->orWhere('jabatan', 'like', "%{$search}%");
             });
         }
@@ -115,6 +116,7 @@ class PetugasController extends Controller
             'nama' => 'required|string|max:255',
             'nik' => 'required|numeric|digits:16|unique:pengguna,nik',
             'nip' => 'nullable|numeric|unique:pengguna,nip',
+            'no_sip' => 'nullable|string|max:100',
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'nullable|in:L,P',
             'pendidikan' => 'nullable|string|max:255',
@@ -144,6 +146,7 @@ class PetugasController extends Controller
             'nama' => $request->nama,
             'nik' => $request->nik,
             'nip' => $request->nip ?: null,
+            'no_sip' => $request->no_sip ? trim($request->no_sip) : null,
             'email' => $request->email ?: null,
             'tanggal_lahir' => $request->tanggal_lahir,
             'alamat' => $request->alamat ?: null,
@@ -188,6 +191,7 @@ class PetugasController extends Controller
             'nama' => 'required|string|max:255',
             'nik' => 'required|numeric|digits:16|unique:pengguna,nik,'.$petugas->id,
             'nip' => 'nullable|numeric|unique:pengguna,nip,'.$petugas->id,
+            'no_sip' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:255|unique:pengguna,email,'.$petugas->id,
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'nullable|in:L,P',
@@ -213,6 +217,7 @@ class PetugasController extends Controller
             'nama' => $request->nama,
             'nik' => $request->nik,
             'nip' => $request->nip ?: null,
+            'no_sip' => $request->no_sip ? trim($request->no_sip) : null,
             'email' => $request->email ?: null,
             'tanggal_lahir' => $request->tanggal_lahir,
             'alamat' => $request->alamat ?: null,

@@ -46,6 +46,7 @@ class PegawaiImport implements ToArray, WithCalculatedFormulas
             'no_hp' => 12,
             'no_bpjs' => 13,
             'pendidikan' => 14,
+            'no_sip' => null,
             'email' => 21,
         ];
 
@@ -56,7 +57,9 @@ class PegawaiImport implements ToArray, WithCalculatedFormulas
                 // Petakan index kolom secara dinamis
                 foreach ($rData as $cIdx => $cVal) {
                     $cStr = strtolower(trim((string) $cVal));
-                    if ($cStr === 'nama' || $cStr === 'nama pegawai' || $cStr === 'nama lengkap') {
+                    if ($cStr === 'sip' || str_contains($cStr, 'sip') || str_contains($cStr, 'izin praktik')) {
+                        $colMap['no_sip'] = $cIdx;
+                    } elseif ($cStr === 'nama' || $cStr === 'nama pegawai' || $cStr === 'nama lengkap') {
                         $colMap['nama'] = $cIdx;
                     } elseif ($cStr === 'nik' || str_contains($cStr, 'nik')) {
                         $colMap['nik'] = $cIdx;
@@ -178,6 +181,12 @@ class PegawaiImport implements ToArray, WithCalculatedFormulas
         // No BPJS
         $noBpjs = trim((string) ($row[$colMap['no_bpjs']] ?? ''));
 
+        // No SIP (Surat Izin Praktik Dokter)
+        $noSip = ! empty($colMap['no_sip']) ? trim((string) ($row[$colMap['no_sip']] ?? '')) : null;
+        if (empty($noSip)) {
+            $noSip = null;
+        }
+
         // Tentukan peran sistem (admin untuk manajemen/pimpinan, petugas untuk klinis & operasional)
         $peran = $this->determineRole($jabatan);
 
@@ -193,6 +202,7 @@ class PegawaiImport implements ToArray, WithCalculatedFormulas
             $user->update([
                 'nama' => $nama,
                 'nip' => $nip ?: $user->nip,
+                'no_sip' => $noSip ?: $user->no_sip,
                 'jabatan' => $jabatan,
                 'tanggal_lahir' => $tanggalLahir ?: $user->tanggal_lahir,
                 'alamat' => $alamat ?: $user->alamat,
@@ -217,6 +227,7 @@ class PegawaiImport implements ToArray, WithCalculatedFormulas
                 'nama' => $nama,
                 'nik' => $nik,
                 'nip' => $nipToUse,
+                'no_sip' => $noSip,
                 'tanggal_lahir' => $tanggalLahir,
                 'alamat' => $alamat ?: null,
                 'no_hp' => $noHp ?: null,

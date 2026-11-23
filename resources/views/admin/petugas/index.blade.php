@@ -300,7 +300,7 @@
                 <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none z-20 ps-3.5">
                     <svg class="flex-shrink-0 size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 </div>
-                <input class="py-2 ps-10 pe-3 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" type="text" name="q" value="{{ request('q') }}" placeholder="Cari NIK, NIP, atau Nama...">
+                <input class="py-2 ps-10 pe-3 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" type="text" name="q" value="{{ request('q') }}" placeholder="Cari NIK, NIP, SIP, atau Nama...">
             </div>
             <button type="submit" class="py-2 px-3 inline-flex items-center gap-x-1.5 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none">
                 Cari
@@ -368,6 +368,9 @@
                             <span class="block text-sm font-mono {{ $p->is_active ? 'text-gray-800' : 'text-gray-500' }}">NIK: {{ $p->nik ?? '-' }}</span>
                             <span class="block text-xs text-gray-500 mt-0.5">
                                 NIP: {{ $p->nip ?: '(Non-PNS)' }}
+                                @if($p->no_sip)
+                                    • <span class="text-blue-700 font-medium">SIP: {{ $p->no_sip }}</span>
+                                @endif
                                 @if($p->pegawai?->no_bpjs)
                                     • BPJS: {{ $p->pegawai->no_bpjs }}
                                 @endif

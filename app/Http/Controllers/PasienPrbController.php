@@ -519,9 +519,16 @@ class PasienPrbController extends Controller
 
         $riwayat = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien', 'obatPrb'])->findOrFail($riwayat_id);
 
-        if (! auth()->user()?->isAdmin() && $riwayat->isFarmasiSudah()) {
-            return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
-                ->with('error', 'Data riwayat obat tidak dapat diubah karena status obat di menu farmasi sudah selesai.');
+        if (! auth()->user()?->isAdmin()) {
+            if ($riwayat->obatPrb->isEmpty() && empty($riwayat->tanggal_diambil)) {
+                return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
+                    ->with('error', 'Jadwal jatuh tempo berikutnya belum memiliki data resep untuk diedit. Silakan gunakan tombol Catat Pengambilan saat pasien berkunjung.');
+            }
+
+            if ($riwayat->isFarmasiSudah()) {
+                return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
+                    ->with('error', 'Data riwayat obat tidak dapat diubah karena status obat di menu farmasi sudah selesai.');
+            }
         }
 
         $prb = $riwayat->pasienPrb;
@@ -556,9 +563,16 @@ class PasienPrbController extends Controller
 
         $riwayat = RiwayatPengambilanObatPrb::findOrFail($riwayat_id);
 
-        if (! auth()->user()?->isAdmin() && $riwayat->isFarmasiSudah()) {
-            return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
-                ->with('error', 'Data riwayat obat tidak dapat diubah karena status obat di menu farmasi sudah selesai.');
+        if (! auth()->user()?->isAdmin()) {
+            if ($riwayat->obatPrb()->count() === 0 && empty($riwayat->tanggal_diambil)) {
+                return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
+                    ->with('error', 'Jadwal jatuh tempo berikutnya belum memiliki data resep untuk diedit. Silakan gunakan tombol Catat Pengambilan saat pasien berkunjung.');
+            }
+
+            if ($riwayat->isFarmasiSudah()) {
+                return redirect()->route('admin.prb.show', $riwayat->pasien_prb_id)
+                    ->with('error', 'Data riwayat obat tidak dapat diubah karena status obat di menu farmasi sudah selesai.');
+            }
         }
 
         $riwayat->load(['obatPrb', 'pasienPrb.pasien', 'pencatat']);

@@ -83,6 +83,13 @@
                         <p class="text-[11px] text-gray-500 mt-1">Kosongkan jika pegawai berstatus Non-PNS/Honorer.</p>
                     </div>
 
+                    <!-- Nomor SIP -->
+                    <div>
+                        <label for="no_sip" class="block text-sm font-medium mb-1.5 text-gray-800">Nomor SIP <span class="text-xs text-gray-400 font-normal">(Surat Izin Praktik Dokter)</span></label>
+                        <input type="text" id="no_sip" name="no_sip" value="{{ old('no_sip') }}" class="py-2.5 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm border" placeholder="Contoh: 503/123/SIP-D/436.7.2/2024">
+                        <p class="text-[11px] text-gray-500 mt-1">Khusus dokter / tenaga medis untuk dicantumkan pada e-resep.</p>
+                    </div>
+
                     <!-- Jenis Kelamin -->
                     <div>
                         <label for="jenis_kelamin" class="block text-sm font-medium mb-1.5 text-gray-800">Jenis Kelamin</label>
@@ -101,7 +108,7 @@
                     </div>
 
                     <!-- Pendidikan Terakhir -->
-                    <div class="sm:col-span-2">
+                    <div>
                         <label for="pendidikan" class="block text-sm font-medium mb-1.5 text-gray-800">Pendidikan Terakhir <span class="text-xs text-gray-400 font-normal">(Opsional)</span></label>
                         <input type="text" id="pendidikan" name="pendidikan" list="daftar-pendidikan" value="{{ old('pendidikan') }}" class="py-2.5 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm border" placeholder="Contoh: S1 Kedokteran, D3 Keperawatan, S1 Farmasi, SMA">
                         <datalist id="daftar-pendidikan">
