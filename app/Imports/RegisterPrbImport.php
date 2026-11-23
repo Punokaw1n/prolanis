@@ -441,6 +441,8 @@ class RegisterPrbImport implements ToArray, WithCalculatedFormulas
             'REZIDUAL SKIZOFRENIA' => 'F20.5',
             'HHD' => 'I11.9',
             'DC' => 'I50',
+            'DIABETES MELITUS TIPE 2 DENGAN KOMPLIKASI YANG TIDAK DIRINCI' => 'E11.8',
+            'DM TIPE 2 DENGAN KOMPLIKASI YANG TIDAK DIRINCI' => 'E11.8',
         ];
 
         $upperRaw = strtoupper($raw);
