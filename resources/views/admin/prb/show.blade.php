@@ -273,7 +273,7 @@
                     <h2 class="text-lg font-bold text-gray-800">Riwayat Pengambilan Obat</h2>
                     <p class="text-xs text-gray-500 mt-0.5">Kelompokkan dan lacak riwayat kunjungan per diagnosa / program PRB</p>
                 </div>
-                @if(auth()->user()?->canCatatPengambilan())
+                @if(auth()->user()?->canCatatPengambilan($prb))
                 <a href="{{ route('admin.prb.riwayat.create', $prb->id) }}" class="py-2 px-3 inline-flex items-center gap-x-2 text-xs font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700">
                     + Catat Pengambilan
                 </a>

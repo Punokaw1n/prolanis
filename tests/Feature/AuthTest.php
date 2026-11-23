@@ -7,6 +7,7 @@ use App\Models\PasienPrb;
 use App\Models\RiwayatPengambilanObatPrb;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -738,5 +739,76 @@ class AuthTest extends TestCase
             'tanggal_lahir' => '1990-01-01',
             'jenis_kelamin' => 'L',
         ])->assertForbidden();
+    }
+
+    public function test_dokter_cannot_see_catat_pengambilan_when_pasien_status_tidak_aktif_and_sees_it_when_aktif(): void
+    {
+        $pasien = Pasien::create([
+            'nik' => '3505103333330001',
+            'nama' => 'Pasien Nonaktif Uji',
+            'tanggal_lahir' => '1982-02-02',
+            'status_keaktifan' => 'tidak_aktif',
+        ]);
+
+        $prb = PasienPrb::create([
+            'pasien_id' => $pasien->id,
+            'status_keaktifan' => 'tidak_aktif',
+            'tanggal_terdaftar' => now()->toDateString(),
+        ]);
+
+        $dokter = User::create([
+            'nama' => 'dr. Dokter Uji Nonaktif',
+            'nik' => '3505103333330002',
+            'password' => Hash::make('password'),
+            'jabatan' => 'Dokter Umum',
+            'peran' => 'petugas',
+            'is_active' => true,
+        ]);
+
+        $admin = User::create([
+            'nama' => 'Admin Uji Nonaktif',
+            'nik' => '3505103333330003',
+            'password' => Hash::make('password'),
+            'jabatan' => 'Admin',
+            'peran' => 'admin',
+            'is_active' => true,
+        ]);
+
+        // 1. Saat pasien status tidak aktif: Dokter TIDAK BISA melihat tombol "+ Catat Pengambilan"
+        $this->assertFalse($dokter->canCatatPengambilan($prb));
+        $responseDokter = $this->actingAs($dokter)->get(route('admin.prb.show', $prb->id));
+        $responseDokter->assertOk();
+        $responseDokter->assertDontSee('+ Catat Pengambilan');
+        $responseDokter->assertDontSee(route('admin.prb.riwayat.create', $prb->id));
+
+        // Akses langsung create/store riwayat diarahkan kembali dengan pesan error
+        $responseCreate = $this->actingAs($dokter)->get(route('admin.prb.riwayat.create', $prb->id));
+        $responseCreate->assertRedirect(route('admin.prb.show', $prb->id));
+        $responseCreate->assertSessionHas('error');
+
+        $responseStore = $this->actingAs($dokter)->post(route('admin.prb.riwayat.store', $prb->id), [
+            'tanggal_diambil' => now()->toDateString(),
+        ]);
+        $responseStore->assertRedirect(route('admin.prb.show', $prb->id));
+        $responseStore->assertSessionHas('error');
+
+        // Admin tetap memiliki akses
+        $this->assertTrue($admin->canCatatPengambilan($prb));
+        $responseAdmin = $this->actingAs($admin)->get(route('admin.prb.show', $prb->id));
+        $responseAdmin->assertOk();
+        $responseAdmin->assertSee('+ Catat Pengambilan');
+
+        // 2. Saat status pasien diaktifkan kembali: Tombol "+ Catat Pengambilan" muncul kembali untuk dokter
+        $prb->update(['status_keaktifan' => 'aktif']);
+        $prb->refresh();
+
+        $this->assertTrue($dokter->canCatatPengambilan($prb));
+        $responseDokterAktif = $this->actingAs($dokter)->get(route('admin.prb.show', $prb->id));
+        $responseDokterAktif->assertOk();
+        $responseDokterAktif->assertSee('+ Catat Pengambilan');
+        $responseDokterAktif->assertSee(route('admin.prb.riwayat.create', $prb->id));
+
+        // Akses langsung create riwayat sekarang berhasil (200 OK)
+        $this->actingAs($dokter)->get(route('admin.prb.riwayat.create', $prb->id))->assertOk();
     }
 }

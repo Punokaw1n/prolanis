@@ -230,8 +230,9 @@ class User extends Authenticatable
     /**
      * Cek apakah user berhak mencatat/menambah riwayat pengambilan obat / pemeriksaan PRB
      * (Khusus Dokter dan Admin, bukan Perawat atau Farmasi/Apoteker)
+     * Untuk role dokter: jika status pasien tidak aktif, akses mencatat pengambilan disembunyikan/dibatasi.
      */
-    public function canCatatPengambilan(): bool
+    public function canCatatPengambilan(?PasienPrb $prb = null): bool
     {
         if ($this->isAdmin()) {
             return true;
@@ -241,7 +242,15 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->isDokter();
+        if (! $this->isDokter()) {
+            return false;
+        }
+
+        if ($prb && $prb->status_keaktifan !== 'aktif') {
+            return false;
+        }
+
+        return true;
     }
 
     /**

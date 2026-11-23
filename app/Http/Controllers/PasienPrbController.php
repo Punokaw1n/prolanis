@@ -336,11 +336,16 @@ class PasienPrbController extends Controller
 
     public function createRiwayat($id)
     {
-        if (! auth()->user()?->canCatatPengambilan()) {
+        $prb = PasienPrb::with('pasien')->findOrFail($id);
+
+        if (! auth()->user()?->canCatatPengambilan($prb)) {
+            if ($prb->status_keaktifan !== 'aktif') {
+                return redirect()->route('admin.prb.show', $prb->id)
+                    ->with('error', 'Tidak dapat mencatat pengambilan obat karena status pasien sedang tidak aktif.');
+            }
             abort(403, 'Akses pencatatan obat khusus untuk dokter.');
         }
 
-        $prb = PasienPrb::with('pasien')->findOrFail($id);
         $masterObatPrb = MasterObat::prb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
         $masterObatNonPrb = MasterObat::nonPrb()->where('is_active', true)->orderBy('nama_obat')->pluck('nama_obat');
 
@@ -365,11 +370,15 @@ class PasienPrbController extends Controller
 
     public function storeRiwayat(Request $request, $id)
     {
-        if (! auth()->user()?->canCatatPengambilan()) {
+        $prb = PasienPrb::findOrFail($id);
+
+        if (! auth()->user()?->canCatatPengambilan($prb)) {
+            if ($prb->status_keaktifan !== 'aktif') {
+                return redirect()->route('admin.prb.show', $prb->id)
+                    ->with('error', 'Tidak dapat mencatat pengambilan obat karena status pasien sedang tidak aktif.');
+            }
             abort(403, 'Akses pencatatan obat khusus untuk dokter.');
         }
-
-        $prb = PasienPrb::findOrFail($id);
 
         $request->validate([
             'tanggal_diambil' => 'required|date',
