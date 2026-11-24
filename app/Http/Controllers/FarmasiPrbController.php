@@ -114,6 +114,7 @@ class FarmasiPrbController extends Controller
                         'nama' => $riwayat->pencatat?->nama ?? 'Dokter Pemeriksa',
                         'nama_gelar' => $riwayat->pencatat?->nama_gelar ?? 'Dokter Pemeriksa',
                     ],
+                    'obat_prb' => $riwayat->obatPrb,
                 ],
             ]);
         }

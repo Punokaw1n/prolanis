@@ -1,5 +1,34 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+@keyframes spinner-bars {
+  0% { transform: scaleY(0.5); opacity: 0.5; }
+  50% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(0.5); opacity: 0.5; }
+}
+.custom-scrollbar-x::-webkit-scrollbar {
+    height: 8px;
+    display: block !important;
+}
+.custom-scrollbar-x::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+.custom-scrollbar-x::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.custom-scrollbar-x::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+.custom-scrollbar-x {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5" x-data="farmasiPrbApp()">
 
@@ -186,24 +215,52 @@
                 </div>
             </div>
 
-            <!-- Sisi Kanan: Kotak Pencarian Sesuai SIMPUS -->
+            <!-- Sisi Kanan: Kotak Pencarian Sesuai SIMPUS dengan Bouncing Loading -->
             <div class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-600">Pencarian:</span>
                 <div class="relative w-full sm:w-64">
-                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Ketik nama, RM, obat, dokter..." 
-                           class="py-2 px-3 block w-full border border-gray-300 rounded-lg text-sm focus:border-teal-500 focus:ring-teal-500 shadow-xs">
+                    <input type="text" 
+                           name="q" 
+                           x-model="searchQuery"
+                           @input="isSearching = true"
+                           @input.debounce.500ms="performSearch()"
+                           @keydown.enter.prevent="performSearch()"
+                           placeholder="Ketik nama, RM, obat, dokter..." 
+                           class="py-2 px-3 pe-9 block w-full border border-gray-300 rounded-lg text-sm focus:border-teal-500 focus:ring-teal-500 shadow-xs">
+
+                    <!-- Bouncing Bars Loading Spinner di dalam Input -->
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" x-show="isSearching" style="display: none;">
+                        <span class="flex h-4 items-center justify-center gap-0.5" aria-hidden="true">
+                            <span class="h-3.5 w-1 rounded-sm bg-gray-300 origin-bottom" style="animation: spinner-bars 1s ease-in-out infinite 0s;"></span>
+                            <span class="h-3.5 w-1 rounded-sm bg-gray-400 origin-bottom" style="animation: spinner-bars 1s ease-in-out infinite 0.12s;"></span>
+                            <span class="h-3.5 w-1 rounded-sm bg-teal-600 origin-bottom" style="animation: spinner-bars 1s ease-in-out infinite 0.24s;"></span>
+                        </span>
+                    </div>
                 </div>
-                @if(request('q'))
-                <a href="{{ route('admin.prb.farmasi.index', ['tanggal' => $tanggal]) }}" class="text-xs text-red-600 hover:underline">
-                    Reset
-                </a>
-                @endif
+                <template x-if="searchQuery">
+                    <button type="button" @click="performSearch(true)" class="text-xs text-red-600 hover:underline cursor-pointer">
+                        Reset
+                    </button>
+                </template>
             </div>
         </form>
     </div>
 
     <!-- Tabel Data Resep Farmasi (Identik Format SIMPUS Puskesmas Kalijudan) -->
-    <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="relative bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden" id="farmasi-table-container">
+        <!-- Loading Overlay di Tengah Table -->
+        <div x-show="isSearching" style="display: none;" class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
+            <div class="inline-flex flex-col items-center gap-3 bg-white p-4 rounded-xl shadow-lg border border-gray-100">
+                <div class="inline-flex" role="status" aria-label="loading">
+                  <span class="flex h-6 items-center justify-center gap-1" aria-hidden="true">
+                    <span class="h-4 w-1.5 rounded-sm bg-gray-300 origin-bottom" style="animation: spinner-bars 1s ease-in-out infinite 0s;"></span>
+                    <span class="h-4 w-1.5 rounded-sm bg-gray-400 origin-bottom" style="animation: spinner-bars 1s ease-in-out infinite 0.12s;"></span>
+                    <span class="h-4 w-1.5 rounded-sm bg-teal-600 origin-bottom" style="animation: spinner-bars 1s ease-in-out infinite 0.24s;"></span>
+                  </span>
+                </div>
+                <span class="text-xs font-semibold text-gray-700">Mencari data resep...</span>
+            </div>
+        </div>
         <div class="overflow-x-auto custom-scrollbar-x">
             <table class="min-w-full divide-y divide-gray-200 text-xs">
                 <thead class="bg-gray-50/80 font-bold text-gray-700">
@@ -616,6 +673,8 @@
     function farmasiPrbApp() {
         return {
             modalResepOpen: false,
+            isSearching: false,
+            searchQuery: @json(request('q', '')),
             selectedResep: {
                 id: null,
                 pasien_prb_id: null,
@@ -632,6 +691,47 @@
             openResep(data) {
                 this.selectedResep = data;
                 this.modalResepOpen = true;
+            },
+            async performSearch(isReset = false) {
+                if (isReset) {
+                    this.searchQuery = '';
+                }
+                this.isSearching = true;
+
+                try {
+                    const params = new URLSearchParams();
+                    const dateInput = document.getElementById('tanggalInput');
+                    const tanggalVal = dateInput ? dateInput.value : '{{ $tanggal }}';
+                    if (tanggalVal) {
+                        params.append('tanggal', tanggalVal);
+                    }
+                    if (this.searchQuery) {
+                        params.append('q', this.searchQuery);
+                    }
+
+                    const url = `{{ route('admin.prb.farmasi.index') }}${params.toString() ? '?' + params.toString() : ''}`;
+                    const response = await fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    const newTable = doc.querySelector('#farmasi-table-container');
+                    const currentTable = document.querySelector('#farmasi-table-container');
+                    if (newTable && currentTable) {
+                        currentTable.innerHTML = newTable.innerHTML;
+                    }
+
+                    window.history.pushState({}, '', url);
+                } catch (error) {
+                    console.error('Gagal memuat data farmasi:', error);
+                } finally {
+                    setTimeout(() => {
+                        this.isSearching = false;
+                    }, 300);
+                }
             }
         };
     }

@@ -111,7 +111,7 @@
         font-family: 'Times New Roman', Times, serif !important;
     }
     @page {
-        size: auto;
+        size: portrait;
         margin: 5mm;
     }
 }
@@ -124,6 +124,7 @@
 @section('content')
 <div class="max-w-[1400px] mx-auto px-3 sm:px-6 py-4 space-y-4" x-data="kunjunganObatApp({{ json_encode($initialObatStatus) }}, {{ json_encode($printPayload) }}, {{ $riwayat->updated_at ? $riwayat->updated_at->timestamp : 0 }}, '{{ $initialFingerprint }}')">
 
+    <div class="no-print space-y-4">
     <!-- Top Breadcrumb / Title Bar Puskesmas Kalijudan -->
     <div class="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
         <div class="flex items-center gap-2">
@@ -795,6 +796,7 @@
             </div>
         </div>
     </div>
+    </div> <!-- End .no-print -->
 
     <!-- ================= DOKUMEN CETAK RESMI (HANYA MUNCUL SAAT CETAK KE PRINTER) ================= -->
     <div id="lembar-resep-asli" class="print-only">
