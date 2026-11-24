@@ -74,6 +74,7 @@ class LogAktivitasTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Log Aktivitas');
+        $response->assertSee('Refresh');
         $response->assertSee('Backup Excel');
         $response->assertSee('Bersihkan Log Lama');
         $response->assertSee('SIMPAN_RESEP');
