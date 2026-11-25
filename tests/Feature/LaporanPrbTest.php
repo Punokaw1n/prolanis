@@ -255,4 +255,34 @@ class LaporanPrbTest extends TestCase
         $resNov->assertDontSee('NARJA TEST');
         $resNov->assertDontSee('PASIEN DOUBLE NOV');
     }
+
+    public function test_non_admin_cannot_access_or_see_laporan_menu(): void
+    {
+        $dokter = User::create([
+            'nama' => 'dr. Dokter PRB',
+            'nik' => '3578010000000088',
+            'password' => Hash::make('password123'),
+            'peran' => 'petugas',
+            'profesi' => 'Dokter',
+            'is_active' => true,
+        ]);
+
+        // Sidebar tidak menampilkan link menu Laporan untuk selain admin
+        $prbPage = $this->actingAs($dokter)->get(route('admin.prb.index'));
+        $prbPage->assertOk();
+        $prbPage->assertDontSee(route('admin.prb.laporan.index'));
+
+        // Akses langsung ke route laporan ditolak (403)
+        foreach ([
+            route('admin.prb.laporan.index'),
+            route('admin.prb.laporan.belum-ambil-obat'),
+            route('admin.prb.laporan.belum-ambil-obat.export'),
+            route('admin.prb.laporan.tidak-aktif'),
+            route('admin.prb.laporan.tidak-aktif.export'),
+            route('admin.prb.laporan.aktif'),
+            route('admin.prb.laporan.aktif.export'),
+        ] as $url) {
+            $this->actingAs($dokter)->get($url)->assertForbidden();
+        }
+    }
 }

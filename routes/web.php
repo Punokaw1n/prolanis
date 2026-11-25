@@ -81,14 +81,16 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
             Route::get('/', [PasienPrbController::class, 'index'])->name('admin.prb.index');
             Route::get('/register', [PasienPrbController::class, 'register'])->name('admin.prb.register');
             Route::get('/register/cetak', [PasienPrbController::class, 'cetakRegister'])->name('admin.prb.register.cetak');
-            // Laporan PRB
-            Route::get('/laporan', [LaporanPrbController::class, 'index'])->name('admin.prb.laporan.index');
-            Route::get('/laporan/belum-ambil-obat', [LaporanPrbController::class, 'belumAmbilObat'])->name('admin.prb.laporan.belum-ambil-obat');
-            Route::get('/laporan/belum-ambil-obat/export', [LaporanPrbController::class, 'exportBelumAmbilObat'])->name('admin.prb.laporan.belum-ambil-obat.export');
-            Route::get('/laporan/tidak-aktif', [LaporanPrbController::class, 'tidakAktif'])->name('admin.prb.laporan.tidak-aktif');
-            Route::get('/laporan/tidak-aktif/export', [LaporanPrbController::class, 'exportTidakAktif'])->name('admin.prb.laporan.tidak-aktif.export');
-            Route::get('/laporan/aktif', [LaporanPrbController::class, 'aktif'])->name('admin.prb.laporan.aktif');
-            Route::get('/laporan/aktif/export', [LaporanPrbController::class, 'exportAktif'])->name('admin.prb.laporan.aktif.export');
+            // Laporan PRB (Khusus Admin)
+            Route::middleware('role:admin')->group(function () {
+                Route::get('/laporan', [LaporanPrbController::class, 'index'])->name('admin.prb.laporan.index');
+                Route::get('/laporan/belum-ambil-obat', [LaporanPrbController::class, 'belumAmbilObat'])->name('admin.prb.laporan.belum-ambil-obat');
+                Route::get('/laporan/belum-ambil-obat/export', [LaporanPrbController::class, 'exportBelumAmbilObat'])->name('admin.prb.laporan.belum-ambil-obat.export');
+                Route::get('/laporan/tidak-aktif', [LaporanPrbController::class, 'tidakAktif'])->name('admin.prb.laporan.tidak-aktif');
+                Route::get('/laporan/tidak-aktif/export', [LaporanPrbController::class, 'exportTidakAktif'])->name('admin.prb.laporan.tidak-aktif.export');
+                Route::get('/laporan/aktif', [LaporanPrbController::class, 'aktif'])->name('admin.prb.laporan.aktif');
+                Route::get('/laporan/aktif/export', [LaporanPrbController::class, 'exportAktif'])->name('admin.prb.laporan.aktif.export');
+            });
             // Pengingat WA - Khusus Dokter & Admin (Bukan Apoteker / Asisten Apoteker)
             Route::middleware('role:pengingat')->group(function () {
                 Route::get('/pengingat', [PasienPrbController::class, 'pengingat'])->name('admin.prb.pengingat');
