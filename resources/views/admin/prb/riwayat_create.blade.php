@@ -124,7 +124,7 @@ input.form-control {
         </div>
     @endif
 
-    <form id="formResepPrb" action="{{ route('admin.prb.riwayat.store', $prb->id) }}" method="POST" class="no-print" @submit="if(isSubmitting) { $event.preventDefault(); return false; } isSubmitting = true">
+    <form id="formResepPrb" action="{{ route('admin.prb.riwayat.store', $prb->id) }}" method="POST" class="no-print" @submit="handleSubmit($event)">
         @csrf
 
         <!-- Layout 2 Kolom (Area Resep di Kiri & Panel Action di Kanan) -->
@@ -159,9 +159,9 @@ input.form-control {
                     <div class="p-4 sm:p-5 bg-slate-50/60 border-b border-gray-200">
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-2.5 gap-x-6 text-xs text-gray-600">
                             <div class="flex items-center">
-                                <span class="w-24 text-gray-400 font-medium">No. RM / Nota</span>
+                                <span class="w-24 text-gray-400 font-medium">Nama Pasien</span>
                                 <span class="text-gray-400 mr-2">:</span>
-                                <strong class="text-gray-800 font-mono">{{ $prb->pasien->no_rm ?? 'RM-'.$prb->pasien->nik }}</strong>
+                                <strong class="text-gray-900 font-bold uppercase">{{ $prb->pasien->nama }}</strong>
                             </div>
                             <div class="flex items-center">
                                 <span class="w-24 text-gray-400 font-medium">Tanggal Kunj.</span>
@@ -174,9 +174,9 @@ input.form-control {
                                 <span class="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80">Ambil Obat Rutin</span>
                             </div>
                             <div class="flex items-center">
-                                <span class="w-24 text-gray-400 font-medium">Nama Pasien</span>
+                                <span class="w-24 text-gray-400 font-medium">NIK Pasien</span>
                                 <span class="text-gray-400 mr-2">:</span>
-                                <strong class="text-gray-900 font-bold uppercase">{{ $prb->pasien->nama }}</strong>
+                                <span class="font-mono text-gray-700">{{ $prb->pasien->nik }}</span>
                             </div>
                             <div class="flex items-center">
                                 <span class="w-24 text-gray-400 font-medium">Total Obat</span>
@@ -184,19 +184,14 @@ input.form-control {
                                 <span class="font-bold text-blue-700"><span x-text="obatList.length">0</span> Item</span>
                             </div>
                             <div class="flex items-center">
-                                <span class="w-24 text-gray-400 font-medium">NIK Pasien</span>
-                                <span class="text-gray-400 mr-2">:</span>
-                                <span class="font-mono text-gray-700">{{ $prb->pasien->nik }}</span>
-                            </div>
-                            <div class="flex items-center sm:col-span-2">
-                                <span class="w-24 text-gray-400 font-medium">Keterangan</span>
-                                <span class="text-gray-400 mr-2">:</span>
-                                <span class="text-gray-700">Resep Obat Kronis PRB (30 Hari)</span>
-                            </div>
-                            <div class="flex items-center">
                                 <span class="w-24 text-gray-400 font-medium">Jatuh Tempo</span>
                                 <span class="text-gray-400 mr-2">:</span>
                                 <span class="font-semibold text-indigo-700" x-text="tanggalJatuhTempo || '-'"></span>
+                            </div>
+                            <div class="flex items-center sm:col-span-2 md:col-span-3">
+                                <span class="w-24 text-gray-400 font-medium">Keterangan</span>
+                                <span class="text-gray-400 mr-2">:</span>
+                                <span class="text-gray-700">Resep Obat Kronis PRB (30 Hari)</span>
                             </div>
                         </div>
 
@@ -204,7 +199,8 @@ input.form-control {
                         <div class="mt-4 pt-4 border-t border-slate-200/80 space-y-4 no-print">
                             
                             <!-- 1. Pemilihan Program Diagnosa / Penyakit PRB -->
-                            <div class="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
+                            <div id="program-diagnosa-card" class="bg-white border rounded-xl p-3.5 shadow-2xs transition-colors"
+                                 :class="diagnosaError ? 'border-red-400 ring-2 ring-red-100' : (isDiagnosaLainnya ? 'border-amber-300' : 'border-slate-200')">
                                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
                                     <div class="flex items-center gap-2">
                                         <span class="size-6 rounded-md bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs">
@@ -265,6 +261,22 @@ input.form-control {
                                             <span class="size-1.5 rounded-full bg-white" x-show="selectedProgramKey === 'baru'"></span>
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- Peringatan jika diagnosa masih LAINNYA / belum jelas -->
+                                <div x-show="isDiagnosaLainnya && !diagnosaError" x-cloak class="mt-2.5 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-start gap-2">
+                                    <svg class="size-4 text-amber-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
+                                    </svg>
+                                    <span>Diagnosa pasien masih <strong>"LAINNYA"</strong> (atau belum diisi). Harap pilih <strong>+ Diagnosa Baru / Lainnya</strong> dan tentukan diagnosa yang jelas sebelum menyimpan.</span>
+                                </div>
+
+                                <!-- Error validasi diagnosa -->
+                                <div x-show="diagnosaError" x-cloak class="mt-2.5 px-3 py-2 rounded-lg bg-red-50 border border-red-300 text-red-700 text-xs font-semibold flex items-start gap-2">
+                                    <svg class="size-4 text-red-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
+                                    </svg>
+                                    <span x-text="diagnosaError"></span>
                                 </div>
 
                                 <!-- Input Hidden untuk POST Laravel Form -->
@@ -1346,6 +1358,31 @@ function riwayatForm() {
         selectedProgramKey: '',
         kodeDiagnosa: '',
         diagnosa: '',
+        diagnosaError: @json($errors->first('diagnosa') ?: ''),
+
+        get isDiagnosaLainnya() {
+            const diag = (this.diagnosa || '').trim().toUpperCase();
+            const kode = (this.kodeDiagnosa || '').trim().toUpperCase();
+            return diag === 'LAINNYA' || kode === 'LAINNYA' || (!diag && !kode);
+        },
+
+        handleSubmit(event) {
+            if (this.isSubmitting) {
+                event.preventDefault();
+                return false;
+            }
+            if (this.isDiagnosaLainnya) {
+                event.preventDefault();
+                this.diagnosaError = 'Diagnosa pasien masih "LAINNYA" atau belum dipilih. Silakan klik "+ Diagnosa Baru / Lainnya" dan tentukan diagnosa penyakit yang jelas sebelum menyimpan.';
+                const el = document.getElementById('program-diagnosa-card');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return false;
+            }
+            this.diagnosaError = '';
+            this.isSubmitting = true;
+        },
 
         init() {
             if (this.programPasien && this.programPasien.length > 0) {
@@ -1356,8 +1393,8 @@ function riwayatForm() {
                 this.lastResep = first.obat_list || [];
             } else {
                 this.selectedProgramKey = 'baru';
-                this.kodeDiagnosa = @json($prb->diagnosa ?? '');
-                this.diagnosa = @json($prb->diagnosa ?? '');
+                this.kodeDiagnosa = '';
+                this.diagnosa = @json(strtoupper(trim((string) ($prb->diagnosa ?? ''))) === 'LAINNYA' ? '' : ($prb->diagnosa ?? ''));
             }
 
             // Parse signa string dari lastResep server menjadi signa1 & signa2 dan simpan signa string
@@ -1377,6 +1414,7 @@ function riwayatForm() {
 
         pilihProgram(key) {
             this.selectedProgramKey = key;
+            this.diagnosaError = '';
             if (key === 'baru') {
                 this.kodeDiagnosa = '';
                 this.diagnosa = '';
@@ -1400,6 +1438,7 @@ function riwayatForm() {
         pilihPresetDiagnosa(kode, nama) {
             this.kodeDiagnosa = kode;
             this.diagnosa = nama;
+            this.diagnosaError = '';
         },
 
         masterPrb: {!! json_encode($masterObatPrb ?? []) !!},

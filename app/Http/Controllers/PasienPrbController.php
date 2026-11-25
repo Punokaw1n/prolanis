@@ -395,7 +395,16 @@ class PasienPrbController extends Controller
             'obat.*.aturan_minum' => 'nullable|string|max:100',
         ]);
 
-        return \DB::transaction(function () use ($prb, $request, $id) {
+        $effectiveDiagnosa = trim((string) ($request->diagnosa ?: ($prb->diagnosa ?: '')));
+        $effectiveKodeDiagnosa = trim((string) ($request->kode_diagnosa ?: ''));
+
+        if (strtoupper($effectiveDiagnosa) === 'LAINNYA' || strtoupper($effectiveKodeDiagnosa) === 'LAINNYA') {
+            return back()
+                ->withErrors(['diagnosa' => 'Diagnosa pasien masih "LAINNYA". Silakan pilih "+ Diagnosa Baru / Lainnya" dan tentukan diagnosa penyakit yang jelas sebelum menyimpan.'])
+                ->withInput();
+        }
+
+        return \DB::transaction(function () use ($prb, $request, $id, $effectiveDiagnosa) {
             // Proteksi race condition / double-click:
             // Cek apakah ada riwayat yang baru dibuat dalam 10 detik terakhir untuk pasien ini dengan tanggal_diambil yang sama
             $recentDuplicate = $prb->riwayatPengambilan()
@@ -420,12 +429,35 @@ class PasienPrbController extends Controller
 
             $pendingRiwayat = $pendingQuery->orderBy('tanggal_jatuh_tempo', 'asc')->first();
 
-            // Jika tidak ditemukan dengan kode diagnosa yang sama dan request tidak menentukan kode diagnosa
-            if (! $pendingRiwayat && ! $request->filled('kode_diagnosa')) {
-                $pendingRiwayat = $prb->riwayatPengambilan()
-                    ->whereNull('tanggal_diambil')
-                    ->orderBy('tanggal_jatuh_tempo', 'asc')
-                    ->first();
+            // Jika tidak ditemukan dengan kode diagnosa yang sama
+            if (! $pendingRiwayat) {
+                if ($request->filled('kode_diagnosa')) {
+                    $diagInput = trim((string) $request->input('diagnosa', ''));
+                    $prbDiag = trim((string) ($prb->diagnosa ?? ''));
+
+                    $pendingRiwayat = $prb->riwayatPengambilan()
+                        ->whereNull('tanggal_diambil')
+                        ->where(function ($q) {
+                            $q->whereNull('kode_diagnosa')->orWhere('kode_diagnosa', '');
+                        })
+                        ->where(function ($q) use ($diagInput, $prbDiag) {
+                            if ($diagInput !== '') {
+                                $q->whereRaw('UPPER(TRIM(diagnosa)) = ?', [strtoupper($diagInput)]);
+                                if (strtoupper($diagInput) === strtoupper($prbDiag)) {
+                                    $q->orWhereNull('diagnosa')->orWhere('diagnosa', '');
+                                }
+                            } else {
+                                $q->whereNull('diagnosa')->orWhere('diagnosa', '');
+                            }
+                        })
+                        ->orderBy('tanggal_jatuh_tempo', 'asc')
+                        ->first();
+                } else {
+                    $pendingRiwayat = $prb->riwayatPengambilan()
+                        ->whereNull('tanggal_diambil')
+                        ->orderBy('tanggal_jatuh_tempo', 'asc')
+                        ->first();
+                }
             }
 
             if ($pendingRiwayat) {
@@ -490,6 +522,8 @@ class PasienPrbController extends Controller
                 'sumber' => 'manual',
                 'dicatat_oleh' => $dokterId,
             ]);
+
+            $this->syncLegacyDiagnosa($prb, $effectiveDiagnosa, $request->kode_diagnosa);
 
             $namaPasien = $prb->pasien?->nama ?? 'Pasien';
             $diagInfo = $request->diagnosa ?: ($request->kode_diagnosa ?: 'PRB');
@@ -616,6 +650,15 @@ class PasienPrbController extends Controller
             'obat.*.aturan_minum' => 'nullable|string|max:100',
         ]);
 
+        $effectiveDiagnosa = trim((string) ($request->diagnosa ?: ($riwayat->diagnosa ?: '')));
+        $effectiveKodeDiagnosa = trim((string) ($request->kode_diagnosa ?: ($riwayat->kode_diagnosa ?: '')));
+
+        if (strtoupper($effectiveDiagnosa) === 'LAINNYA' || strtoupper($effectiveKodeDiagnosa) === 'LAINNYA') {
+            return back()
+                ->withErrors(['diagnosa' => 'Diagnosa pasien masih "LAINNYA". Silakan pilih "+ Diagnosa Baru / Lainnya" dan tentukan diagnosa penyakit yang jelas sebelum menyimpan.'])
+                ->withInput();
+        }
+
         $updateData = [
             'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
             'tanggal_diambil' => $request->tanggal_diambil,
@@ -632,6 +675,10 @@ class PasienPrbController extends Controller
         }
 
         $riwayat->update($updateData);
+
+        if ($riwayat->pasienPrb) {
+            $this->syncLegacyDiagnosa($riwayat->pasienPrb, $effectiveDiagnosa, $effectiveKodeDiagnosa ?: null);
+        }
 
         // Sync Obat (Delete all and recreate)
         $riwayat->obatPrb()->delete();
@@ -859,6 +906,11 @@ class PasienPrbController extends Controller
 
         $programPasien = $riwayatDenganObat->groupBy(function ($r) {
             return $r->diagnosa_group_key;
+        })->reject(function ($items, $key) {
+            $last = $items->first();
+            $diagText = strtoupper(trim((string) ($last->diagnosa ?: $key)));
+
+            return strtoupper(trim((string) $key)) === 'LAINNYA' || $diagText === 'LAINNYA';
         })->map(function ($items, $key) {
             $last = $items->first();
 
@@ -882,7 +934,7 @@ class PasienPrbController extends Controller
             ];
         })->values();
 
-        if ($programPasien->isEmpty() && ! empty($prb->diagnosa)) {
+        if ($programPasien->isEmpty() && ! empty($prb->diagnosa) && strtoupper(trim((string) $prb->diagnosa)) !== 'LAINNYA') {
             $programPasien->push([
                 'key' => strtoupper(trim($prb->diagnosa)),
                 'kode' => '',
@@ -1039,5 +1091,56 @@ class PasienPrbController extends Controller
         }
 
         return $roman;
+    }
+
+    /**
+     * Pertahankan riwayat lama berstatus LAINNYA tetap sebagai LAINNYA agar tidak
+     * ikut berubah label menjadi diagnosa baru atau terpecah menjadi dua grup.
+     * Jika diagnosa induk sudah spesifik (bukan LAINNYA) dengan nama yang sama,
+     * riwayat lama tanpa kode ICD-10 tetap disatukan.
+     */
+    private function syncLegacyDiagnosa(PasienPrb $prb, string $effectiveDiagnosa, ?string $kodeDiagnosa): void
+    {
+        if ($effectiveDiagnosa === '') {
+            return;
+        }
+
+        $prbDiag = trim((string) $prb->diagnosa);
+        $wasLainnyaOrEmpty = strtoupper($prbDiag) === 'LAINNYA' || $prbDiag === '';
+        $kodeClean = $kodeDiagnosa ? trim($kodeDiagnosa) : null;
+
+        if ($wasLainnyaOrEmpty) {
+            // Kunci riwayat lama yang masih NULL/kosong agar tetap berlabel 'LAINNYA'
+            // dan tidak ikut mewarisi diagnosa baru pasien.
+            $prb->riwayatPengambilan()
+                ->where(function ($q) {
+                    $q->whereNull('kode_diagnosa')->orWhere('kode_diagnosa', '');
+                })
+                ->where(function ($q) {
+                    $q->whereNull('diagnosa')->orWhere('diagnosa', '');
+                })
+                ->update([
+                    'diagnosa' => 'LAINNYA',
+                ]);
+
+            $prb->update(['diagnosa' => $effectiveDiagnosa]);
+
+            return;
+        }
+
+        $prb->riwayatPengambilan()
+            ->where(function ($q) {
+                $q->whereNull('kode_diagnosa')->orWhere('kode_diagnosa', '');
+            })
+            ->where(function ($q) use ($effectiveDiagnosa, $prbDiag) {
+                $q->whereRaw('UPPER(TRIM(diagnosa)) = ?', [strtoupper($effectiveDiagnosa)]);
+                if (strtoupper($effectiveDiagnosa) === strtoupper($prbDiag)) {
+                    $q->orWhereNull('diagnosa')->orWhere('diagnosa', '');
+                }
+            })
+            ->update([
+                'kode_diagnosa' => $kodeClean,
+                'diagnosa' => $effectiveDiagnosa,
+            ]);
     }
 }

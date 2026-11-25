@@ -205,4 +205,119 @@ class PrbSignaTest extends TestCase
         $this->assertStringContainsString('attachment;', $response->headers->get('content-disposition', ''));
         $this->assertStringStartsWith('%PDF-', $response->getContent());
     }
+
+    public function test_cannot_store_riwayat_when_diagnosa_is_still_lainnya(): void
+    {
+        $this->pasienPrb->update(['diagnosa' => 'LAINNYA']);
+
+        $response = $this->actingAs($this->admin)->post(
+            route('admin.prb.riwayat.store', $this->pasienPrb->id),
+            [
+                'tanggal_diambil' => Carbon::now()->toDateString(),
+                'tanggal_jatuh_tempo' => Carbon::now()->addDays(30)->toDateString(),
+                'kode_diagnosa' => '',
+                'diagnosa' => 'LAINNYA',
+            ]
+        );
+
+        $response->assertSessionHasErrors(['diagnosa']);
+        $this->assertDatabaseCount('riwayat_pengambilan_obat_prbs', 0);
+
+        $validResponse = $this->actingAs($this->admin)->post(
+            route('admin.prb.riwayat.store', $this->pasienPrb->id),
+            [
+                'tanggal_diambil' => Carbon::now()->toDateString(),
+                'tanggal_jatuh_tempo' => Carbon::now()->addDays(30)->toDateString(),
+                'kode_diagnosa' => 'I10',
+                'diagnosa' => 'Hipertensi',
+            ]
+        );
+
+        $validResponse->assertRedirect(route('admin.prb.show', $this->pasienPrb->id));
+        $this->pasienPrb->refresh();
+        $this->assertEquals('Hipertensi', $this->pasienPrb->diagnosa);
+    }
+
+    public function test_cannot_update_riwayat_when_diagnosa_is_still_lainnya(): void
+    {
+        $this->pasienPrb->update(['diagnosa' => 'LAINNYA']);
+
+        $riwayat = $this->pasienPrb->riwayatPengambilan()->create([
+            'tanggal_jatuh_tempo' => Carbon::now()->toDateString(),
+            'tanggal_diambil' => Carbon::now()->toDateString(),
+            'diagnosa' => 'LAINNYA',
+            'sumber' => 'import',
+        ]);
+
+        $response = $this->actingAs($this->admin)->put(
+            route('admin.prb.riwayat.update', $riwayat->id),
+            [
+                'tanggal_jatuh_tempo' => Carbon::now()->toDateString(),
+                'tanggal_diambil' => Carbon::now()->toDateString(),
+                'kode_diagnosa' => '',
+                'diagnosa' => 'Lainnya',
+            ]
+        );
+
+        $response->assertSessionHasErrors(['diagnosa']);
+
+        $validResponse = $this->actingAs($this->admin)->put(
+            route('admin.prb.riwayat.update', $riwayat->id),
+            [
+                'tanggal_jatuh_tempo' => Carbon::now()->toDateString(),
+                'tanggal_diambil' => Carbon::now()->toDateString(),
+                'kode_diagnosa' => 'E11.8',
+                'diagnosa' => 'Diabetes melitus tipe 2 dengan komplikasi yang tidak dirinci',
+            ]
+        );
+
+        $validResponse->assertRedirect(route('admin.prb.show', $this->pasienPrb->id));
+        $riwayat->refresh();
+        $this->assertEquals('E11.8', $riwayat->kode_diagnosa);
+        $this->assertEquals('Diabetes melitus tipe 2 dengan komplikasi yang tidak dirinci', $riwayat->diagnosa);
+    }
+
+    public function test_replacing_lainnya_keeps_legacy_null_rows_as_lainnya_without_duplicating_new_diagnosa(): void
+    {
+        $this->pasienPrb->update(['diagnosa' => 'LAINNYA']);
+
+        $legacy1 = $this->pasienPrb->riwayatPengambilan()->create([
+            'tanggal_jatuh_tempo' => '2026-09-09',
+            'tanggal_diambil' => '2026-09-09',
+            'kode_diagnosa' => null,
+            'diagnosa' => null,
+            'sumber' => 'import',
+        ]);
+        $legacy2 = $this->pasienPrb->riwayatPengambilan()->create([
+            'tanggal_jatuh_tempo' => '2026-10-09',
+            'tanggal_diambil' => null,
+            'kode_diagnosa' => null,
+            'diagnosa' => null,
+            'sumber' => 'import',
+        ]);
+
+        $this->actingAs($this->admin)->post(
+            route('admin.prb.riwayat.store', $this->pasienPrb->id),
+            [
+                'tanggal_diambil' => '2026-11-25',
+                'tanggal_jatuh_tempo' => '2026-12-25',
+                'kode_diagnosa' => 'E11',
+                'diagnosa' => 'Diabetes Melitus',
+            ]
+        )->assertRedirect(route('admin.prb.show', $this->pasienPrb->id));
+
+        $legacy1->refresh();
+        $legacy2->refresh();
+
+        // Riwayat lama tetap berlabel LAINNYA (tidak berubah jadi Diabetes Melitus)
+        $this->assertNull($legacy1->kode_diagnosa);
+        $this->assertEquals('LAINNYA', $legacy1->diagnosa);
+        $this->assertNull($legacy2->kode_diagnosa);
+        $this->assertEquals('LAINNYA', $legacy2->diagnosa);
+
+        // Grup diagnosa terpisah tegas antara LAINNYA dan E11 (tidak ada duplikat Diabetes Melitus)
+        $groupKeys = $this->pasienPrb->riwayatPengambilan()->get()->pluck('diagnosa_group_key')->unique()->values()->all();
+        sort($groupKeys);
+        $this->assertEquals(['E11', 'LAINNYA'], $groupKeys);
+    }
 }
