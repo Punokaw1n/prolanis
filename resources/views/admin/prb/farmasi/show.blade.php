@@ -39,7 +39,10 @@
     foreach ($obatPrbs as $o) {
         $initialObatStatus[$o->id] = [
             'id' => $o->id,
+            'nama' => strtoupper($o->nama_obat),
+            'qty' => (int) ($o->jumlah_obat ?: 30),
             'status' => $o->status_pemberian ?? 'sudah', // default beri obat siap diberikan
+            'jumlah_kurang' => $o->jumlah_kurang ? (int) $o->jumlah_kurang : null,
             'catatan' => $o->catatan_farmasi ?? ''
         ];
     }
@@ -363,6 +366,7 @@
                             <!-- Input Hidden untuk Form Submission -->
                             <input type="hidden" name="obat[{{ $idx }}][id]" value="{{ $obat->id }}">
                             <input type="hidden" name="obat[{{ $idx }}][status_pemberian]" :value="obatStatus[{{ $obat->id }}].status">
+                            <input type="hidden" name="obat[{{ $idx }}][jumlah_kurang]" :value="obatStatus[{{ $obat->id }}].status === 'kosong' ? (obatStatus[{{ $obat->id }}].jumlah_kurang || '') : ''">
 
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
                                 
@@ -392,6 +396,19 @@
                                             {{ $obat->jumlah_hari }} Hari
                                         </span>
                                         @endif
+
+                                        <!-- Badge Hutang / Jumlah Kurang (Merah) -->
+                                        <template x-if="obatStatus[{{ $obat->id }}].status === 'kosong' && obatStatus[{{ $obat->id }}].jumlah_kurang">
+                                            <button type="button"
+                                                    @click="bukaModalStokKosong({{ $obat->id }})"
+                                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-bold bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 transition-colors cursor-pointer"
+                                                    title="Klik untuk ubah jumlah obat yang kurang">
+                                                <span>Hutang pasien: <span x-text="obatStatus[{{ $obat->id }}].jumlah_kurang"></span></span>
+                                                <svg class="size-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                                </svg>
+                                            </button>
+                                        </template>
                                     </div>
                                 </div>
 
@@ -797,6 +814,83 @@
             </div>
         </div>
     </div>
+
+    <!-- ================= MODAL INPUT JUMLAH OBAT KURANG (STOK KOSONG) ================= -->
+    <div x-show="modalStokKosong.open"
+         x-cloak
+         style="display: none; position: fixed; inset: 0; z-index: 99999; background-color: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px);"
+         class="fixed inset-0 z-[99999] overflow-y-auto flex items-center justify-center p-4"
+         @keydown.escape.window="tutupModalStokKosong()">
+        <div @click.outside="tutupModalStokKosong()"
+             class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <!-- Header Modal -->
+            <div class="px-5 py-4 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="size-9 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                        <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-900">Input Jumlah Obat yang Kurang</h3>
+                        <p class="text-[11px] text-amber-800" x-text="modalStokKosong.namaObat"></p>
+                    </div>
+                </div>
+                <button type="button" @click="tutupModalStokKosong()"
+                        class="size-8 rounded-lg border border-amber-200 bg-white text-gray-500 hover:text-gray-800 hover:bg-gray-50 flex items-center justify-center">
+                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body Modal -->
+            <div class="p-5 space-y-4">
+                <div class="flex items-center justify-between text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                    <span class="text-gray-600">Jumlah Resep Dokter (Qty):</span>
+                    <span class="font-bold font-mono text-gray-900" x-text="modalStokKosong.maxQty + ' Butir / Unit'"></span>
+                </div>
+
+                <div>
+                    <label for="input_jumlah_kurang" class="block text-xs font-bold text-gray-800 mb-1.5">
+                        Berapa jumlah obat yang kurang (hutang pasien)? <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input type="number"
+                               id="input_jumlah_kurang"
+                               x-model="modalStokKosong.jumlahKurang"
+                               @keydown.enter.prevent="simpanModalStokKosong()"
+                               min="1"
+                               :max="modalStokKosong.maxQty"
+                               placeholder="Contoh: 10"
+                               class="py-2.5 px-3.5 block w-full border border-gray-300 rounded-lg text-sm font-bold font-mono text-gray-900 focus:border-amber-500 focus:ring-amber-500 shadow-2xs">
+                        <button type="button"
+                                @click="modalStokKosong.jumlahKurang = modalStokKosong.maxQty; modalStokKosong.error = ''"
+                                class="py-2.5 px-3 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold whitespace-nowrap transition-colors cursor-pointer"
+                                title="Isi semua sesuai qty resep">
+                            Kosong Semua (<span x-text="modalStokKosong.maxQty"></span>)
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-1.5">
+                        Angka ini akan tercatat sebagai <span class="font-bold text-red-600">Hutang pasien</span> pada buku Register PRB.
+                    </p>
+                    <p x-show="modalStokKosong.error" x-text="modalStokKosong.error" class="text-xs font-semibold text-red-600 mt-1.5"></p>
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="px-5 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2">
+                <button type="button" @click="tutupModalStokKosong()"
+                        class="py-2 px-4 text-xs font-semibold rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 shadow-2xs cursor-pointer">
+                    Batal
+                </button>
+                <button type="button" @click="simpanModalStokKosong()"
+                        class="py-2 px-4 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-gray-950 shadow-xs transition-colors cursor-pointer">
+                    Simpan Stok Kosong
+                </button>
+            </div>
+        </div>
+    </div>
     </div> <!-- End .no-print -->
 
     <!-- ================= DOKUMEN CETAK RESMI (HANYA MUNCUL SAAT CETAK KE PRINTER) ================= -->
@@ -1109,20 +1203,92 @@
                 window.print();
             },
 
-            setStatus(id, status) {
+            modalStokKosong: {
+                open: false,
+                obatId: null,
+                namaObat: '',
+                maxQty: 30,
+                jumlahKurang: '',
+                error: ''
+            },
+
+            bukaModalStokKosong(id) {
+                const item = this.obatStatus[id];
+                if (!item) return;
+                this.modalStokKosong = {
+                    open: true,
+                    obatId: id,
+                    namaObat: item.nama || '',
+                    maxQty: parseInt(item.qty, 10) || 30,
+                    jumlahKurang: item.jumlah_kurang ? String(item.jumlah_kurang) : '',
+                    error: ''
+                };
+                this.$nextTick(() => {
+                    const input = document.getElementById('input_jumlah_kurang');
+                    if (input) {
+                        input.focus();
+                        input.select();
+                    }
+                });
+            },
+
+            tutupModalStokKosong() {
+                this.modalStokKosong.open = false;
+                this.modalStokKosong.error = '';
+            },
+
+            simpanModalStokKosong() {
+                const id = this.modalStokKosong.obatId;
+                const val = parseInt(this.modalStokKosong.jumlahKurang, 10);
+                const max = this.modalStokKosong.maxQty;
+
+                if (isNaN(val) || val < 1) {
+                    this.modalStokKosong.error = 'Masukkan jumlah obat yang kurang minimal 1.';
+                    return;
+                }
+                if (val > max) {
+                    this.modalStokKosong.error = `Jumlah kurang tidak boleh melebihi jumlah resep (${max}).`;
+                    return;
+                }
+
                 if (this.obatStatus[id]) {
-                    // Jika klik status yang sama, toggle off kembali ke 'belum'
-                    this.obatStatus[id].status = (this.obatStatus[id].status === status) ? 'belum' : status;
+                    this.obatStatus[id].status = 'kosong';
+                    this.obatStatus[id].jumlah_kurang = val;
+                }
+                this.tutupModalStokKosong();
+            },
+
+            setStatus(id, status) {
+                if (!this.obatStatus[id]) return;
+
+                if (status === 'kosong') {
+                    if (this.obatStatus[id].status === 'kosong') {
+                        this.obatStatus[id].status = 'belum';
+                        this.obatStatus[id].jumlah_kurang = null;
+                    } else {
+                        this.bukaModalStokKosong(id);
+                    }
+                    return;
+                }
+
+                // Jika klik status 'sudah' yang sama, toggle off kembali ke 'belum'
+                this.obatStatus[id].status = (this.obatStatus[id].status === status) ? 'belum' : status;
+                if (this.obatStatus[id].status !== 'kosong') {
+                    this.obatStatus[id].jumlah_kurang = null;
                 }
             },
             setSemua(status) {
                 for (let k in this.obatStatus) {
                     this.obatStatus[k].status = status;
+                    if (status !== 'kosong') {
+                        this.obatStatus[k].jumlah_kurang = null;
+                    }
                 }
             },
             resetSemua() {
                 for (let k in this.obatStatus) {
                     this.obatStatus[k].status = 'belum';
+                    this.obatStatus[k].jumlah_kurang = null;
                     this.obatStatus[k].catatan = '';
                 }
             },

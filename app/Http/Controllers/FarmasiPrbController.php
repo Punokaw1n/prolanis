@@ -149,6 +149,7 @@ class FarmasiPrbController extends Controller
             'obat' => 'required|array',
             'obat.*.id' => 'required|exists:obat_prbs,id',
             'obat.*.status_pemberian' => 'required|in:sudah,kosong,belum',
+            'obat.*.jumlah_kurang' => 'nullable|integer|min:1',
             'obat.*.catatan_farmasi' => 'nullable|string|max:255',
         ]);
 
@@ -160,8 +161,13 @@ class FarmasiPrbController extends Controller
             $obat = $riwayat->obatPrb->firstWhere('id', $obatItem['id']);
             if ($obat) {
                 $status = $obatItem['status_pemberian'];
+                $jumlahKurang = $status === 'kosong' && ! empty($obatItem['jumlah_kurang'])
+                    ? (int) $obatItem['jumlah_kurang']
+                    : null;
+
                 $obat->update([
                     'status_pemberian' => $status,
+                    'jumlah_kurang' => $jumlahKurang,
                     'catatan_farmasi' => $obatItem['catatan_farmasi'] ?? null,
                 ]);
 

@@ -30,6 +30,15 @@
             @php
                 $cetakParams = request()->all();
             @endphp
+            <button type="button"
+                id="btn-export-register-image"
+                onclick="exportRegisterImage('{{ route('admin.prb.register.cetak', array_merge($cetakParams, ['export_image' => 1])) }}')"
+                class="py-2 px-4 inline-flex items-center gap-x-2 text-xs font-bold rounded-lg border border-transparent bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all hover:shadow hover:-translate-y-0.5 active:translate-y-0 cursor-pointer disabled:opacity-60 disabled:pointer-events-none">
+                <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
+                <span id="btn-export-register-image-text">Export Gambar (PNG)</span>
+            </button>
             <a href="{{ route('admin.prb.register.cetak', array_merge($cetakParams, ['autoprint' => 1])) }}" target="_blank" class="py-2 px-4 inline-flex items-center gap-x-2 text-xs font-bold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all hover:shadow hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.076-.64-2.124-1.22-3.089m0 0a15.34 15.34 0 0 1 2.22-2.179m-2.22 2.179c1.077-.24 2.124-.64 3.089-1.22M17.28 13.829c.24-1.076.64-2.124 1.22-3.089m0 0a15.34 15.34 0 0 0-2.22-2.179m2.22 2.179c-1.077-.24-2.124-.64-3.089-1.22M6.75 6.75h10.5a2.25 2.25 0 0 1 2.25 2.25v6.75a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 15.75V9a2.25 2.25 0 0 1 2.25-2.25Z" />
@@ -314,21 +323,28 @@
                                 @if($r->obatPrb->count() > 0)
                                     <div class="space-y-1.5">
                                         @foreach($r->obatPrb as $obat)
-                                            <div class="flex items-baseline justify-between gap-2 border-b border-gray-100/80 pb-1 last:border-0 last:pb-0">
-                                                <div class="flex items-baseline gap-1.5">
-                                                    <span class="text-[9.5px] font-bold font-mono px-1 py-0.2 rounded {{ $obat->kategori === 'prb' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200' }}">
-                                                        {{ $obat->kategori === 'prb' ? 'PRB' : 'NON' }}
-                                                    </span>
-                                                    <span class="font-semibold text-gray-900 text-xs">
-                                                        {{ $obat->nama_obat }}
-                                                    </span>
-                                                    <span class="font-mono text-gray-600 text-[11px]">
-                                                        {{ $obat->signa ?: '1 x 1' }}
-                                                    </span>
+                                            <div class="border-b border-gray-100/80 pb-1 last:border-0 last:pb-0">
+                                                <div class="flex items-baseline justify-between gap-2">
+                                                    <div class="flex items-baseline gap-1.5">
+                                                        <span class="text-[9.5px] font-bold font-mono px-1 py-0.2 rounded {{ $obat->kategori === 'prb' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200' }}">
+                                                            {{ $obat->kategori === 'prb' ? 'PRB' : 'NON' }}
+                                                        </span>
+                                                        <span class="font-semibold text-gray-900 text-xs">
+                                                            {{ $obat->nama_obat }}
+                                                        </span>
+                                                        <span class="font-mono text-gray-600 text-[11px]">
+                                                            {{ $obat->signa ?: '1 x 1' }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="font-mono font-bold text-blue-700 text-xs shrink-0">
+                                                        ({{ $obat->jumlah_obat ?? 30 }})
+                                                    </div>
                                                 </div>
-                                                <div class="font-mono font-bold text-blue-700 text-xs shrink-0">
-                                                    ({{ $obat->jumlah_obat ?? 30 }})
-                                                </div>
+                                                @if($obat->status_pemberian === 'kosong' && $obat->jumlah_kurang)
+                                                    <div class="mt-0.5 text-[11px] font-bold text-red-600">
+                                                        Hutang pasien: {{ $obat->jumlah_kurang }}
+                                                    </div>
+                                                @endif
                                             </div>
                                         @endforeach
                                     </div>
@@ -402,4 +418,58 @@
         @endif
     </div>
 </div>
+
+<script>
+    let exportRegisterTimer = null;
+
+    function resetExportRegisterBtn() {
+        const btn = document.getElementById('btn-export-register-image');
+        const txt = document.getElementById('btn-export-register-image-text');
+        if (btn) btn.disabled = false;
+        if (txt) txt.textContent = 'Export Gambar (PNG)';
+        if (exportRegisterTimer) {
+            clearTimeout(exportRegisterTimer);
+            exportRegisterTimer = null;
+        }
+    }
+
+    function exportRegisterImage(url) {
+        const btn = document.getElementById('btn-export-register-image');
+        const txt = document.getElementById('btn-export-register-image-text');
+        if (btn) btn.disabled = true;
+        if (txt) txt.textContent = 'Membuat Gambar...';
+
+        let iframe = document.getElementById('register-export-iframe');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'register-export-iframe';
+            iframe.style.position = 'fixed';
+            iframe.style.left = '-99999px';
+            iframe.style.top = '0';
+            iframe.style.width = '1122px';
+            iframe.style.height = '850px';
+            iframe.style.border = '0';
+            iframe.style.visibility = 'hidden';
+            document.body.appendChild(iframe);
+        }
+
+        const sep = url.includes('?') ? '&' : '?';
+        iframe.src = url + sep + '_ts=' + Date.now();
+
+        if (exportRegisterTimer) clearTimeout(exportRegisterTimer);
+        exportRegisterTimer = setTimeout(() => {
+            resetExportRegisterBtn();
+        }, 15000);
+    }
+
+    window.addEventListener('message', function (event) {
+        if (event.origin !== window.location.origin) return;
+        if (event.data && (event.data.type === 'register-image-exported' || event.data.type === 'register-image-error')) {
+            resetExportRegisterBtn();
+            if (event.data.type === 'register-image-error') {
+                alert('Gagal mengekspor gambar register. Silakan coba lagi atau gunakan Cetak Lembar Register.');
+            }
+        }
+    });
+</script>
 @endsection

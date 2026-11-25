@@ -289,4 +289,67 @@ class FarmasiPrbTest extends TestCase
         $this->assertEquals('tidak_lengkap', $riwayat->status_farmasi);
         $this->assertEquals('Sudah Diberikan Tidak Lengkap', $riwayat->status_farmasi_badge['label']);
     }
+
+    public function test_stok_kosong_saves_jumlah_kurang_and_displays_hutang_pasien_in_register(): void
+    {
+        $pasien = Pasien::create([
+            'nama' => 'AHMAD DAHLAN',
+            'nik' => '3578012345670006',
+        ]);
+
+        $prb = PasienPrb::create([
+            'pasien_id' => $pasien->id,
+            'status_keaktifan' => 'aktif',
+            'tanggal_terdaftar' => '2026-10-01',
+        ]);
+
+        $riwayat = $prb->riwayatPengambilan()->create([
+            'tanggal_diambil' => '2026-11-25',
+            'tanggal_jatuh_tempo' => '2026-12-25',
+            'dicatat_oleh' => $this->admin->id,
+            'sumber' => 'manual',
+        ]);
+
+        $obat1 = $riwayat->obatPrb()->create([
+            'nama_obat' => 'Akarbose 100mg',
+            'kategori' => 'prb',
+            'signa' => '1 x 1',
+            'jumlah_obat' => 30,
+            'sumber' => 'manual',
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.prb.farmasi.beri-obat', $riwayat->id), [
+            'obat' => [
+                [
+                    'id' => $obat1->id,
+                    'status_pemberian' => 'kosong',
+                    'jumlah_kurang' => 12,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('admin.prb.farmasi.index', ['tanggal' => '2026-11-25']));
+
+        $obat1->refresh();
+        $this->assertEquals('kosong', $obat1->status_pemberian);
+        $this->assertEquals(12, $obat1->jumlah_kurang);
+
+        $registerResponse = $this->actingAs($this->admin)->get(route('admin.prb.register', [
+            'mode' => 'bulan',
+            'bulan' => 11,
+            'tahun' => 2026,
+        ]));
+        $registerResponse->assertStatus(200);
+        $registerResponse->assertSee('Akarbose 100mg');
+        $registerResponse->assertSee('Hutang pasien: 12');
+
+        $cetakResponse = $this->actingAs($this->admin)->get(route('admin.prb.register.cetak', [
+            'mode' => 'bulan',
+            'bulan' => 11,
+            'tahun' => 2026,
+        ]));
+        $cetakResponse->assertStatus(200);
+        $cetakResponse->assertSee('Akarbose 100mg');
+        $cetakResponse->assertSee('Hutang pasien: 12');
+    }
 }

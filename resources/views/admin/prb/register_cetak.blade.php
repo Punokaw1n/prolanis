@@ -34,6 +34,7 @@
             width: 100%;
             max-width: 280mm;
             margin: 0 auto;
+            padding: 16px 20px;
             background: #fff;
         }
 
@@ -267,6 +268,15 @@
             transform: translateY(-1px);
         }
 
+        .btn-export-img {
+            background: #059669;
+            color: #fff;
+        }
+
+        .btn-export-img:hover {
+            background: #047857;
+        }
+
         .btn-close {
             background: #475569;
             color: #fff;
@@ -293,6 +303,10 @@
     <!-- Floating Toolbar on Browser -->
     <div class="print-toolbar no-print">
         <span><strong>Preview Cetak Register PRB</strong> (Landscape A4/F4)</span>
+        <button type="button" id="btn-export-png" onclick="exportSheetToPng()" class="btn-action btn-export-img">
+            <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/></svg>
+            <span id="btn-export-png-text">Export Gambar (PNG)</span>
+        </button>
         <button type="button" onclick="window.print()" class="btn-action">
             <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h10.5a2.25 2.25 0 0 1 2.25 2.25v6.75a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 15.75V9a2.25 2.25 0 0 1 2.25-2.25Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75V4.5a2.25 2.25 0 0 1 2.25-2.25h6a2.25 2.25 0 0 1 2.25 2.25v2.25m-9 9h9m-9 3h9"/></svg>
             Cetak Dokumen
@@ -302,7 +316,7 @@
         </button>
     </div>
 
-    <div class="sheet-container">
+    <div id="register-sheet" class="sheet-container">
         <!-- KOP SURAT RESMI PUSKESMAS -->
         <div class="kop-wrapper">
             <img src="{{ $logoSurabayaBase64 ?? asset('surabaya-city.png') }}" onerror="this.onerror=null; this.src='/surabaya-city.png'" alt="Logo Pemkot Surabaya" class="kop-logo">
@@ -361,9 +375,14 @@
                             @if($r->obatPrb->count() > 0)
                                 @foreach($r->obatPrb as $obat)
                                     <div class="obat-item">
-                                        <span class="obat-nama">
-                                            {{ $obat->nama_obat }} {{ $obat->signa ? $obat->signa : '' }}
-                                        </span>
+                                        <div class="obat-nama">
+                                            <div>{{ $obat->nama_obat }} {{ $obat->signa ? $obat->signa : '' }}</div>
+                                            @if($obat->status_pemberian === 'kosong' && $obat->jumlah_kurang)
+                                                <div style="color: #dc2626; font-weight: bold; font-size: 8.5pt; margin-top: 1px;">
+                                                    Hutang pasien: {{ $obat->jumlah_kurang }}
+                                                </div>
+                                            @endif
+                                        </div>
                                         <span class="obat-qty">
                                             ({{ $obat->jumlah_obat ?? 30 }})
                                         </span>
@@ -393,7 +412,74 @@
         </table>
     </div>
 
-    @if(request('autoprint') == 1)
+    <script src="{{ asset('js/html2pdf.bundle.min.js') }}"></script>
+    <script>
+        function exportSheetToPng(fromParent = false) {
+            const sheet = document.getElementById('register-sheet');
+            const btn = document.getElementById('btn-export-png');
+            const txt = document.getElementById('btn-export-png-text');
+
+            if (!sheet || typeof html2pdf === 'undefined') {
+                if (fromParent && window.parent) {
+                    window.parent.postMessage({ type: 'register-image-error' }, window.location.origin);
+                }
+                return;
+            }
+
+            if (btn) btn.disabled = true;
+            if (txt) txt.textContent = 'Membuat Gambar...';
+
+            const filename = @json('Register_PRB_' . \Illuminate\Support\Str::slug($periodeJudul, '_') . '.png');
+
+            html2pdf()
+                .set({
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    }
+                })
+                .from(sheet)
+                .toCanvas()
+                .get('canvas')
+                .then(function (canvas) {
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = canvas.toDataURL('image/png');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    if (btn) btn.disabled = false;
+                    if (txt) txt.textContent = 'Export Gambar (PNG)';
+
+                    if (fromParent && window.parent) {
+                        window.parent.postMessage({ type: 'register-image-exported' }, window.location.origin);
+                    }
+                })
+                .catch(function () {
+                    if (btn) btn.disabled = false;
+                    if (txt) txt.textContent = 'Export Gambar (PNG)';
+
+                    if (fromParent && window.parent) {
+                        window.parent.postMessage({ type: 'register-image-error' }, window.location.origin);
+                    } else {
+                        alert('Gagal membuat gambar register.');
+                    }
+                });
+        }
+    </script>
+
+    @if(request('export_image') == 1)
+        <script>
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    exportSheetToPng(true);
+                }, 350);
+            });
+        </script>
+    @elseif(request('autoprint') == 1)
         <script>
             window.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
