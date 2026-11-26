@@ -319,7 +319,7 @@ class AuthTest extends TestCase
         $this->actingAs($dokter)->get('/admin/prb/farmasi')->assertForbidden();
     }
 
-    public function test_farmasi_can_see_farmasi_prb_but_cannot_see_or_access_pengingat_wa(): void
+    public function test_farmasi_can_see_and_access_farmasi_prb_and_pengingat_wa(): void
     {
         // 1. Uji untuk Apoteker
         $apoteker = User::create([
@@ -334,19 +334,17 @@ class AuthTest extends TestCase
         $responseApoteker = $this->actingAs($apoteker)->get('/admin/dashboard');
 
         $responseApoteker->assertOk();
-        // Apoteker sees PRB & Farmasi PRB
+        // Apoteker sees PRB, Farmasi PRB, & Pengingat WA
         $responseApoteker->assertSee(route('admin.prb.index'));
         $responseApoteker->assertSee(route('admin.prb.register'));
         $responseApoteker->assertSee(route('admin.prb.farmasi.index'));
+        $responseApoteker->assertSee(route('admin.prb.pengingat'));
         $responseApoteker->assertSee(route('admin.import.prb'));
 
-        // Apoteker DOES NOT see Pengingat WA
-        $responseApoteker->assertDontSee(route('admin.prb.pengingat'));
-
-        // Direct access: can access PRB & Farmasi PRB, but Pengingat WA is forbidden (403)
+        // Direct access: can access PRB, Farmasi PRB, and Pengingat WA
         $this->actingAs($apoteker)->get('/admin/prb')->assertOk();
         $this->actingAs($apoteker)->get('/admin/prb/farmasi')->assertOk();
-        $this->actingAs($apoteker)->get('/admin/prb/pengingat')->assertForbidden();
+        $this->actingAs($apoteker)->get('/admin/prb/pengingat')->assertOk();
 
         // 2. Uji untuk Asisten Apoteker
         $asistenApoteker = User::create([
@@ -361,9 +359,9 @@ class AuthTest extends TestCase
         $responseAsisten = $this->actingAs($asistenApoteker)->get('/admin/dashboard');
         $responseAsisten->assertOk();
         $responseAsisten->assertSee(route('admin.prb.farmasi.index'));
-        $responseAsisten->assertDontSee(route('admin.prb.pengingat'));
+        $responseAsisten->assertSee(route('admin.prb.pengingat'));
 
-        $this->actingAs($asistenApoteker)->get('/admin/prb/pengingat')->assertForbidden();
+        $this->actingAs($asistenApoteker)->get('/admin/prb/pengingat')->assertOk();
     }
 
     public function test_general_staff_cannot_see_prb_menu(): void

@@ -175,12 +175,17 @@ class PasienPrbController extends Controller
     {
         $search = $request->search;
         $bulan = $request->input('bulan');
+        $tahun = $request->input('tahun');
 
         $riwayatPengingat = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien'])
             ->belumDiambilAktif()
             ->when($bulan, function ($query) use ($bulan) {
                 $query->whereMonth('tanggal_jatuh_tempo', (int) $bulan);
-            }, function ($query) {
+            })
+            ->when($tahun, function ($query) use ($tahun) {
+                $query->whereYear('tanggal_jatuh_tempo', (int) $tahun);
+            })
+            ->when(! $bulan && ! $tahun, function ($query) {
                 $query->where('tanggal_jatuh_tempo', '<=', now()->addDays(3)->toDateString());
             })
             ->when($search, function ($query) use ($search) {
@@ -195,7 +200,7 @@ class PasienPrbController extends Controller
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
-        return view('admin.prb.pengingat', compact('riwayatPengingat', 'search', 'bulan'));
+        return view('admin.prb.pengingat', compact('riwayatPengingat', 'search', 'bulan', 'tahun'));
     }
 
     public function tandaiDiingatkan($id)
@@ -254,15 +259,23 @@ class PasienPrbController extends Controller
         }
 
         $request->validate([
-            'nik' => 'required|string|max:16',
+            'nik' => 'required|digits:16',
             'pasien_id' => 'nullable|exists:pasien,id',
             'nama' => 'required_without:pasien_id|string|max:255',
             'no_rm' => 'nullable|string|max:255',
             'no_bpjs' => 'nullable|string|max:255',
             'tanggal_lahir' => 'required_without:pasien_id|date',
             'jenis_kelamin' => 'required_without:pasien_id|in:L,P',
-            'no_hp' => 'nullable|string|max:20',
+            'no_hp' => 'required_without:pasien_id|string|min:8|max:20',
             'alamat' => 'nullable|string',
+        ], [
+            'nik.required' => 'NIK wajib diisi.',
+            'nik.digits' => 'NIK harus berupa 16 digit angka.',
+            'nama.required_without' => 'Nama lengkap pasien wajib diisi.',
+            'tanggal_lahir.required_without' => 'Tanggal lahir wajib diisi.',
+            'jenis_kelamin.required_without' => 'Jenis kelamin wajib dipilih.',
+            'no_hp.required_without' => 'Nomor Handphone (WhatsApp) wajib diisi.',
+            'no_hp.min' => 'Nomor Handphone minimal 8 digit.',
         ]);
 
         // Find or create Pasien
@@ -388,9 +401,9 @@ class PasienPrbController extends Controller
             'kode_diagnosa' => 'nullable|string|max:50',
             'diagnosa' => 'nullable|string|max:255',
             'catatan' => 'nullable|string',
-            'obat' => 'nullable|array',
-            'obat.*.nama' => 'required_with:obat|string|max:255',
-            'obat.*.kategori' => 'required_with:obat|in:prb,non_prb',
+            'obat' => 'required|array|min:1',
+            'obat.*.nama' => 'required|string|max:255',
+            'obat.*.kategori' => 'required|in:prb,non_prb',
             'obat.*.signa' => 'nullable|string|max:100',
             'obat.*.jumlah_hari' => 'nullable|integer|min:1',
             'obat.*.jumlah_obat' => 'nullable|integer|min:1',
@@ -404,6 +417,10 @@ class PasienPrbController extends Controller
             return back()
                 ->withErrors(['diagnosa' => 'Diagnosa pasien masih "LAINNYA". Silakan pilih "+ Diagnosa Baru / Lainnya" dan tentukan diagnosa penyakit yang jelas sebelum menyimpan.'])
                 ->withInput();
+        }
+
+        if ($noHpError = $this->validateAndSyncPasienNoHp($request, $prb->pasien)) {
+            return $noHpError;
         }
 
         return \DB::transaction(function () use ($prb, $request, $id, $effectiveDiagnosa) {
@@ -643,9 +660,9 @@ class PasienPrbController extends Controller
             'kode_diagnosa' => 'nullable|string|max:50',
             'diagnosa' => 'nullable|string|max:255',
             'catatan' => 'nullable|string',
-            'obat' => 'nullable|array',
-            'obat.*.nama' => 'required_with:obat|string|max:255',
-            'obat.*.kategori' => 'required_with:obat|in:prb,non_prb',
+            'obat' => 'required|array|min:1',
+            'obat.*.nama' => 'required|string|max:255',
+            'obat.*.kategori' => 'required|in:prb,non_prb',
             'obat.*.signa' => 'nullable|string|max:100',
             'obat.*.jumlah_hari' => 'nullable|integer|min:1',
             'obat.*.jumlah_obat' => 'nullable|integer|min:1',
@@ -659,6 +676,10 @@ class PasienPrbController extends Controller
             return back()
                 ->withErrors(['diagnosa' => 'Diagnosa pasien masih "LAINNYA". Silakan pilih "+ Diagnosa Baru / Lainnya" dan tentukan diagnosa penyakit yang jelas sebelum menyimpan.'])
                 ->withInput();
+        }
+
+        if ($noHpError = $this->validateAndSyncPasienNoHp($request, $riwayat->pasienPrb?->pasien)) {
+            return $noHpError;
         }
 
         $updateData = [
@@ -1107,14 +1128,46 @@ class PasienPrbController extends Controller
             'tanggal_diambil.date' => 'Format tanggal pelayanan / diambil tidak valid.',
             'tanggal_jatuh_tempo.required' => 'Jadwal jatuh tempo (berikutnya) wajib diisi.',
             'tanggal_jatuh_tempo.date' => 'Format jadwal jatuh tempo tidak valid.',
-            'obat.*.nama.required_with' => 'Nama obat wajib diisi.',
-            'obat.*.kategori.required_with' => 'Kategori obat wajib dipilih.',
+            'obat.required' => 'Daftar obat wajib diisi minimal 1 obat sebelum menyimpan.',
+            'obat.array' => 'Format daftar obat tidak valid.',
+            'obat.min' => 'Daftar obat wajib diisi minimal 1 obat sebelum menyimpan.',
+            'obat.*.nama.required' => 'Nama obat wajib diisi.',
+            'obat.*.kategori.required' => 'Kategori obat wajib dipilih.',
             'obat.*.kategori.in' => 'Kategori obat harus PRB atau Non-PRB.',
             'obat.*.jumlah_hari.integer' => 'Jumlah hari harus berupa angka.',
             'obat.*.jumlah_hari.min' => 'Jumlah hari minimal 1.',
             'obat.*.jumlah_obat.integer' => 'Jumlah obat harus berupa angka.',
             'obat.*.jumlah_obat.min' => 'Jumlah obat minimal 1.',
         ];
+    }
+
+    /**
+     * Pastikan pasien memiliki nomor telepon / WhatsApp sebelum resep disimpan.
+     * Jika nomor HP pasien kosong dan dikirim dari popup form resep, otomatis simpan ke profil pasien.
+     */
+    private function validateAndSyncPasienNoHp(Request $request, ?Pasien $pasien)
+    {
+        $existingDigits = preg_replace('/[^0-9]/', '', (string) ($pasien?->no_hp ?? ''));
+        if (strlen($existingDigits) >= 8) {
+            return null;
+        }
+
+        $inputHp = trim((string) $request->input('no_hp_pasien', ''));
+        $inputDigits = preg_replace('/[^0-9]/', '', $inputHp);
+
+        if (strlen($inputDigits) < 8) {
+            return back()
+                ->withErrors(['no_hp_pasien' => 'Nomor telepon / WhatsApp pasien wajib diisi (minimal 8 digit) sebelum menyimpan resep.'])
+                ->withInput();
+        }
+
+        if ($pasien) {
+            $pasien->update([
+                'no_hp' => $this->normalizePhoneNumber($inputHp),
+            ]);
+        }
+
+        return null;
     }
 
     /**

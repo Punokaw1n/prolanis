@@ -116,7 +116,7 @@ class PasienController extends Controller
             'nik' => ['required', 'string', 'max:20', Rule::unique('pasien', 'nik')->ignore($pasien->id)],
             'no_rm' => 'nullable|string|max:50',
             'no_bpjs' => 'nullable|string|max:50',
-            'no_hp' => 'nullable|string|max:25',
+            'no_hp' => 'required|string|min:8|max:25',
             'tanggal_lahir' => 'nullable|date',
             'jenis_kelamin' => 'nullable|in:L,P',
             'alamat' => 'nullable|string|max:500',
@@ -127,6 +127,8 @@ class PasienController extends Controller
             'nama.required' => 'Nama pasien wajib diisi.',
             'nik.required' => 'NIK wajib diisi.',
             'nik.unique' => 'NIK sudah digunakan oleh pasien lain.',
+            'no_hp.required' => 'Nomor Handphone / WhatsApp wajib diisi.',
+            'no_hp.min' => 'Nomor Handphone / WhatsApp minimal 8 digit.',
         ]);
 
         if (! empty($validated['no_hp'])) {

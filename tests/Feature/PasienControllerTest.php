@@ -229,6 +229,7 @@ class PasienControllerTest extends TestCase
         $response = $this->actingAs($this->admin)->put(route('admin.pasien.update', $pasien->id), [
             'nama' => 'Pasien PRB Test',
             'nik' => '3501010101900001',
+            'no_hp' => '081234567890',
             'diagnosa' => 'E11.8',
         ]);
 
@@ -236,5 +237,22 @@ class PasienControllerTest extends TestCase
         $response->assertSessionHasNoErrors();
         $this->assertEquals('E11.8', $prb->fresh()->diagnosa);
         $this->assertEquals('E11.8', $pasien->fresh()->diagnosa);
+    }
+
+    public function test_update_pasien_requires_no_hp(): void
+    {
+        $pasien = Pasien::create([
+            'nik' => '3501010101900009',
+            'nama' => 'Pasien Uji HP Wajib',
+            'tanggal_lahir' => '1990-01-01',
+        ]);
+
+        $response = $this->actingAs($this->admin)->put(route('admin.pasien.update', $pasien->id), [
+            'nama' => 'Pasien Uji HP Wajib',
+            'nik' => '3501010101900009',
+            'no_hp' => '',
+        ]);
+
+        $response->assertSessionHasErrors(['no_hp']);
     }
 }

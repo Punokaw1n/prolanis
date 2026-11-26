@@ -95,9 +95,10 @@
                             <!-- No. Handphone / WhatsApp -->
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                                    Nomor Handphone / WhatsApp
+                                    Nomor Handphone / WhatsApp <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="no_hp" value="{{ old('no_hp', $pasien->no_hp) }}" maxlength="20"
+                                <input type="tel" inputmode="numeric" name="no_hp" value="{{ old('no_hp', $pasien->no_hp) }}" required minlength="8" maxlength="20"
+                                       @input="$el.value = $el.value.replace(/[^0-9]/g, '')"
                                        placeholder="Contoh: 08123456789..." 
                                        class="py-2.5 px-3 block w-full border border-gray-300 rounded-lg text-sm font-mono text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors shadow-2xs">
                             </div>

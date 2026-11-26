@@ -195,6 +195,7 @@ class LaporanPrbTest extends TestCase
         $pasienNarja = Pasien::create([
             'nama' => 'NARJA TEST',
             'nik' => '3578010000000077',
+            'no_hp' => '081234567890',
         ]);
         $prbNarja = PasienPrb::create([
             'pasien_id' => $pasienNarja->id,
@@ -218,6 +219,9 @@ class LaporanPrbTest extends TestCase
             'tanggal_jatuh_tempo' => '2026-12-25',
             'kode_diagnosa' => 'M32',
             'diagnosa' => 'SLE',
+            'obat' => [
+                ['nama' => 'Metilprednisolon 4mg', 'kategori' => 'prb', 'signa' => '1 x 1', 'jumlah_hari' => 30, 'jumlah_obat' => 30],
+            ],
         ])->assertRedirect(route('admin.prb.show', $prbNarja->id));
 
         $legacyPending->refresh();
@@ -257,34 +261,54 @@ class LaporanPrbTest extends TestCase
         $resNov->assertDontSee('PASIEN DOUBLE NOV');
     }
 
-    public function test_non_admin_cannot_access_or_see_laporan_menu(): void
+    public function test_dokter_and_farmasi_can_access_laporan_while_non_prb_is_forbidden(): void
     {
         $dokter = User::create([
             'nama' => 'dr. Dokter PRB',
             'nik' => '3578010000000088',
             'password' => Hash::make('password123'),
             'peran' => 'petugas',
-            'profesi' => 'Dokter',
+            'jabatan' => 'Dokter Umum',
             'is_active' => true,
         ]);
 
-        // Sidebar tidak menampilkan link menu Laporan untuk selain admin
-        $prbPage = $this->actingAs($dokter)->get(route('admin.prb.index'));
-        $prbPage->assertOk();
-        $prbPage->assertDontSee(route('admin.prb.laporan.index'));
+        $apoteker = User::create([
+            'nama' => 'Apt. Farmasi PRB',
+            'nik' => '3578010000000089',
+            'password' => Hash::make('password123'),
+            'peran' => 'petugas',
+            'jabatan' => 'Apoteker',
+            'is_active' => true,
+        ]);
 
-        // Akses langsung ke route laporan ditolak (403)
-        foreach ([
-            route('admin.prb.laporan.index'),
-            route('admin.prb.laporan.belum-ambil-obat'),
-            route('admin.prb.laporan.belum-ambil-obat.export'),
-            route('admin.prb.laporan.tidak-aktif'),
-            route('admin.prb.laporan.tidak-aktif.export'),
-            route('admin.prb.laporan.aktif'),
-            route('admin.prb.laporan.aktif.export'),
-        ] as $url) {
-            $this->actingAs($dokter)->get($url)->assertForbidden();
+        $perawat = User::create([
+            'nama' => 'Ns. Perawat Non PRB',
+            'nik' => '3578010000000087',
+            'password' => Hash::make('password123'),
+            'peran' => 'petugas',
+            'jabatan' => 'Perawat',
+            'is_active' => true,
+        ]);
+
+        // Dokter & Farmasi melihat menu Laporan di sidebar dan dapat mengakses laporan
+        foreach ([$dokter, $apoteker] as $user) {
+            $this->actingAs($user)
+                ->get(route('admin.prb.index'))
+                ->assertOk()
+                ->assertSee(route('admin.prb.laporan.index'));
+
+            foreach ([
+                route('admin.prb.laporan.index'),
+                route('admin.prb.laporan.belum-ambil-obat'),
+                route('admin.prb.laporan.tidak-aktif'),
+                route('admin.prb.laporan.aktif'),
+            ] as $url) {
+                $this->actingAs($user)->get($url)->assertOk();
+            }
         }
+
+        // Perawat (non-PRB) tetap ditolak (403)
+        $this->actingAs($perawat)->get(route('admin.prb.laporan.index'))->assertForbidden();
     }
 
     public function test_multi_diagnosa_and_multiple_visits_in_same_month_keep_untaken_schedules_visible(): void

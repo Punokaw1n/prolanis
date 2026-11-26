@@ -81,8 +81,8 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
             Route::get('/', [PasienPrbController::class, 'index'])->name('admin.prb.index');
             Route::get('/register', [PasienPrbController::class, 'register'])->name('admin.prb.register');
             Route::get('/register/cetak', [PasienPrbController::class, 'cetakRegister'])->name('admin.prb.register.cetak');
-            // Laporan PRB (Khusus Admin)
-            Route::middleware('role:admin')->group(function () {
+            // Laporan PRB (Admin, Dokter & Farmasi)
+            Route::middleware('role:admin,dokter,farmasi')->group(function () {
                 Route::get('/laporan', [LaporanPrbController::class, 'index'])->name('admin.prb.laporan.index');
                 Route::get('/laporan/belum-ambil-obat', [LaporanPrbController::class, 'belumAmbilObat'])->name('admin.prb.laporan.belum-ambil-obat');
                 Route::get('/laporan/belum-ambil-obat/export', [LaporanPrbController::class, 'exportBelumAmbilObat'])->name('admin.prb.laporan.belum-ambil-obat.export');

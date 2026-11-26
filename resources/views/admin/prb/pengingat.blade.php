@@ -44,7 +44,7 @@
                 <input type="text" name="search" value="{{ request('search') }}" class="py-2.5 ps-10 pe-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm" placeholder="Cari Nama / NIK Pasien...">
             </div>
 
-            <select name="bulan" onchange="this.form.submit()" class="py-2.5 px-3 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-sm">
+            <select name="bulan" onchange="if (this.value && !this.form.tahun.value) { this.form.tahun.value = '{{ now()->year }}'; } this.form.submit()" class="py-2.5 px-3 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-sm">
                 <option value="">Perlu Diingatkan (H-3 &amp; Terlambat)</option>
                 @php
                     $namaBulanPengingat = [
@@ -60,10 +60,19 @@
                 @endforeach
             </select>
 
+            <select name="tahun" onchange="this.form.submit()" class="py-2.5 px-3 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white focus:border-blue-500 focus:ring-blue-500 shadow-sm">
+                <option value="">Semua Tahun</option>
+                @for($y = now()->year + 1; $y >= 2024; $y--)
+                    <option value="{{ $y }}" {{ (string) request('tahun') === (string) $y ? 'selected' : '' }}>
+                        Tahun {{ $y }}
+                    </option>
+                @endfor
+            </select>
+
             <button type="submit" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors cursor-pointer">
                 Cari
             </button>
-            @if(request('search') || request('bulan'))
+            @if(request('search') || request('bulan') || request('tahun'))
                 <a href="{{ route('admin.prb.pengingat') }}" class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 transition-colors">
                     Reset
                 </a>

@@ -219,6 +219,7 @@ class PrbEndToEndTest extends TestCase
             'nik' => '3507555566660001',
             'nama' => 'Ibu Wati Sync',
             'tanggal_lahir' => '1970-03-15',
+            'no_hp' => '081234567890',
             'status_keaktifan' => 'aktif',
         ]);
 

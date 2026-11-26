@@ -199,7 +199,7 @@ class User extends Authenticatable
 
     /**
      * Cek apakah user berhak mengakses modul Pengingat WA PRB
-     * (Admin dan Dokter, tidak untuk Farmasi/Apoteker maupun Perawat)
+     * (Admin, Dokter, dan Farmasi/Apoteker, tidak untuk Perawat)
      */
     public function canAccessPengingat(): bool
     {
@@ -207,11 +207,11 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->isFarmasi() || $this->isPerawat()) {
+        if ($this->isPerawat()) {
             return false;
         }
 
-        return $this->isDokter();
+        return $this->isDokter() || $this->isFarmasi();
     }
 
     /**

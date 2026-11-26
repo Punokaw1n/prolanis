@@ -36,6 +36,7 @@ class PrbSignaTest extends TestCase
             'nik' => '3507123456780001',
             'nama' => 'Bapak Hartono Signa',
             'tanggal_lahir' => '1965-08-17',
+            'no_hp' => '081234567890',
             'status_keaktifan' => 'aktif',
         ]);
 
@@ -217,6 +218,9 @@ class PrbSignaTest extends TestCase
                 'tanggal_jatuh_tempo' => Carbon::now()->addDays(30)->toDateString(),
                 'kode_diagnosa' => '',
                 'diagnosa' => 'LAINNYA',
+                'obat' => [
+                    ['nama' => 'Amlodipine 10mg', 'kategori' => 'prb', 'signa' => '1 x 1', 'jumlah_hari' => 30, 'jumlah_obat' => 30],
+                ],
             ]
         );
 
@@ -230,6 +234,9 @@ class PrbSignaTest extends TestCase
                 'tanggal_jatuh_tempo' => Carbon::now()->addDays(30)->toDateString(),
                 'kode_diagnosa' => 'I10',
                 'diagnosa' => 'Hipertensi',
+                'obat' => [
+                    ['nama' => 'Amlodipine 10mg', 'kategori' => 'prb', 'signa' => '1 x 1', 'jumlah_hari' => 30, 'jumlah_obat' => 30],
+                ],
             ]
         );
 
@@ -256,6 +263,9 @@ class PrbSignaTest extends TestCase
                 'tanggal_diambil' => Carbon::now()->toDateString(),
                 'kode_diagnosa' => '',
                 'diagnosa' => 'Lainnya',
+                'obat' => [
+                    ['nama' => 'Metformin 500mg', 'kategori' => 'prb', 'signa' => '2 x 1', 'jumlah_hari' => 30, 'jumlah_obat' => 60],
+                ],
             ]
         );
 
@@ -268,6 +278,9 @@ class PrbSignaTest extends TestCase
                 'tanggal_diambil' => Carbon::now()->toDateString(),
                 'kode_diagnosa' => 'E11.8',
                 'diagnosa' => 'Diabetes melitus tipe 2 dengan komplikasi yang tidak dirinci',
+                'obat' => [
+                    ['nama' => 'Metformin 500mg', 'kategori' => 'prb', 'signa' => '2 x 1', 'jumlah_hari' => 30, 'jumlah_obat' => 60],
+                ],
             ]
         );
 
@@ -303,6 +316,9 @@ class PrbSignaTest extends TestCase
                 'tanggal_jatuh_tempo' => '2026-12-25',
                 'kode_diagnosa' => 'E11',
                 'diagnosa' => 'Diabetes Melitus',
+                'obat' => [
+                    ['nama' => 'Metformin 500mg', 'kategori' => 'prb', 'signa' => '2 x 1', 'jumlah_hari' => 30, 'jumlah_obat' => 60],
+                ],
             ]
         )->assertRedirect(route('admin.prb.show', $this->pasienPrb->id));
 
@@ -319,5 +335,159 @@ class PrbSignaTest extends TestCase
         $groupKeys = $this->pasienPrb->riwayatPengambilan()->get()->pluck('diagnosa_group_key')->unique()->values()->all();
         sort($groupKeys);
         $this->assertEquals(['E11', 'LAINNYA'], $groupKeys);
+    }
+
+    public function test_cannot_store_riwayat_without_pasien_no_hp_and_saves_no_hp_when_submitted(): void
+    {
+        $pasienTanpaHp = Pasien::create([
+            'nik' => '3507123456780099',
+            'nama' => 'Pasien Tanpa HP',
+            'tanggal_lahir' => '1970-01-01',
+            'no_hp' => null,
+            'status_keaktifan' => 'aktif',
+        ]);
+
+        $prbTanpaHp = PasienPrb::create([
+            'pasien_id' => $pasienTanpaHp->id,
+            'diagnosa' => 'Hipertensi',
+            'status_keaktifan' => 'aktif',
+            'tanggal_terdaftar' => '2026-11-01',
+        ]);
+
+        // Ditolak jika no_hp pasien kosong dan no_hp_pasien tidak diisi
+        $resFail = $this->actingAs($this->admin)->post(
+            route('admin.prb.riwayat.store', $prbTanpaHp->id),
+            [
+                'tanggal_diambil' => '2026-11-26',
+                'tanggal_jatuh_tempo' => '2026-12-26',
+                'kode_diagnosa' => 'I10',
+                'diagnosa' => 'Hipertensi',
+                'no_hp_pasien' => '',
+                'obat' => [
+                    ['nama' => 'Amlodipine 10mg', 'kategori' => 'prb', 'signa' => '1 x 1', 'jumlah_hari' => 30, 'jumlah_obat' => 30],
+                ],
+            ]
+        );
+        $resFail->assertSessionHasErrors(['no_hp_pasien']);
+        $this->assertDatabaseCount('riwayat_pengambilan_obat_prbs', 0);
+
+        // Berhasil jika no_hp_pasien diisi lewat modal, dan no_hp profil pasien otomatis tersimpan
+        $resOk = $this->actingAs($this->admin)->post(
+            route('admin.prb.riwayat.store', $prbTanpaHp->id),
+            [
+                'tanggal_diambil' => '2026-11-26',
+                'tanggal_jatuh_tempo' => '2026-12-26',
+                'kode_diagnosa' => 'I10',
+                'diagnosa' => 'Hipertensi',
+                'no_hp_pasien' => '081234567899',
+                'obat' => [
+                    ['nama' => 'Amlodipine 10mg', 'kategori' => 'prb', 'signa' => '1 x 1', 'jumlah_hari' => 30, 'jumlah_obat' => 30],
+                ],
+            ]
+        );
+        $resOk->assertRedirect(route('admin.prb.show', $prbTanpaHp->id));
+
+        $pasienTanpaHp->refresh();
+        $this->assertEquals('6281234567899', $pasienTanpaHp->no_hp);
+    }
+
+    public function test_store_new_prb_patient_requires_numeric_16_digit_nik_and_no_hp(): void
+    {
+        // Gagal jika NIK bukan angka 16 digit atau no_hp kosong
+        $resFail = $this->actingAs($this->admin)->post(route('admin.prb.store'), [
+            'nik' => 'ABCD123456789012',
+            'nama' => 'Pasien Baru Uji',
+            'tanggal_lahir' => '1990-01-01',
+            'jenis_kelamin' => 'L',
+            'no_hp' => '',
+        ]);
+        $resFail->assertSessionHasErrors(['nik', 'no_hp']);
+
+        // Berhasil jika NIK 16 digit angka dan no_hp terisi
+        $resOk = $this->actingAs($this->admin)->post(route('admin.prb.store'), [
+            'nik' => '3578010101900077',
+            'nama' => 'Pasien Baru Uji Valid',
+            'tanggal_lahir' => '1990-01-01',
+            'jenis_kelamin' => 'L',
+            'no_hp' => '081234567890',
+        ]);
+        $resOk->assertRedirect(route('admin.prb.index'));
+        $this->assertDatabaseHas('pasien', [
+            'nik' => '3578010101900077',
+            'no_hp' => '6281234567890',
+        ]);
+    }
+
+    public function test_cannot_store_or_update_riwayat_when_obat_list_is_empty(): void
+    {
+        $resStore = $this->actingAs($this->admin)->post(
+            route('admin.prb.riwayat.store', $this->pasienPrb->id),
+            [
+                'tanggal_diambil' => Carbon::now()->toDateString(),
+                'tanggal_jatuh_tempo' => Carbon::now()->addDays(30)->toDateString(),
+                'kode_diagnosa' => 'I10',
+                'diagnosa' => 'Hipertensi',
+                'obat' => [],
+            ]
+        );
+
+        $resStore->assertSessionHasErrors(['obat']);
+        $this->assertDatabaseCount('riwayat_pengambilan_obat_prbs', 0);
+
+        $riwayat = $this->pasienPrb->riwayatPengambilan()->create([
+            'tanggal_jatuh_tempo' => Carbon::now()->addDays(30)->toDateString(),
+            'tanggal_diambil' => Carbon::now()->toDateString(),
+            'kode_diagnosa' => 'I10',
+            'diagnosa' => 'Hipertensi',
+            'sumber' => 'manual',
+        ]);
+
+        $resUpdate = $this->actingAs($this->admin)->put(
+            route('admin.prb.riwayat.update', $riwayat->id),
+            [
+                'tanggal_diambil' => Carbon::now()->toDateString(),
+                'tanggal_jatuh_tempo' => Carbon::now()->addDays(30)->toDateString(),
+                'kode_diagnosa' => 'I10',
+                'diagnosa' => 'Hipertensi',
+                'obat' => [],
+            ]
+        );
+
+        $resUpdate->assertSessionHasErrors(['obat']);
+    }
+
+    public function test_pengingat_filters_by_bulan_and_tahun(): void
+    {
+        $this->pasienPrb->riwayatPengambilan()->create([
+            'tanggal_jatuh_tempo' => '2026-03-14',
+            'tanggal_diambil' => null,
+            'kode_diagnosa' => 'I10',
+            'diagnosa' => 'Hipertensi',
+            'sumber' => 'manual',
+        ]);
+
+        $this->pasienPrb->riwayatPengambilan()->create([
+            'tanggal_jatuh_tempo' => '2027-03-14',
+            'tanggal_diambil' => null,
+            'kode_diagnosa' => 'I10',
+            'diagnosa' => 'Hipertensi',
+            'sumber' => 'manual',
+        ]);
+
+        $res2026 = $this->actingAs($this->admin)->get(route('admin.prb.pengingat', [
+            'bulan' => 3,
+            'tahun' => 2026,
+        ]));
+        $res2026->assertOk();
+        $res2026->assertSee('14 Mar 2026');
+        $res2026->assertDontSee('14 Mar 2027');
+
+        $res2027 = $this->actingAs($this->admin)->get(route('admin.prb.pengingat', [
+            'bulan' => 3,
+            'tahun' => 2027,
+        ]));
+        $res2027->assertOk();
+        $res2027->assertSee('14 Mar 2027');
+        $res2027->assertDontSee('14 Mar 2026');
     }
 }

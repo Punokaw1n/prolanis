@@ -42,7 +42,7 @@
             <div class="mb-6">
                 <label for="nik" class="block text-sm font-medium mb-2">Nomor Induk Kependudukan (NIK) <span class="text-red-500">*</span></label>
                 <div class="flex gap-3">
-                    <input type="text" inputmode="numeric" id="nik" name="nik" x-model="nik" @input="resetState" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Masukkan 16 digit NIK..." required maxlength="16" pattern="\d{16}">
+                    <input type="text" inputmode="numeric" id="nik" name="nik" x-model="nik" @input="nik = nik.replace(/[^0-9]/g, '').slice(0, 16); resetState()" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm font-mono focus:border-blue-500 focus:ring-blue-500" placeholder="Masukkan 16 digit NIK (hanya angka)..." required maxlength="16" pattern="\d{16}">
                     <button type="button" @click="checkNik" :disabled="nik.length !== 16 || isChecking" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50 min-w-[120px] justify-center">
                         <span x-show="!isChecking">Cari Pasien</span>
                         <span x-show="isChecking" class="animate-spin inline-block size-4 border-[3px] border-current border-t-transparent text-white rounded-full" role="status" aria-label="loading"></span>
@@ -107,8 +107,8 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium mb-2">Nomor Handphone (WhatsApp)</label>
-                            <input type="number" name="no_hp" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" placeholder="08xxx...">
+                            <label class="block text-sm font-medium mb-2">Nomor Handphone (WhatsApp) <span class="text-red-500">*</span></label>
+                            <input type="tel" inputmode="numeric" name="no_hp" value="{{ old('no_hp') }}" @input="$el.value = $el.value.replace(/[^0-9]/g, '')" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm font-mono focus:border-blue-500 focus:ring-blue-500" placeholder="08xxx..." minlength="8" required>
                         </div>
 
                         <div>
