@@ -106,7 +106,7 @@
                             <td class="py-3 px-4 text-center font-semibold text-gray-600">
                                 {{ $pasienList->firstItem() + $index }}
                             </td>
-                            <td class="py-3 px-4 font-bold text-gray-900 uppercase">
+                            <td class="py-3 px-4 font-bold text-gray-900">
                                 {{ $pasien?->nama ?? '-' }}
                             </td>
                             <td class="py-3 px-4 font-mono text-[11px] text-gray-700">

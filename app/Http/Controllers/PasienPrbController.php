@@ -174,12 +174,14 @@ class PasienPrbController extends Controller
     public function pengingat(Request $request)
     {
         $search = $request->search;
+        $bulan = $request->input('bulan');
 
         $riwayatPengingat = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien'])
-            ->whereNull('tanggal_diambil')
-            ->where('tanggal_jatuh_tempo', '<=', now()->addDays(3)->toDateString())
-            ->whereHas('pasienPrb', function ($q) {
-                $q->where('status_keaktifan', 'aktif');
+            ->belumDiambilAktif()
+            ->when($bulan, function ($query) use ($bulan) {
+                $query->whereMonth('tanggal_jatuh_tempo', (int) $bulan);
+            }, function ($query) {
+                $query->where('tanggal_jatuh_tempo', '<=', now()->addDays(3)->toDateString());
             })
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('pasienPrb.pasien', function ($q) use ($search) {
@@ -193,7 +195,7 @@ class PasienPrbController extends Controller
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
-        return view('admin.prb.pengingat', compact('riwayatPengingat', 'search'));
+        return view('admin.prb.pengingat', compact('riwayatPengingat', 'search', 'bulan'));
     }
 
     public function tandaiDiingatkan($id)
@@ -393,7 +395,7 @@ class PasienPrbController extends Controller
             'obat.*.jumlah_hari' => 'nullable|integer|min:1',
             'obat.*.jumlah_obat' => 'nullable|integer|min:1',
             'obat.*.aturan_minum' => 'nullable|string|max:100',
-        ]);
+        ], $this->riwayatValidationMessages());
 
         $effectiveDiagnosa = trim((string) ($request->diagnosa ?: ($prb->diagnosa ?: '')));
         $effectiveKodeDiagnosa = trim((string) ($request->kode_diagnosa ?: ''));
@@ -648,7 +650,7 @@ class PasienPrbController extends Controller
             'obat.*.jumlah_hari' => 'nullable|integer|min:1',
             'obat.*.jumlah_obat' => 'nullable|integer|min:1',
             'obat.*.aturan_minum' => 'nullable|string|max:100',
-        ]);
+        ], $this->riwayatValidationMessages());
 
         $effectiveDiagnosa = trim((string) ($request->diagnosa ?: ($riwayat->diagnosa ?: '')));
         $effectiveKodeDiagnosa = trim((string) ($request->kode_diagnosa ?: ($riwayat->kode_diagnosa ?: '')));
@@ -1091,6 +1093,28 @@ class PasienPrbController extends Controller
         }
 
         return $roman;
+    }
+
+    /**
+     * Pesan error validasi Bahasa Indonesia untuk pencatatan & pembaruan riwayat PRB.
+     *
+     * @return array<string, string>
+     */
+    private function riwayatValidationMessages(): array
+    {
+        return [
+            'tanggal_diambil.required' => 'Tanggal pelayanan / diambil wajib diisi.',
+            'tanggal_diambil.date' => 'Format tanggal pelayanan / diambil tidak valid.',
+            'tanggal_jatuh_tempo.required' => 'Jadwal jatuh tempo (berikutnya) wajib diisi.',
+            'tanggal_jatuh_tempo.date' => 'Format jadwal jatuh tempo tidak valid.',
+            'obat.*.nama.required_with' => 'Nama obat wajib diisi.',
+            'obat.*.kategori.required_with' => 'Kategori obat wajib dipilih.',
+            'obat.*.kategori.in' => 'Kategori obat harus PRB atau Non-PRB.',
+            'obat.*.jumlah_hari.integer' => 'Jumlah hari harus berupa angka.',
+            'obat.*.jumlah_hari.min' => 'Jumlah hari minimal 1.',
+            'obat.*.jumlah_obat.integer' => 'Jumlah obat harus berupa angka.',
+            'obat.*.jumlah_obat.min' => 'Jumlah obat minimal 1.',
+        ];
     }
 
     /**

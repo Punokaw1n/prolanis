@@ -253,4 +253,27 @@ class ImportController extends Controller
         return redirect()->route('admin.import.obat-umum')
             ->with('import_summary', $import->summary);
     }
+
+    public function destroyMasterObat(Request $request, $id)
+    {
+        if (! auth()->user()?->isAdmin()) {
+            abort(403, 'Akses ditolak. Hanya Administrator yang dapat menghapus data master obat.');
+        }
+
+        $obat = MasterObat::findOrFail($id);
+        $namaObat = $obat->nama_obat;
+        $kategoriLabel = $obat->kategori === 'prb' ? 'PRB' : 'Umum (SIMBOK)';
+        $obat->delete();
+
+        LogAktivitas::catat('HAPUS_MASTER_OBAT', "Menghapus data master obat {$kategoriLabel}: {$namaObat}");
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Obat \"{$namaObat}\" berhasil dihapus dari master.",
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Obat \"{$namaObat}\" berhasil dihapus dari master.");
+    }
 }

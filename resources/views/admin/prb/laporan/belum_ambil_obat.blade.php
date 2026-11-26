@@ -127,7 +127,7 @@
                                 {{ $riwayatList->firstItem() + $index }}
                             </td>
                             <td class="py-3 px-4">
-                                <div class="font-bold text-gray-900 uppercase">{{ $pasien?->nama ?? '-' }}</div>
+                                <div class="font-bold text-gray-900">{{ $pasien?->nama ?? '-' }}</div>
                                 <div class="text-[11px] text-gray-500 font-mono mt-0.5">
                                     NIK: {{ $pasien?->nik ?? '-' }}
                                     @if($pasien?->no_bpjs)

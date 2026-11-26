@@ -123,6 +123,7 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
         Route::get('/import/obat-umum', [ImportController::class, 'showObatUmum'])->name('admin.import.obat-umum');
         Route::get('/import/obat-umum/template', [ImportController::class, 'downloadTemplateObatUmum'])->name('admin.import.obat-umum.template');
         Route::post('/import/obat-umum', [ImportController::class, 'importObatUmum'])->name('admin.import.obat-umum.process');
+        Route::middleware('role:admin')->delete('/import/master-obat/{id}', [ImportController::class, 'destroyMasterObat'])->name('admin.import.master-obat.destroy');
     });
 
     // Menu & Fitur Khusus Admin (Petugas, Prolanis, Informed Consent, Log Aktivitas)

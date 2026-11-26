@@ -53,7 +53,7 @@ class LaporanPrbExport
                 : 'Belum Diambil';
 
             $sheet->setCellValue("A{$rowNum}", $idx + 1);
-            $sheet->setCellValue("B{$rowNum}", strtoupper((string) ($pasien?->nama ?? '-')));
+            $sheet->setCellValue("B{$rowNum}", (string) ($pasien?->nama ?? '-'));
             $sheet->setCellValueExplicit("C{$rowNum}", (string) ($pasien?->nik ?? '-'), DataType::TYPE_STRING);
             $sheet->setCellValueExplicit("D{$rowNum}", (string) ($pasien?->no_bpjs ?: '-'), DataType::TYPE_STRING);
             $sheet->setCellValue("E{$rowNum}", $r->diagnosa_lengkap ?: ($r->pasienPrb?->diagnosa ?: '-'));
@@ -121,7 +121,7 @@ class LaporanPrbExport
             $tglDaftar = $prb->tanggal_terdaftar ? Carbon::parse($prb->tanggal_terdaftar)->format('d/m/Y') : '-';
 
             $sheet->setCellValue("A{$rowNum}", $idx + 1);
-            $sheet->setCellValue("B{$rowNum}", strtoupper((string) ($pasien?->nama ?? '-')));
+            $sheet->setCellValue("B{$rowNum}", (string) ($pasien?->nama ?? '-'));
             $sheet->setCellValueExplicit("C{$rowNum}", (string) ($pasien?->nik ?? '-'), DataType::TYPE_STRING);
             $sheet->setCellValueExplicit("D{$rowNum}", (string) ($pasien?->no_bpjs ?: '-'), DataType::TYPE_STRING);
             $sheet->setCellValue("E{$rowNum}", (string) ($prb->diagnosa ?: '-'));

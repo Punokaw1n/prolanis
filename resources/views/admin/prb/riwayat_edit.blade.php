@@ -427,6 +427,22 @@
                     </div>
 
                     <!-- ================= TABEL OBAT (ALA GAMBAR 1) ================= -->
+                    <div x-show="removedMasterObatList.length > 0" x-cloak class="mx-4 mt-3 px-3.5 py-2.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start justify-between gap-3 no-print">
+                        <div class="flex items-start gap-2">
+                            <svg class="size-4 text-amber-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
+                            </svg>
+                            <div>
+                                <p class="font-bold">Data obat berikut sudah dihapus dari Master Obat dan tidak ikut disalin:</p>
+                                <p class="mt-0.5">
+                                    <strong class="text-red-700" x-text="removedMasterObatList.join(', ')"></strong>
+                                    — silakan cari dan masukkan kembali obat tersebut dengan nama yang jelas di kolom pencarian di atas.
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" @click="removedMasterObatList = []" class="text-amber-700 hover:text-amber-950 font-bold text-sm leading-none shrink-0 cursor-pointer" title="Tutup peringatan">&times;</button>
+                    </div>
+
                     <div class="overflow-x-auto min-h-[360px] pb-32">
                         <table class="min-w-full divide-y divide-gray-200 text-left text-xs">
                             <thead class="bg-gray-50 text-gray-600 font-semibold tracking-wider uppercase text-[10.5px]">
@@ -1628,13 +1644,34 @@ function riwayatForm() {
             this.showModalObatBaru = false;
         },
 
+        removedMasterObatList: [],
+
+        isObatInMaster(nama, kategori) {
+            const list = kategori === 'non_prb' ? this.masterNonPrb : this.masterPrb;
+            const target = (nama || '').trim().toLowerCase();
+            return (list || []).some(m => String(m).trim().toLowerCase() === target);
+        },
+
         salinResepTerakhir() {
             if (!this.lastResep || this.lastResep.length === 0) {
                 this.showAlert('Tidak ada data resep bulan lalu yang tersimpan untuk disalin.');
                 return;
             }
 
-            this.obatList = this.lastResep.map(item => ({
+            const validItems = [];
+            const removedNames = [];
+
+            for (const item of this.lastResep) {
+                if (this.isObatInMaster(item.nama, item.kategori)) {
+                    validItems.push(item);
+                } else {
+                    removedNames.push(item.nama);
+                }
+            }
+
+            this.removedMasterObatList = removedNames;
+
+            this.obatList = validItems.map(item => ({
                 id: Date.now() + Math.random(),
                 nama: item.nama,
                 kategori: item.kategori,
@@ -1648,7 +1685,14 @@ function riwayatForm() {
             }));
 
             this.updateAllHari();
-            this.showAlert(`Berhasil menyalin ${this.obatList.length} obat dari resep bulan lalu.`);
+
+            if (removedNames.length > 0 && validItems.length > 0) {
+                this.showAlert(`Berhasil menyalin ${validItems.length} obat. Obat (${removedNames.join(', ')}) sudah dihapus dari Master Obat — silakan masukkan kembali obat penggantinya.`);
+            } else if (removedNames.length > 0 && validItems.length === 0) {
+                this.showAlert(`Obat (${removedNames.join(', ')}) sudah dihapus dari Master Obat dan tidak disalin. Silakan masukkan kembali obat tersebut.`);
+            } else {
+                this.showAlert(`Berhasil menyalin ${this.obatList.length} obat dari resep bulan lalu.`);
+            }
         },
 
         get defaultHari() {

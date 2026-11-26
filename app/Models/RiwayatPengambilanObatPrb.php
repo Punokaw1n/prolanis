@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class RiwayatPengambilanObatPrb extends Model
 {
@@ -131,5 +133,50 @@ class RiwayatPengambilanObatPrb extends Model
 
         return in_array($status, ['sudah', 'tidak_lengkap', 'belum_lengkap', 'sudah_lengkap'], true)
             || (str_contains($status, 'sudah') && ! str_contains($status, 'belum dipersiapkan'));
+    }
+
+    /**
+     * Scope jadwal pengambilan obat yang belum diambil untuk pasien PRB aktif,
+     * dengan mengecualikan jadwal lama yang sudah terlunasi oleh pengambilan susulan
+     * pada bulan/tahun & diagnosa yang sama.
+     */
+    public function scopeBelumDiambilAktif(Builder $query): Builder
+    {
+        $isSqlite = DB::getDriverName() === 'sqlite';
+        $ymTaken = $isSqlite
+            ? "strftime('%Y-%m', taken.tanggal_diambil)"
+            : "DATE_FORMAT(taken.tanggal_diambil, '%Y-%m')";
+        $ymDue = $isSqlite
+            ? "strftime('%Y-%m', riwayat_pengambilan_obat_prbs.tanggal_jatuh_tempo)"
+            : "DATE_FORMAT(riwayat_pengambilan_obat_prbs.tanggal_jatuh_tempo, '%Y-%m')";
+
+        return $query
+            ->whereNull('tanggal_diambil')
+            ->whereHas('pasienPrb', function ($q) {
+                $q->where('status_keaktifan', 'aktif');
+            })
+            ->whereNotExists(function ($sub) use ($ymTaken, $ymDue) {
+                $sub->select(DB::raw(1))
+                    ->from('riwayat_pengambilan_obat_prbs as taken')
+                    ->join('pasien_prbs as prb', 'prb.id', '=', 'taken.pasien_prb_id')
+                    ->whereColumn('taken.pasien_prb_id', 'riwayat_pengambilan_obat_prbs.pasien_prb_id')
+                    ->whereNotNull('taken.tanggal_diambil')
+                    ->whereRaw("{$ymTaken} = {$ymDue}")
+                    ->whereColumn('taken.tanggal_diambil', '>=', 'riwayat_pengambilan_obat_prbs.tanggal_jatuh_tempo')
+                    ->where(function ($diagQ) {
+                        $diagQ->where(function ($q) {
+                            $q->whereNotNull('riwayat_pengambilan_obat_prbs.kode_diagnosa')
+                                ->where('riwayat_pengambilan_obat_prbs.kode_diagnosa', '!=', '')
+                                ->whereRaw("UPPER(TRIM(COALESCE(taken.kode_diagnosa, ''))) = UPPER(TRIM(riwayat_pengambilan_obat_prbs.kode_diagnosa))");
+                        })->orWhere(function ($q) {
+                            $q->where(function ($emptyKode) {
+                                $emptyKode->whereNull('riwayat_pengambilan_obat_prbs.kode_diagnosa')
+                                    ->orWhere('riwayat_pengambilan_obat_prbs.kode_diagnosa', '');
+                            })->whereRaw(
+                                "UPPER(TRIM(COALESCE(NULLIF(taken.diagnosa, ''), prb.diagnosa, ''))) = UPPER(TRIM(COALESCE(NULLIF(riwayat_pengambilan_obat_prbs.diagnosa, ''), prb.diagnosa, '')))"
+                            );
+                        });
+                    });
+            });
     }
 }

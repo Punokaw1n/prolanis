@@ -274,6 +274,9 @@
                                 <th scope="col" class="px-6 py-3 text-start text-xs font-semibold uppercase tracking-wider text-gray-500 w-16">No</th>
                                 <th scope="col" class="px-6 py-3 text-start text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Obat</th>
                                 <th scope="col" class="px-6 py-3 text-start text-xs font-semibold uppercase tracking-wider text-gray-500 w-32">Kategori</th>
+                                @if(auth()->user()?->isAdmin())
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 w-28">Aksi</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
@@ -291,12 +294,24 @@
                                             PRB
                                         </span>
                                     </td>
+                                    @if(auth()->user()?->isAdmin())
+                                    <td class="px-6 py-3.5 whitespace-nowrap text-center">
+                                        <button type="button" @click="konfirmasiHapus(item)"
+                                                class="py-1 px-2.5 inline-flex items-center gap-1 text-xs font-semibold rounded-md bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer"
+                                                title="Hapus obat dari master">
+                                            <svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                            </svg>
+                                            Hapus
+                                        </button>
+                                    </td>
+                                    @endif
                                 </tr>
                             </template>
 
                             <!-- Empty State -->
                             <tr x-show="filteredItems.length === 0">
-                                <td colspan="3" class="px-6 py-10 text-center">
+                                <td colspan="{{ auth()->user()?->isAdmin() ? 4 : 3 }}" class="px-6 py-10 text-center">
                                     <div class="flex flex-col items-center justify-center">
                                         <svg class="size-10 text-gray-300 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
@@ -350,12 +365,44 @@
                     </div>
                 </div>
             </div>
+
+            @if(auth()->user()?->isAdmin())
+            <!-- Modal Konfirmasi Hapus Master Obat -->
+            <div x-show="deleteTarget" style="display: none; position: fixed; inset: 0; z-index: 99999; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px);"
+                 class="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+                 @keydown.escape.window="deleteTarget = null">
+                <div @click.outside="if (!isDeleting) deleteTarget = null"
+                     class="bg-white border border-gray-200 rounded-xl shadow-xl max-w-sm w-full p-6 text-center">
+                    <div class="size-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3">
+                        <svg class="size-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-800">Hapus Data Obat?</h3>
+                    <p class="text-xs text-gray-600 mt-1">
+                        Obat <strong class="text-gray-900" x-text="deleteTarget?.nama_obat"></strong> akan dihapus permanen dari master obat.
+                    </p>
+                    <p x-show="deleteError" x-text="deleteError" class="text-xs text-red-600 font-semibold mt-2"></p>
+                    <div class="mt-5 flex items-center justify-center gap-2">
+                        <button type="button" @click="deleteTarget = null" :disabled="isDeleting"
+                                class="py-2 px-4 text-xs font-semibold rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-2xs cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="button" @click="eksekusiHapus()" :disabled="isDeleting"
+                                class="py-2 px-4 text-xs font-bold rounded-lg bg-red-600 text-white hover:bg-red-700 shadow-2xs disabled:opacity-60 cursor-pointer">
+                            <span x-text="isDeleting ? 'Menghapus...' : 'Ya, Hapus'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('obatTable', (initialData) => ({
@@ -366,6 +413,56 @@ document.addEventListener('alpine:init', () => {
         currentPage: 1,
         perPage: 10,
         items: initialData || [],
+        deleteTarget: null,
+        isDeleting: false,
+        deleteError: '',
+
+        konfirmasiHapus(item) {
+            this.deleteTarget = item;
+            this.deleteError = '';
+        },
+
+        async eksekusiHapus() {
+            if (!this.deleteTarget || this.isDeleting) return;
+            this.isDeleting = true;
+            this.deleteError = '';
+            const id = this.deleteTarget.id;
+            const nama = this.deleteTarget.nama_obat;
+
+            try {
+                const res = await fetch(`{{ url('/admin/import/master-obat') }}/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.status === 'success') {
+                    this.items = this.items.filter(i => i.id !== id);
+                    if (this.currentPage > this.totalPages) {
+                        this.currentPage = this.totalPages;
+                    }
+                    this.deleteTarget = null;
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil Dihapus!',
+                            text: data.message || `Obat "${nama}" berhasil dihapus dari master.`,
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+                    }
+                } else {
+                    this.deleteError = data.message || 'Gagal menghapus data obat.';
+                }
+            } catch (e) {
+                this.deleteError = 'Koneksi terputus saat menghapus obat.';
+            } finally {
+                this.isDeleting = false;
+            }
+        },
         
         get filteredItems() {
             const q = this.activeFilter.trim().toLowerCase();

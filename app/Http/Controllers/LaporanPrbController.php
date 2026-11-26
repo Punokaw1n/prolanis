@@ -8,7 +8,6 @@ use App\Models\RiwayatPengambilanObatPrb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class LaporanPrbController extends Controller
 {
@@ -143,26 +142,8 @@ class LaporanPrbController extends Controller
         $tahun = $request->input('tahun');
         $search = trim((string) $request->input('search', ''));
 
-        $isSqlite = DB::getDriverName() === 'sqlite';
-        $ymTaken = $isSqlite
-            ? "strftime('%Y-%m', taken.tanggal_diambil)"
-            : "DATE_FORMAT(taken.tanggal_diambil, '%Y-%m')";
-        $ymDue = $isSqlite
-            ? "strftime('%Y-%m', riwayat_pengambilan_obat_prbs.tanggal_jatuh_tempo)"
-            : "DATE_FORMAT(riwayat_pengambilan_obat_prbs.tanggal_jatuh_tempo, '%Y-%m')";
-
         $query = RiwayatPengambilanObatPrb::with(['pasienPrb.pasien'])
-            ->whereNull('tanggal_diambil')
-            ->whereHas('pasienPrb', function ($q) {
-                $q->where('status_keaktifan', 'aktif');
-            })
-            ->whereNotExists(function ($sub) use ($ymTaken, $ymDue) {
-                $sub->select(DB::raw(1))
-                    ->from('riwayat_pengambilan_obat_prbs as taken')
-                    ->whereColumn('taken.pasien_prb_id', 'riwayat_pengambilan_obat_prbs.pasien_prb_id')
-                    ->whereNotNull('taken.tanggal_diambil')
-                    ->whereRaw("{$ymTaken} = {$ymDue}");
-            });
+            ->belumDiambilAktif();
 
         if ($tanggal) {
             $query->whereDate('tanggal_jatuh_tempo', $tanggal);
