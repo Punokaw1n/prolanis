@@ -215,6 +215,12 @@
                 
                 @if(auth()->user()?->peran === 'admin' && !auth()->user()?->isDokter())
                 <ul class="space-y-1 mt-2">
+                    <li>
+                        <a href="{{ route('admin.srk.index') }}" class="flex items-center gap-x-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('admin.srk.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                            <svg class="flex-shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            Pasien SRK
+                        </a>
+                    </li>
                     <li x-data="{ open: {{ $isConsentActive ? 'true' : 'false' }} }">
                         <button type="button" @click="open = !open" class="w-full text-start flex items-center gap-x-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors" :class="open ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'">
                             <svg class="flex-shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>

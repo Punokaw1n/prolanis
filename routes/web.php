@@ -26,6 +26,7 @@ use App\Http\Controllers\LogAktivitasController;
 use App\Http\Controllers\PasienAuthController;
 use App\Http\Controllers\PasienController;
 use App\Http\Controllers\PasienPrbController;
+use App\Http\Controllers\PasienSrkController;
 use App\Http\Controllers\PersetujuanController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\PortalPasienController;
@@ -173,6 +174,15 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
         // Log Aktivitas
         Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])->name('admin.log.index');
+
+        // Pasien SRK (Non-PRB WhatsApp Broadcast)
+        Route::get('/pasien-srk', [PasienSrkController::class, 'index'])->name('admin.srk.index');
+        Route::post('/pasien-srk/import', [PasienSrkController::class, 'import'])->name('admin.srk.import');
+        Route::get('/pasien-srk/template', [PasienSrkController::class, 'downloadTemplate'])->name('admin.srk.template');
+        Route::post('/pasien-srk/pesan', [PasienSrkController::class, 'updateTemplate'])->name('admin.srk.pesan.update');
+        Route::post('/pasien-srk/{id}/tandai', [PasienSrkController::class, 'tandaiDihubungi'])->name('admin.srk.tandai');
+        Route::delete('/pasien-srk/hapus-semua', [PasienSrkController::class, 'destroyAll'])->name('admin.srk.destroy-all');
+        Route::delete('/pasien-srk/{id}', [PasienSrkController::class, 'destroy'])->name('admin.srk.destroy');
         Route::get('/log-aktivitas/export', [LogAktivitasController::class, 'export'])->name('admin.log.export');
         Route::post('/log-aktivitas/prune', [LogAktivitasController::class, 'prune'])->name('admin.log.prune');
     });
