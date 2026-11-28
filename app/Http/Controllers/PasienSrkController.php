@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PasienSrkExport;
 use App\Exports\TemplatePasienSrkExport;
 use App\Imports\PasienSrkImport;
-use App\Models\LogAktivitas;
 use App\Models\PasienSrk;
 use App\Models\PasienSrkTemplate;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,17 +20,9 @@ class PasienSrkController extends Controller
     public function index(Request $request): View
     {
         $search = trim((string) $request->input('search', ''));
-        $status = $request->input('status', '');
+        $status = (string) $request->input('status', '');
 
-        $pasienSrk = PasienSrk::query()
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($q) use ($search): void {
-                    $q->where('nama', 'like', "%{$search}%")
-                        ->orWhere('no_hp', 'like', "%{$search}%");
-                });
-            })
-            ->when($status === 'belum', fn ($q) => $q->whereNull('terakhir_dihubungi'))
-            ->when($status === 'sudah', fn ($q) => $q->whereNotNull('terakhir_dihubungi'))
+        $pasienSrk = $this->filteredQuery($search, $status)
             ->orderByDesc('id')
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
@@ -48,6 +41,34 @@ class PasienSrkController extends Controller
         ));
     }
 
+    public function export(Request $request): StreamedResponse
+    {
+        $search = trim((string) $request->input('search', ''));
+        $status = (string) $request->input('status', '');
+
+        $items = $this->filteredQuery($search, $status)
+            ->orderByDesc('id')
+            ->get();
+
+        return PasienSrkExport::download($items, $status);
+    }
+
+    /**
+     * @return Builder<PasienSrk>
+     */
+    private function filteredQuery(string $search, string $status): Builder
+    {
+        return PasienSrk::query()
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($q) use ($search): void {
+                    $q->where('nama', 'like', "%{$search}%")
+                        ->orWhere('no_hp', 'like', "%{$search}%");
+                });
+            })
+            ->when($status === 'belum', fn ($q) => $q->whereNull('terakhir_dihubungi'))
+            ->when($status === 'sudah', fn ($q) => $q->whereNotNull('terakhir_dihubungi'));
+    }
+
     public function import(Request $request): RedirectResponse
     {
         $request->validate([
@@ -60,11 +81,6 @@ class PasienSrkController extends Controller
 
         $import = new PasienSrkImport;
         Excel::import($import, $request->file('file'));
-
-        LogAktivitas::catat(
-            'IMPORT_SRK',
-            "Import Pasien SRK: {$import->summary['imported']} baru, {$import->summary['existing']} sudah ada, {$import->summary['skipped']} dilewati."
-        );
 
         if ($import->summary['imported'] === 0 && $import->summary['existing'] === 0) {
             return redirect()
@@ -104,8 +120,6 @@ class PasienSrkController extends Controller
             PasienSrkTemplate::create(['isi_pesan' => $validated['isi_pesan']]);
         }
 
-        LogAktivitas::catat('UPDATE_TEMPLATE_SRK', 'Memperbarui template pesan WhatsApp Pasien SRK.');
-
         return redirect()
             ->route('admin.srk.index')
             ->with('success', 'Template pesan WhatsApp berhasil disimpan.');
@@ -117,8 +131,6 @@ class PasienSrkController extends Controller
         $pasienSrk->update([
             'terakhir_dihubungi' => now(),
         ]);
-
-        LogAktivitas::catat('HUBUNGI_SRK', "Menandai kontak WA telah dikirim kepada pasien SRK {$pasienSrk->nama}.");
 
         return response()->json([
             'success' => true,
@@ -132,8 +144,6 @@ class PasienSrkController extends Controller
         $nama = $pasienSrk->nama;
         $pasienSrk->delete();
 
-        LogAktivitas::catat('HAPUS_SRK', "Menghapus kontak pasien SRK {$nama}.");
-
         return redirect()
             ->route('admin.srk.index')
             ->with('success', "Data kontak {$nama} berhasil dihapus.");
@@ -143,8 +153,6 @@ class PasienSrkController extends Controller
     {
         $jumlah = PasienSrk::count();
         PasienSrk::query()->delete();
-
-        LogAktivitas::catat('HAPUS_SEMUA_SRK', "Menghapus seluruh data kontak Pasien SRK ({$jumlah} data).");
 
         return redirect()
             ->route('admin.srk.index')

@@ -132,29 +132,32 @@
                 @endif
             </form>
 
-            @if($totalKontak > 0)
-                <form action="{{ route('admin.srk.destroy-all') }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus seluruh data Pasien SRK ({{ $totalKontak }} kontak)?');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="py-2.5 px-3.5 inline-flex items-center gap-x-1.5 text-xs font-semibold rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors cursor-pointer">
-                        Kosongkan Semua Data
-                    </button>
-                </form>
-            @endif
+            <div class="flex flex-wrap items-center gap-2">
+                @if($totalKontak > 0)
+                    <a href="{{ route('admin.srk.export', ['search' => $search, 'status' => $status]) }}" class="py-2.5 px-3.5 inline-flex items-center gap-x-1.5 text-xs font-semibold rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">
+                        <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16"/></svg>
+                        Export Excel
+                    </a>
+                    <form action="{{ route('admin.srk.destroy-all') }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus seluruh data Pasien SRK ({{ $totalKontak }} kontak)?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="py-2.5 px-3.5 inline-flex items-center gap-x-1.5 text-xs font-semibold rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors cursor-pointer">
+                            Kosongkan Semua Data
+                        </button>
+                    </form>
+                @endif
+            </div>
         </div>
 
         @if($pasienSrk->count() > 0)
-            <div class="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+            <div x-show="selectedIds.length > 0" x-cloak class="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap items-center gap-2">
-                    <button type="button" @click="pilihBelumDihubungi()" class="py-1.5 px-3 text-xs font-semibold rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer">
-                        Pilih Belum Dihubungi (Halaman Ini)
-                    </button>
-                    <button type="button" x-show="selectedIds.length > 0" x-cloak @click="selectedIds = []" class="py-1.5 px-3 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                    <button type="button" @click="selectedIds = []" class="py-1.5 px-3 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
                         Batal Pilih
                     </button>
                 </div>
 
-                <div class="flex items-center gap-2" x-show="selectedIds.length > 0" x-cloak>
+                <div class="flex items-center gap-2">
                     <span class="text-xs font-semibold text-gray-600">
                         <span x-text="selectedIds.length"></span> kontak dipilih
                     </span>

@@ -177,6 +177,7 @@ Route::middleware(['auth', 'role:admin,petugas'])->prefix('admin')->group(functi
 
         // Pasien SRK (Non-PRB WhatsApp Broadcast)
         Route::get('/pasien-srk', [PasienSrkController::class, 'index'])->name('admin.srk.index');
+        Route::get('/pasien-srk/export', [PasienSrkController::class, 'export'])->name('admin.srk.export');
         Route::post('/pasien-srk/import', [PasienSrkController::class, 'import'])->name('admin.srk.import');
         Route::get('/pasien-srk/template', [PasienSrkController::class, 'downloadTemplate'])->name('admin.srk.template');
         Route::post('/pasien-srk/pesan', [PasienSrkController::class, 'updateTemplate'])->name('admin.srk.pesan.update');
